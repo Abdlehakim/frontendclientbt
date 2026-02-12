@@ -1,18 +1,40 @@
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/auth/useAuth";
-import type { ModuleKey } from "@/lib/api";
+import { api, type ModuleDTO, type ModuleKey } from "@/lib/api";
+import { useNavigate } from "react-router-dom";
 
-function moduleLabel(m: ModuleKey) {
-  if (m === "MODULE_1") return "Module 1";
+function moduleLabelFromKey(m: ModuleKey) {
+  if (m === "MODULE_1") return "Calculateur";
   if (m === "MODULE_2") return "Module 2";
   return m;
 }
 
 export default function DashboardPage() {
-  const { user, logout, subscriptionActive, subscription, plan, modules } = useAuth();
+  const nav = useNavigate();
+  const { user, subscriptionActive, subscription, plan } = useAuth();
+
+  const [enabledTree, setEnabledTree] = useState<ModuleDTO[]>([]);
+  const [loadingTree, setLoadingTree] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await api.listEnabledModules();
+        if (mounted) setEnabledTree(res.modules ?? []);
+      } catch (e) {
+        void e;
+        if (mounted) setEnabledTree([]);
+      } finally {
+        if (mounted) setLoadingTree(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const effectivePlan = subscription?.plan ?? plan ?? null;
-  const selectedModules: ModuleKey[] = Array.isArray(modules) ? modules : [];
-
   const isValid = Boolean(subscription?.valid ?? subscriptionActive);
 
   const endLabel = subscription?.currentPeriodEnd
@@ -29,12 +51,22 @@ export default function DashboardPage() {
       ? "Yearly"
       : "—";
 
+  const hasEnabledSomething = useMemo(() => enabledTree.length > 0, [enabledTree]);
+
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Dashboard</h1>
-        <button type="button" onClick={logout} className="border rounded-lg px-3 py-1.5 bg-white hover:bg-neutral-50">
-          Logout
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-extrabold text-slate-900">Dashboard</h1>
+          <div className="text-sm text-neutral-600">{user?.email ?? "—"}</div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => nav("/onboarding/plan?redirectTo=/onboarding/modules")}
+          className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700"
+        >
+          Update subscription & modules
         </button>
       </div>
 
@@ -73,16 +105,30 @@ export default function DashboardPage() {
         <div className="bg-white rounded-2xl shadow p-5 space-y-3">
           <h2 className="font-semibold">Modules</h2>
 
-          {selectedModules.length ? (
-            <div className="flex flex-wrap gap-2">
-              {selectedModules.map((m) => (
-                <span key={m} className="text-xs px-3 py-1 rounded-full bg-neutral-100 border">
-                  {moduleLabel(m)}
-                </span>
+          {loadingTree ? (
+            <div className="text-sm text-neutral-600">Loading modules…</div>
+          ) : !hasEnabledSomething ? (
+            <div className="text-sm text-neutral-600">No module enabled</div>
+          ) : (
+            <div className="space-y-3">
+              {enabledTree.map((m) => (
+                <div key={m.key} className="rounded-xl border border-slate-200 p-3">
+                  <div className="font-semibold text-slate-900">
+                    {m.name || moduleLabelFromKey(m.key)}
+                  </div>
+
+                  {m.subModules && m.subModules.length > 0 ? (
+                    <ul className="mt-2 ml-4 list-disc text-sm text-slate-700">
+                      {m.subModules.map((s) => (
+                        <li key={s.key}>{s.name}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="mt-2 text-sm text-slate-500">No submodules</div>
+                  )}
+                </div>
               ))}
             </div>
-          ) : (
-            <div className="text-sm text-neutral-600">No module selected</div>
           )}
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React from "react";
-import type { BillingCycle, ModuleKey, Plan, UserDTO } from "@/lib/api";
+import type { BillingCycle, ModuleKey, Plan, SubModuleKey, UserDTO } from "@/lib/api";
 
 export type AuthUser = UserDTO | null;
 
@@ -21,6 +21,7 @@ export type AuthState = {
 
   plan: Plan | null;
   modules: ModuleKey[];
+  subModules: SubModuleKey[];
   onboardingComplete: boolean;
 
   refresh: () => Promise<void>;

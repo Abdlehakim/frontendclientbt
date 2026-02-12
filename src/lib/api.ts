@@ -3,6 +3,7 @@ const API_BASE = "/api";
 export type Plan = "INDIVIDUAL" | "ENTERPRISE";
 export type BillingCycle = "MONTHLY" | "YEARLY";
 export type ModuleKey = "MODULE_1" | "MODULE_2";
+export type SubModuleKey = "FERRAILLAGE";
 
 export type UserDTO = {
   id: string;
@@ -19,12 +20,30 @@ export type SubscriptionDTO = {
   valid: boolean;
 };
 
+export type SubModuleDTO = {
+  key: SubModuleKey;
+  name: string;
+  route?: string;
+  slug?: string;
+  sortOrder?: number;
+};
+
+export type ModuleDTO = {
+  key: ModuleKey;
+  name: string;
+  route?: string;
+  slug?: string;
+  sortOrder?: number;
+  subModules?: SubModuleDTO[];
+};
+
 export type MeResponse = {
   user: UserDTO | null;
   subscriptionActive: boolean;
   subscription: SubscriptionDTO | null;
   plan: Plan | null;
   modules: ModuleKey[];
+  subModules: SubModuleKey[];
   onboarding: {
     planSelected: boolean;
     modulesSelected: boolean;
@@ -33,10 +52,13 @@ export type MeResponse = {
   onboardingComplete: boolean;
 };
 
-export type ModuleDTO = { key: ModuleKey; name: string };
+export type SelectModulesPayload =
+  | { moduleKeys: ModuleKey[]; subModuleKeys?: SubModuleKey[] }
+  | { modules: ModuleKey[]; subModuleKeys?: SubModuleKey[] };
 
 class ApiError extends Error {
   status: number;
+
   constructor(status: number, message: string) {
     super(message);
     this.status = status;
@@ -44,8 +66,9 @@ class ApiError extends Error {
 }
 
 function getErrorMessage(data: unknown, fallback: string) {
-  if (typeof data === "object" && data !== null && "error" in data) {
-    return String((data as { error?: unknown }).error ?? fallback);
+  if (typeof data === "object" && data !== null) {
+    if ("error" in data) return String((data as { error?: unknown }).error ?? fallback);
+    if ("message" in data) return String((data as { message?: unknown }).message ?? fallback);
   }
   return fallback;
 }
@@ -95,10 +118,12 @@ export const api = {
 
   listModules: () => request<{ modules: ModuleDTO[] }>("/modules"),
 
-  selectModules: (modules: ModuleKey[]) =>
+  listEnabledModules: () => request<{ modules: ModuleDTO[] }>("/modules/enabled"),
+
+  selectModules: (payload: SelectModulesPayload) =>
     request<{ ok: true }>("/onboarding/modules", {
       method: "POST",
-      body: JSON.stringify({ modules }),
+      body: JSON.stringify(payload),
     }),
 };
 

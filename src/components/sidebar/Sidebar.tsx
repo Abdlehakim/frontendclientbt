@@ -9,6 +9,7 @@ import { FaBars } from "react-icons/fa6";
 import IconButton from "@/components/sidebar/IconButton";
 import { sidebarItems, type SidebarItem } from "@/components/sidebar/sidebarItems";
 import { useAuth } from "@/auth/useAuth";
+import type { ModuleKey, SubModuleKey } from "@/lib/api";
 
 const normalizePath = (s?: string) => {
   if (!s) return "";
@@ -25,10 +26,55 @@ const collectHrefs = (items?: SidebarItem[]): string[] => {
   return out;
 };
 
+const filterSidebarItems = (items: SidebarItem[], can: (perm?: string) => boolean): SidebarItem[] => {
+  const out: SidebarItem[] = [];
+
+  for (const item of items) {
+    const children = item.children ? filterSidebarItems(item.children, can) : undefined;
+
+    if (item.isHeader) {
+      if (children && children.length > 0) out.push({ ...item, children });
+      continue;
+    }
+
+    const selfAllowed = can(item.permission);
+
+    if (children && children.length > 0) {
+      out.push({ ...item, children });
+      continue;
+    }
+
+    if (selfAllowed) out.push({ ...item, children: undefined });
+  }
+
+  return out;
+};
+
 export default function Sidebar() {
   const nav = useNavigate();
   const { pathname } = useLocation();
-  const { logout, user } = useAuth();
+  const { logout, user, modules, subModules } = useAuth() as unknown as {
+    logout: () => Promise<void>;
+    user: { email?: string } | null;
+    modules?: ModuleKey[];
+    subModules?: SubModuleKey[];
+  };
+
+  const moduleSet = useMemo(() => new Set(modules ?? []), [modules]);
+  const subModuleSet = useMemo(() => new Set(subModules ?? []), [subModules]);
+
+  const hasPermission = useCallback(
+    (perm?: string) => {
+      if (!perm) return true;
+      const [kind, key] = perm.split(":");
+      if (kind === "module") return moduleSet.has(key as ModuleKey);
+      if (kind === "submodule") return subModuleSet.has(key as SubModuleKey);
+      return false;
+    },
+    [moduleSet, subModuleSet]
+  );
+
+  const visibleItems = useMemo(() => filterSidebarItems(sidebarItems, hasPermission), [hasPermission]);
 
   const [collapsed, setCollapsed] = useState(true);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -68,14 +114,14 @@ export default function Sidebar() {
   useEffect(() => {
     const current = normalizePath(pathname || "/");
     const next: Record<string, boolean> = {};
-    sidebarItems.forEach((item) => {
+    visibleItems.forEach((item) => {
       if (!item.children) return;
       const hrefs = collectHrefs(item.children).map(normalizePath);
       const match = hrefs.some((h) => current === h || current.startsWith(h + "/"));
       if (match) next[item.name] = true;
     });
     setExpanded(next);
-  }, [pathname]);
+  }, [pathname, visibleItems]);
 
   const computeScrollHints = useCallback(() => {
     const el = navRef.current;
@@ -113,11 +159,6 @@ export default function Sidebar() {
 
   const displayName = useMemo(() => "SmartWebify", []);
   const initials = useMemo(() => "SW", []);
-
-  const hasPermission = useCallback((perm?: string) => {
-    void perm;
-    return true;
-  }, []);
 
   const toggleCollapse = () => setCollapsed((c) => !c);
 
@@ -320,143 +361,141 @@ export default function Sidebar() {
               [&::-webkit-scrollbar-button:end:increment]:hidden`}
           >
             <div className="flex flex-col">
-              {sidebarItems
-                .filter((item) => !item.permission || hasPermission(item.permission))
-                .map((item) => {
-                  const isOpen = !!expanded[item.name];
-                  const Icon = item.icon;
+              {visibleItems.map((item) => {
+                const isOpen = !!expanded[item.name];
+                const Icon = item.icon;
 
-                  if (collapsed) return <CollapsedRow key={item.name} item={item} />;
+                if (collapsed) return <CollapsedRow key={item.name} item={item} />;
 
-                  return (
-                    <div key={item.name}>
-                      {item.children ? (
-                        <>
-                          <div
-                            onClick={() => {
-                              toggleExpand(item.name);
-                              requestAnimationFrame(computeScrollHints);
-                            }}
-                            onTouchStart={() => {}}
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault();
-                                toggleExpand(item.name);
-                                requestAnimationFrame(computeScrollHints);
-                              }
-                            }}
-                            aria-expanded={isOpen}
-                            className={[
-                              "flex items-center px-8 h-12 cursor-pointer text-xs select-none my-0.5 mx-2 rounded",
-                              isSectionActive(item)
-                                ? "bg-white text-black"
-                                : "hover:bg-white hover:text-(--hoverText) active:bg-white active:text-black focus:bg-white focus:text-(--hoverText)",
-                            ].join(" ")}
-                          >
-                            <span className="mr-3">{Icon ? <Icon size={18} /> : null}</span>
-                            <span className="flex-1 whitespace-nowrap overflow-hidden">{item.name}</span>
-                            <span
-                              className={[
-                                "transform transition-transform duration-200 ease-in-out",
-                                isOpen ? "rotate-90" : "rotate-0",
-                              ].join(" ")}
-                            >
-                              <BiChevronRight size={20} />
-                            </span>
-                          </div>
-
-                          <ul
-                            className={`ml-8 flex flex-col text-xs overflow-hidden transition-all duration-500 ease-in-out gap-1 ${
-                              isOpen ? "max-h-fit opacity-100 py-1" : "max-h-0 opacity-0"
-                            }`}
-                          >
-                            {item.children.map((child) => {
-                              if (child.isHeader) {
-                                return (
-                                  <div key={child.name}>
-                                    <div className="text-xs px-12 h-6 font-semibold text-white select-none flex items-center">
-                                      {child.name}
-                                    </div>
-                                    <ul className="ml-4 flex flex-col gap-1 text-xs h-fit">
-                                      {child.children?.map((subChild) => {
-                                        const active = isHrefActive(subChild.to);
-                                        return (
-                                          <li key={subChild.name}>
-                                            <Link
-                                              to={subChild.to!}
-                                              onClick={() => {
-                                                closeIfMobile();
-                                                requestAnimationFrame(computeScrollHints);
-                                              }}
-                                              onTouchStart={() => {}}
-                                              aria-current={active ? "page" : undefined}
-                                              className={[
-                                                "flex items-center px-8 h-8 mx-2 rounded",
-                                                active
-                                                  ? "bg-white text-black"
-                                                  : "hover:bg-white hover:text-(--hoverText) active:bg-white active:text-black focus:bg-white focus:text-(--hoverText)",
-                                              ].join(" ")}
-                                            >
-                                              <span className="whitespace-nowrap overflow-hidden">{subChild.name}</span>
-                                            </Link>
-                                          </li>
-                                        );
-                                      })}
-                                    </ul>
-                                  </div>
-                                );
-                              }
-
-                              const active = isHrefActive(child.to);
-                              return (
-                                <li key={child.name}>
-                                  <Link
-                                    to={child.to!}
-                                    onClick={() => {
-                                      closeIfMobile();
-                                      requestAnimationFrame(computeScrollHints);
-                                    }}
-                                    onTouchStart={() => {}}
-                                    aria-current={active ? "page" : undefined}
-                                    className={[
-                                      "flex items-center px-8 h-8 mx-2 rounded",
-                                      active
-                                        ? "bg-white text-black"
-                                        : "hover:bg-white hover:text-(--hoverText) active:bg-white active:text-black focus:bg-white focus:text-(--hoverText)",
-                                    ].join(" ")}
-                                  >
-                                    <span className="whitespace-nowrap overflow-hidden">{child.name}</span>
-                                  </Link>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        </>
-                      ) : (
-                        <Link
-                          to={item.to!}
+                return (
+                  <div key={item.name}>
+                    {item.children ? (
+                      <>
+                        <div
                           onClick={() => {
-                            closeIfMobile();
+                            toggleExpand(item.name);
                             requestAnimationFrame(computeScrollHints);
                           }}
                           onTouchStart={() => {}}
-                          aria-current={isHrefActive(item.to) ? "page" : undefined}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              toggleExpand(item.name);
+                              requestAnimationFrame(computeScrollHints);
+                            }
+                          }}
+                          aria-expanded={isOpen}
                           className={[
-                            "flex items-center px-8 h-12 transform transition-transform duration-200 ease-in-out text-xs mx-2 my-0.5 rounded",
-                            isHrefActive(item.to)
+                            "flex items-center px-8 h-12 cursor-pointer text-xs select-none my-0.5 mx-2 rounded",
+                            isSectionActive(item)
                               ? "bg-white text-black"
                               : "hover:bg-white hover:text-(--hoverText) active:bg-white active:text-black focus:bg-white focus:text-(--hoverText)",
                           ].join(" ")}
                         >
                           <span className="mr-3">{Icon ? <Icon size={18} /> : null}</span>
                           <span className="flex-1 whitespace-nowrap overflow-hidden">{item.name}</span>
-                        </Link>
-                      )}
-                    </div>
-                  );
-                })}
+                          <span
+                            className={[
+                              "transform transition-transform duration-200 ease-in-out",
+                              isOpen ? "rotate-90" : "rotate-0",
+                            ].join(" ")}
+                          >
+                            <BiChevronRight size={20} />
+                          </span>
+                        </div>
+
+                        <ul
+                          className={`ml-8 flex flex-col text-xs overflow-hidden transition-all duration-500 ease-in-out gap-1 ${
+                            isOpen ? "max-h-fit opacity-100 py-1" : "max-h-0 opacity-0"
+                          }`}
+                        >
+                          {item.children.map((child) => {
+                            if (child.isHeader) {
+                              return (
+                                <div key={child.name}>
+                                  <div className="text-xs px-12 h-6 font-semibold text-white select-none flex items-center">
+                                    {child.name}
+                                  </div>
+                                  <ul className="ml-4 flex flex-col gap-1 text-xs h-fit">
+                                    {child.children?.map((subChild) => {
+                                      const active = isHrefActive(subChild.to);
+                                      return (
+                                        <li key={subChild.name}>
+                                          <Link
+                                            to={subChild.to!}
+                                            onClick={() => {
+                                              closeIfMobile();
+                                              requestAnimationFrame(computeScrollHints);
+                                            }}
+                                            onTouchStart={() => {}}
+                                            aria-current={active ? "page" : undefined}
+                                            className={[
+                                              "flex items-center px-8 h-8 mx-2 rounded",
+                                              active
+                                                ? "bg-white text-black"
+                                                : "hover:bg-white hover:text-(--hoverText) active:bg-white active:text-black focus:bg-white focus:text-(--hoverText)",
+                                            ].join(" ")}
+                                          >
+                                            <span className="whitespace-nowrap overflow-hidden">{subChild.name}</span>
+                                          </Link>
+                                        </li>
+                                      );
+                                    })}
+                                  </ul>
+                                </div>
+                              );
+                            }
+
+                            const active = isHrefActive(child.to);
+                            return (
+                              <li key={child.name}>
+                                <Link
+                                  to={child.to!}
+                                  onClick={() => {
+                                    closeIfMobile();
+                                    requestAnimationFrame(computeScrollHints);
+                                  }}
+                                  onTouchStart={() => {}}
+                                  aria-current={active ? "page" : undefined}
+                                  className={[
+                                    "flex items-center px-8 h-8 mx-2 rounded",
+                                    active
+                                      ? "bg-white text-black"
+                                      : "hover:bg-white hover:text-(--hoverText) active:bg-white active:text-black focus:bg-white focus:text-(--hoverText)",
+                                  ].join(" ")}
+                                >
+                                  <span className="whitespace-nowrap overflow-hidden">{child.name}</span>
+                                </Link>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </>
+                    ) : (
+                      <Link
+                        to={item.to!}
+                        onClick={() => {
+                          closeIfMobile();
+                          requestAnimationFrame(computeScrollHints);
+                        }}
+                        onTouchStart={() => {}}
+                        aria-current={isHrefActive(item.to) ? "page" : undefined}
+                        className={[
+                          "flex items-center px-8 h-12 transform transition-transform duration-200 ease-in-out text-xs mx-2 my-0.5 rounded",
+                          isHrefActive(item.to)
+                            ? "bg-white text-black"
+                            : "hover:bg-white hover:text-(--hoverText) active:bg-white active:text-black focus:bg-white focus:text-(--hoverText)",
+                        ].join(" ")}
+                      >
+                        <span className="mr-3">{Icon ? <Icon size={18} /> : null}</span>
+                        <span className="flex-1 whitespace-nowrap overflow-hidden">{item.name}</span>
+                      </Link>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </nav>
 

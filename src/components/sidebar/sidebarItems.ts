@@ -1,5 +1,5 @@
 import type { IconType } from "react-icons";
-import { FiGrid, FiUsers, FiFileText, FiSettings } from "react-icons/fi";
+import { FiGrid, FiSettings, FiFileText } from "react-icons/fi";
 
 export type SidebarItem = {
   name: string;
@@ -16,19 +16,24 @@ export const sidebarItems: SidebarItem[] = [
     to: "/app",
     icon: FiGrid,
   },
+
   {
-    name: "Clients",
-    to: "/app/clients",
-    icon: FiUsers,
-  },
-  {
-    name: "Models",
+    name: "Calculateur",
+    to: "/app/models/module-1",
     icon: FiFileText,
+    permission: "module:MODULE_1",
     children: [
-      { name: "Model 1", to: "/app/models/module-1" },
-      { name: "Model 2", to: "/app/models/module-2" },
+      { name: "Ferraillage", to: "/app/models/module-1/ferraillage", permission: "submodule:FERRAILLAGE" },
     ],
   },
+
+  {
+    name: "Module 2",
+    to: "/app/models/module-2",
+    icon: FiFileText,
+    permission: "module:MODULE_2",
+  },
+
   {
     name: "Settings",
     to: "/app/settings",
