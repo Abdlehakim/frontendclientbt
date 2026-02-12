@@ -1,35 +1,33 @@
-import { useState } from 'react'
-import reactLogo from '@/assets/react.svg'
-import viteLogo from '/vite.svg'
-import '@/App.css'
+/// App.tsx
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "@/auth/useAuth";
 
-function App() {
-  const [count, setCount] = useState(0)
+import Login from "@/pages/Login";
+import AppLayout from "@/layouts/AppLayout";
+import AppGuard from "@/pages/AppGuard"; // this should NOT render <Sidebar />
+
+export default function App() {
+  const { user, loading } = useAuth();
+
+  if (loading) return <div style={{ padding: 20 }}>Loading...</div>;
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <Routes>
+      <Route path="/login" element={<Login />} />
 
-export default App
+      {/* Layout route: Sidebar appears once here */}
+      <Route path="/app" element={user ? <AppLayout /> : <Navigate to="/login" replace />}>
+        {/* Index page inside the layout */}
+        <Route index element={<AppGuard />} />
+
+        {/* Example sub-pages */}
+        <Route path="clients" element={<div className="bg-white rounded-2xl shadow p-5">Clients</div>} />
+        <Route path="clients/new" element={<div className="bg-white rounded-2xl shadow p-5">New Client</div>} />
+        <Route path="module-1" element={<div className="bg-white rounded-2xl shadow p-5">Module 1</div>} />
+        <Route path="module-2" element={<div className="bg-white rounded-2xl shadow p-5">Module 2</div>} />
+      </Route>
+
+      <Route path="*" element={<Navigate to={user ? "/app" : "/login"} replace />} />
+    </Routes>
+  );
+}

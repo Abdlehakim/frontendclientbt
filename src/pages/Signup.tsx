@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { useAuth } from "@/auth/useAuth";
+import signinImg from "@/assets/signin.jpg";
 
 export default function Signup() {
   const { signup } = useAuth();
@@ -36,23 +37,23 @@ export default function Signup() {
   }
 
   return (
-    <div className="relative w-full h-screen">
+    <div className="relative w-full h-screen bg-(--background) text-(--foreground)">
       <div className="w-[60%] max-lg:w-full flex justify-center items-center h-screen">
-        <div className="px-8 flex flex-col w-150 max-w-[92vw] h-175 max-md:h-auto max-md:py-10 bg-white/80 rounded-xl justify-center gap-4 z-10 shadow">
+        <div className="px-8 flex flex-col w-150 max-w-[92vw] h-175 max-md:h-auto max-md:py-10 bg-white/90 rounded-xl justify-center gap-4 z-10 shadow">
           <div className="flex flex-col gap-2 items-center">
             <h1 className="text-4xl font-bold mb-2 text-gray-900">Bienvenu Client</h1>
             <p className="text-lg text-gray-600">Create an account.</p>
 
             <div className="text-sm text-gray-600">
               Vous avez deja un compte ?{" "}
-              <Link to="/login" className="text-indigo-600 font-semibold hover:underline">
+              <Link to="/login" className="text-(--primary) font-semibold hover:underline">
                 Connectez-vous
               </Link>
             </div>
 
             <div className="flex items-center w-75 gap-2">
               <div className="grow border-t border-gray-300" />
-              <Link to="/login" className="text-indigo-600 text-sm font-semibold hover:underline">
+              <Link to="/login" className="text-(--primary) text-sm font-semibold hover:underline">
                 Click here pour connectez a votre compte
               </Link>
               <div className="grow border-t border-gray-300" />
@@ -73,7 +74,7 @@ export default function Signup() {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full h-12.5 border px-4 border-indigo-600 rounded-md focus:outline-none text-sm font-semibold bg-white"
+                className="w-full h-12.5 border px-4 border-(--primary) rounded-md focus:outline-none text-sm font-semibold bg-white"
               />
             </div>
 
@@ -88,7 +89,7 @@ export default function Signup() {
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full h-12.5 border px-4 border-indigo-600 rounded-md focus:outline-none text-sm font-semibold bg-white"
+                className="w-full h-12.5 border px-4 border-(--primary) rounded-md focus:outline-none text-sm font-semibold bg-white"
               />
             </div>
 
@@ -105,7 +106,7 @@ export default function Signup() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                className="w-full h-12.5 border px-4 border-indigo-600 rounded-md focus:outline-none text-sm font-semibold bg-white"
+                className="w-full h-12.5 border px-4 border-(--primary) rounded-md focus:outline-none text-sm font-semibold bg-white"
               />
             </div>
 
@@ -124,7 +125,7 @@ export default function Signup() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="new-password"
-                  className="w-full border border-indigo-600 rounded-md px-3 py-2 pr-10 focus:outline-none text-lg font-semibold bg-white"
+                  className="w-full border border-(--primary) rounded-md px-3 py-2 pr-10 focus:outline-none text-lg font-semibold bg-white"
                 />
 
                 <button
@@ -141,7 +142,7 @@ export default function Signup() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="h-12.5 w-full text-white text-lg font-semibold py-2 rounded-md bg-indigo-600 transition duration-200 mt-4 hover:bg-indigo-700 disabled:opacity-60"
+              className="h-12.5 w-full text-white text-lg font-semibold py-2 rounded-md bg-(--primary) transition duration-200 mt-4 hover:bg-(--secondary) disabled:opacity-60"
             >
               {isSubmitting ? "Signing up..." : "Sign up"}
             </button>
@@ -150,8 +151,8 @@ export default function Signup() {
       </div>
 
       {/* Background Image */}
-      <div className="fixed inset-0 -z-10">
-        <img src="/signin.jpg" alt="signin background" className="w-full h-full object-cover" />
+    <div className="fixed inset-0 z-1">
+        <img src={signinImg} alt="signin background" className="w-full h-full object-cover" />
       </div>
     </div>
   );
