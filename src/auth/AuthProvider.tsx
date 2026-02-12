@@ -18,32 +18,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(async () => {
     try {
       const data = await api.me();
-      setUser(data.user);
-      setSubscriptionActive(!!data.subscriptionActive);
 
-      setSubscription(data.subscription ?? null);
-      setPlan(data.plan ?? null);
-      setModules(data.modules ?? []);
-      setSubModules(data.subModules ?? []);
-      setOnboardingComplete(!!data.onboardingComplete);
+      setUser(data.user);
+      setSubscriptionActive(Boolean(data.subscriptionActive));
+
+      const sub = data.subscription ?? null;
+      setSubscription(sub);
+
+      const effectivePlan = sub?.plan ?? data.plan ?? null;
+      setPlan(effectivePlan);
+
+      const effectiveModules = Array.isArray(data.modules) ? data.modules : [];
+      const effectiveSubModules = Array.isArray(data.subModules) ? data.subModules : [];
+      setModules(effectiveModules);
+      setSubModules(effectiveSubModules);
+
+      const planSelected = Boolean(sub?.plan) && Boolean(sub?.billingCycle);
+      const modulesSelected = effectiveModules.length > 0 && effectiveSubModules.length > 0;
+
+      const complete =
+        data.onboarding?.complete ??
+        data.onboardingComplete ??
+        (planSelected && modulesSelected);
+
+      setOnboardingComplete(Boolean(complete));
     } catch (err: unknown) {
-      if (isApiError(err) && err.status === 401) {
+      const isUnauthorized = isApiError(err) && err.status === 401;
+
+      if (isUnauthorized) {
         setUser(null);
-        setSubscriptionActive(false);
-        setSubscription(null);
-        setPlan(null);
-        setModules([]);
-        setSubModules([]);
-        setOnboardingComplete(false);
       } else {
         setUser(null);
-        setSubscriptionActive(false);
-        setSubscription(null);
-        setPlan(null);
-        setModules([]);
-        setSubModules([]);
-        setOnboardingComplete(false);
       }
+
+      setSubscriptionActive(false);
+      setSubscription(null);
+      setPlan(null);
+      setModules([]);
+      setSubModules([]);
+      setOnboardingComplete(false);
     } finally {
       setLoading(false);
     }

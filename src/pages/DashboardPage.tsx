@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/auth/useAuth";
 import { api, type ModuleDTO, type ModuleKey } from "@/lib/api";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 function moduleLabelFromKey(m: ModuleKey) {
   if (m === "MODULE_1") return "Calculateur";
@@ -11,6 +11,7 @@ function moduleLabelFromKey(m: ModuleKey) {
 
 export default function DashboardPage() {
   const nav = useNavigate();
+  const loc = useLocation();
   const { user, subscriptionActive, subscription, plan } = useAuth();
 
   const [enabledTree, setEnabledTree] = useState<ModuleDTO[]>([]);
@@ -22,8 +23,7 @@ export default function DashboardPage() {
       try {
         const res = await api.listEnabledModules();
         if (mounted) setEnabledTree(res.modules ?? []);
-      } catch (e) {
-        void e;
+      } catch {
         if (mounted) setEnabledTree([]);
       } finally {
         if (mounted) setLoadingTree(false);
@@ -53,6 +53,8 @@ export default function DashboardPage() {
 
   const hasEnabledSomething = useMemo(() => enabledTree.length > 0, [enabledTree]);
 
+  const current = loc.pathname + loc.search;
+
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between gap-4">
@@ -63,7 +65,7 @@ export default function DashboardPage() {
 
         <button
           type="button"
-          onClick={() => nav("/onboarding/plan?redirectTo=/onboarding/modules")}
+          onClick={() => nav(`/onboarding/plan?redirectTo=${encodeURIComponent(current)}`)}
           className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700"
         >
           Update subscription & modules
@@ -113,9 +115,7 @@ export default function DashboardPage() {
             <div className="space-y-3">
               {enabledTree.map((m) => (
                 <div key={m.key} className="rounded-xl border border-slate-200 p-3">
-                  <div className="font-semibold text-slate-900">
-                    {m.name || moduleLabelFromKey(m.key)}
-                  </div>
+                  <div className="font-semibold text-slate-900">{m.name || moduleLabelFromKey(m.key)}</div>
 
                   {m.subModules && m.subModules.length > 0 ? (
                     <ul className="mt-2 ml-4 list-disc text-sm text-slate-700">
@@ -131,11 +131,6 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
-      </div>
-
-      <div className="bg-white rounded-2xl shadow p-5">
-        <h2 className="font-semibold mb-2">Client area</h2>
-        <div className="text-sm text-neutral-600">Here you can show client list and module content.</div>
       </div>
     </div>
   );

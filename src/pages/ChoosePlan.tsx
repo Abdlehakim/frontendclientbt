@@ -23,27 +23,28 @@ export default function ChoosePlan() {
 
   const planLabel = plan === "INDIVIDUAL" ? "Individuel" : "Entreprise";
   const cycleLabel = billingCycle === "MONTHLY" ? "Mensuel" : "Annuel";
+  
+async function handleContinue() {
+  setErr("");
+  setLoading(true);
 
-  async function handleContinue() {
-    setErr("");
-    setLoading(true);
+  try {
+    await api.selectPlan(plan, billingCycle);
+    await refresh();
 
-    try {
-      await api.selectPlan(plan, billingCycle);
-      await refresh();
-
-      const redirectTo = params.get("redirectTo") || "/onboarding/modules";
-      nav(redirectTo, { replace: true });
-    } catch (e: unknown) {
-      setErr(e instanceof Error ? e.message : "Erreur lors de l’enregistrement du plan");
-    } finally {
-      setLoading(false);
-    }
+    // ✅ Always go to modules step after plan
+    const finalTarget = params.get("redirectTo") || "/app";
+    nav(`/onboarding/modules?redirectTo=${encodeURIComponent(finalTarget)}`, { replace: true });
+  } catch (e: unknown) {
+    setErr(e instanceof Error ? e.message : "Erreur lors de l’enregistrement du plan");
+  } finally {
+    setLoading(false);
   }
+}
+
 
   return (
-  <div className="min-h-screen bg-linear-to-b from-slate-50 to-white">
-
+    <div className="min-h-screen bg-linear-to-b from-slate-50 to-white">
       <div className="mx-auto max-w-5xl px-4 py-10">
         {/* Header */}
         <div className="flex flex-col gap-2">

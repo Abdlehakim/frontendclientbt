@@ -52,9 +52,10 @@ export type MeResponse = {
   onboardingComplete: boolean;
 };
 
-export type SelectModulesPayload =
-  | { moduleKeys: ModuleKey[]; subModuleKeys?: SubModuleKey[] }
-  | { modules: ModuleKey[]; subModuleKeys?: SubModuleKey[] };
+export type SelectModulesPayload = {
+  moduleKeys: ModuleKey[];
+  subModuleKeys: SubModuleKey[];
+};
 
 class ApiError extends Error {
   status: number;
@@ -121,7 +122,7 @@ export const api = {
   listEnabledModules: () => request<{ modules: ModuleDTO[] }>("/modules/enabled"),
 
   selectModules: (payload: SelectModulesPayload) =>
-    request<{ ok: true }>("/onboarding/modules", {
+    request<{ ok: true }>("/modules/select", {
       method: "POST",
       body: JSON.stringify(payload),
     }),
