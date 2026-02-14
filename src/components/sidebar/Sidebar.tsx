@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, type To } from "react-router-dom";
 
 import { LuArrowBigLeft, LuArrowBigRight } from "react-icons/lu";
 import { BiChevronRight, BiChevronDown, BiChevronUp } from "react-icons/bi";
@@ -52,7 +52,8 @@ const filterSidebarItems = (items: SidebarItem[], can: (perm?: string) => boolea
 
 export default function Sidebar() {
   const nav = useNavigate();
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
+
   const { logout, user, modules, subModules } = useAuth() as unknown as {
     logout: () => Promise<void>;
     user: { email?: string } | null;
@@ -76,7 +77,20 @@ export default function Sidebar() {
 
   const visibleItems = useMemo(() => filterSidebarItems(sidebarItems, hasPermission), [hasPermission]);
 
-  const [collapsed, setCollapsed] = useState(true);
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === "undefined") return true;
+
+    const isDesktop = window.matchMedia("(min-width: 768px)").matches;
+    if (!isDesktop) return true;
+
+    const p = new URLSearchParams(window.location.search);
+    const navState = p.get("nav");
+    if (navState === "collapsed") return true;
+    if (navState === "expanded") return false;
+
+    return false;
+  });
+
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [signingOut, setSigningOut] = useState(false);
 
@@ -157,6 +171,50 @@ export default function Sidebar() {
     computeScrollHints();
   }, [pathname, expanded, computeScrollHints]);
 
+  const locRef = useRef({ pathname, search });
+  useEffect(() => {
+    locRef.current = { pathname, search };
+  }, [pathname, search]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const isDesktop = window.matchMedia("(min-width: 768px)").matches;
+    if (!isDesktop) return;
+
+    const { pathname: p, search: s } = locRef.current;
+    const sp = new URLSearchParams(s);
+    sp.set("nav", collapsed ? "collapsed" : "expanded");
+    const nextSearch = `?${sp.toString()}`;
+
+    if (nextSearch === (s || "")) return;
+    nav({ pathname: p, search: nextSearch }, { replace: true });
+  }, [collapsed, nav]);
+
+  const buildTo = useCallback(
+    (href?: string): To => {
+      if (!href) return "/app";
+
+      if (typeof window === "undefined") return href;
+
+      const isDesktop = window.matchMedia("(min-width: 768px)").matches;
+      if (!isDesktop) return href;
+
+      const target = new URL(href, window.location.origin);
+
+      const currentParams = new URLSearchParams(search);
+      currentParams.forEach((v, k) => {
+        if (!target.searchParams.has(k)) target.searchParams.set(k, v);
+      });
+
+      target.searchParams.set("nav", collapsed ? "collapsed" : "expanded");
+
+      const qs = target.searchParams.toString();
+      return { pathname: target.pathname, search: qs ? `?${qs}` : "" };
+    },
+    [search, collapsed]
+  );
+
   const displayName = useMemo(() => "SmartWebify", []);
   const initials = useMemo(() => "SW", []);
 
@@ -194,7 +252,7 @@ export default function Sidebar() {
         >
           {item.to && !hasChildren ? (
             <Link
-              to={item.to}
+              to={buildTo(item.to)}
               onClick={() => closeIfMobile()}
               aria-current={isHrefActive(item.to) ? "page" : undefined}
               className="flex items-center justify-center w-full h-full"
@@ -219,16 +277,14 @@ export default function Sidebar() {
                 if (child.isHeader) {
                   return (
                     <div key={child.name} className="mb-1">
-                      <div className="px-4 py-1 text-[11px] uppercase tracking-wide text-white/80">
-                        {child.name}
-                      </div>
+                      <div className="px-4 py-1 text-[11px] uppercase tracking-wide text-white/80">{child.name}</div>
                       <ul className="px-1">
                         {child.children?.map((sub) => {
                           const activeSub = isHrefActive(sub.to);
                           return (
                             <li key={sub.name}>
                               <Link
-                                to={sub.to!}
+                                to={buildTo(sub.to)}
                                 onClick={() => closeIfMobile()}
                                 aria-current={activeSub ? "page" : undefined}
                                 className={`flex items-center gap-2 px-4 py-2 text-sm rounded ${
@@ -249,7 +305,7 @@ export default function Sidebar() {
                 return (
                   <Link
                     key={child.name}
-                    to={child.to!}
+                    to={buildTo(child.to)}
                     onClick={() => closeIfMobile()}
                     aria-current={activeChild ? "page" : undefined}
                     className={`flex items-center gap-2 px-4 py-2 text-sm ${
@@ -294,9 +350,7 @@ export default function Sidebar() {
         <div className="flex flex-col justify-between h-screen">
           <div className="flex items-center justify-center h-20 border-b-2 z-50">
             <div className="flex items-center gap-2">
-              <div className="text-xl text-white flex items-center justify-center font-semibold border-y-2">
-                {initials}
-              </div>
+              <div className="text-xl text-white flex items-center justify-center font-semibold border-y-2">{initials}</div>
 
               {!collapsed && (
                 <>
@@ -424,7 +478,7 @@ export default function Sidebar() {
                                       return (
                                         <li key={subChild.name}>
                                           <Link
-                                            to={subChild.to!}
+                                            to={buildTo(subChild.to)}
                                             onClick={() => {
                                               closeIfMobile();
                                               requestAnimationFrame(computeScrollHints);
@@ -452,7 +506,7 @@ export default function Sidebar() {
                             return (
                               <li key={child.name}>
                                 <Link
-                                  to={child.to!}
+                                  to={buildTo(child.to)}
                                   onClick={() => {
                                     closeIfMobile();
                                     requestAnimationFrame(computeScrollHints);
@@ -475,7 +529,7 @@ export default function Sidebar() {
                       </>
                     ) : (
                       <Link
-                        to={item.to!}
+                        to={buildTo(item.to)}
                         onClick={() => {
                           closeIfMobile();
                           requestAnimationFrame(computeScrollHints);

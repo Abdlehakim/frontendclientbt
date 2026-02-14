@@ -1,0 +1,119 @@
+.swb-date-picker {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+  padding: 12px;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  color: #111827;
+}
+
+.swb-date-picker.is-floating {
+  z-index: 100010 !important;
+}
+
+.swb-date-picker__header {
+  display: grid;
+  grid-template-columns: 40px 1fr 40px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.swb-date-picker__nav {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.swb-date-picker__nav:hover {
+  background: #f9fafb;
+}
+
+.swb-date-picker__month {
+  text-align: center;
+  font-weight: 700;
+}
+
+.swb-date-picker__weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 600;
+  text-align: center;
+}
+
+.swb-date-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.swb-date-picker__day {
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: #f9fafb;
+  cursor: pointer;
+  font-size: 12px;
+  color: #111827;
+}
+
+.swb-date-picker__day:hover {
+  background: #eef2ff;
+}
+
+.swb-date-picker__day.is-outside {
+  color: #9ca3af;
+  background: #fff;
+}
+
+.swb-date-picker__day.is-today {
+  border-color: #c7d2fe;
+  background: #eef2ff;
+}
+
+.swb-date-picker__day.is-selected {
+  background: #6d28d9;
+  color: #fff;
+}
+
+.swb-date-picker__footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.swb-date-picker__footer-btn {
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  background: #eef2ff;
+  color: #4f46e5;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.swb-date-picker__footer-btn:hover {
+  background: #e0e7ff;
+}
+
+.swb-date-picker__footer-btn--muted {
+  background: #fff;
+  color: #374151;
+}
+
+.swb-date-picker__footer-btn--muted:hover {
+  background: #f9fafb;
+}

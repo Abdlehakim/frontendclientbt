@@ -3,6 +3,9 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import "@/index.css";
 
+import "@/lib/swbDatePicker.css";
+import "@/lib/swbDatePicker";
+
 import { AuthProvider } from "@/auth/AuthProvider";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
@@ -10,14 +13,17 @@ import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import ChoosePlan from "@/pages/ChoosePlan";
 import ChooseModules from "@/pages/ChooseModules";
-import DashboardPage from "@/pages/DashboardPage";
 
+import { APP_PATHS, APP_HREFS } from "@/routes/paths";
 import AppLayout from "@/layouts/AppLayout";
 import AppGuard from "@/pages/AppGuard";
+import FerraillagePage from "@/pages/FerraillagePage";
+import FerRapportViewPage from "@/pages/FerRapportViewPage";
+import DashboardPage from "@/pages/DashboardPage";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <AuthProvider>
         <Routes>
           <Route path="/" element={<Navigate to="/app" replace />} />
@@ -50,18 +56,23 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               </ProtectedRoute>
             }
           >
+            <Route index element={<Navigate to={APP_HREFS.dashboard} replace />} />
+
             <Route element={<AppGuard />}>
-              <Route index element={<DashboardPage />} />
-              <Route path="clients" element={<div className="bg-white rounded-2xl shadow p-5">Clients</div>} />
-              <Route path="clients/new" element={<div className="bg-white rounded-2xl shadow p-5">New Client</div>} />
-              <Route path="module-1" element={<div className="bg-white rounded-2xl shadow p-5">Module 1</div>} />
-              <Route path="module-2" element={<div className="bg-white rounded-2xl shadow p-5">Module 2</div>} />
+              <Route path={APP_PATHS.dashboard} element={<DashboardPage />} />
+              <Route path={APP_PATHS.ferraillage} element={<FerraillagePage />} />
+              <Route
+                path={`${APP_PATHS.ferraillage}/rapports/:rapportId`}
+                element={<FerRapportViewPage />}
+              />
             </Route>
+
+            <Route path="*" element={<Navigate to={APP_HREFS.dashboard} replace />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/app" replace />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
-  </React.StrictMode>
+  </React.StrictMode>,
 );
