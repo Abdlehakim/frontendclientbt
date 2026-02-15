@@ -14,9 +14,6 @@
   --inputcolor: #EFEFEF;
 }
 
-
-
-/* Good defaults for Vite apps */
 html,
 body,
 #root {
@@ -31,7 +28,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Optional: better default for buttons/inputs in your theme */
 button {
   font: inherit;
 }
@@ -42,93 +38,129 @@ textarea {
   font: inherit;
 }
 
-
 .ButtonSquare {
-    color: var(--primary);
-    cursor: pointer;
-    border: 1px solid #d1d5db;
-    border-radius: 5px;
-    justify-content: center;
-    align-items: center;
+  color: var(--primary);
+  cursor: pointer;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  justify-content: center;
+  align-items: center;
   padding: 9px;
-    transition: background-color .2s, border-color .2s;
-    display: inline-flex;
+  transition: background-color .2s, border-color .2s;
+  display: inline-flex;
 }
 
 .ButtonSquareDelete {
-    color: #dc2626;
-    cursor: pointer;
-    background-color: #0000;
-    border: 1px solid #ef4444;
-    border-radius: 5px;
-    justify-content: center;
-    align-items: center;
-    width: 32px;
-    height: 32px;
-    transition: background-color .2s, border-color .2s, color .2s;
-    display: inline-flex;
+  color: #dc2626;
+  cursor: pointer;
+  background-color: #0000;
+  border: 1px solid #ef4444;
+  border-radius: 5px;
+  justify-content: center;
+  align-items: center;
+  width: 32px;
+  height: 32px;
+  transition: background-color .2s, border-color .2s, color .2s;
+  display: inline-flex;
 }
 
 .ButtonSquare:hover {
-    background-color: var(--primary);
-    color: #fff;
-    border-color: #d1d5db;
+  background-color: var(--primary);
+  color: #fff;
+  border-color: #d1d5db;
 }
 
 .ButtonSquareDelete:hover {
-    color: #fff;
-    background-color: #ef4444;
-    border-color: #ef4444;
+  color: #fff;
+  background-color: #ef4444;
+  border-color: #ef4444;
 }
-
 
 .btn-fit-white-outline:hover {
-    background-color: rgb(from var(--primary) r g b / .1);
-    color: #000;
-}
-.btn-fit-white-outline {
-    background-color: var(--primary);
-    border: 1px solid var(--primary);
-    cursor: pointer;
-    color: #fff;
-    border-radius: .375rem;
-    align-items: center;
-    gap: 1rem;
-    width: fit-content;
-    padding: .5rem 1rem;
-    font-size: .875rem;
-    line-height: 1.25rem;
-    display: flex;
+  background-color: rgb(from var(--primary) r g b / .1);
+  color: #000;
 }
 
+.btn-fit-white-outline {
+  background-color: var(--primary);
+  border: 1px solid var(--primary);
+  cursor: pointer;
+  color: #fff;
+  border-radius: .375rem;
+  align-items: center;
+  gap: 1rem;
+  width: fit-content;
+  padding: .5rem 1rem;
+  font-size: .875rem;
+  line-height: 1.25rem;
+  display: flex;
+}
 
 .stepper__nav {
-    appearance: none;
-    background: #fff;
-    color: #0b1220;
-    border: 1px solid rgba(15, 23, 42, 0.12);
-    border-radius: 5px;
-    padding: 10px 20px;
-    font-weight: 600;
-    font-size: 12px;
-    line-height: 1.2;
-    cursor: pointer;
-    white-space: nowrap;
-    min-width: 80px;
-    min-height: auto;
-    height: auto;
-    justify-content: center;
+  appearance: none;
+  background: #fff;
+  color: #0b1220;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 5px;
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 1.2;
+  cursor: pointer;
+  white-space: nowrap;
+  min-width: 80px;
+  min-height: auto;
+  height: auto;
+  justify-content: center;
 }
 
 .stepper__nav:hover:not(:disabled):not([disabled]) {
-    background: #15335e;
-    color: #fff;
-    border-color: #15335e;
+  background: #15335e;
+  color: #fff;
+  border-color: #15335e;
 }
 
 .stepper__nav:hover:disabled:hover {
-    background: #f1f5f9;
-    color: #94a3b8;
-    border-color: #e2e8f0;
+  background: #f1f5f9;
+  color: #94a3b8;
+  border-color: #e2e8f0;
 }
 
+.ButtonSquare.ButtonSquare--expandText {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  box-sizing: border-box;
+  transition: width 160ms ease, padding 160ms ease, gap 160ms ease;
+}
+
+.ButtonSquare.ButtonSquare--expandText .ButtonSquare__text {
+  display: inline-block;
+  overflow: hidden;
+  max-width: 0;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: max-width 160ms ease, opacity 160ms ease, transform 160ms ease;
+}
+
+.ButtonSquare.ButtonSquare--expandText:hover {
+  gap: 8px;
+  width: 240px;     /* ✅ augmente pour que le texte rentre */
+  padding: 0 12px;
+}
+
+.ButtonSquare.ButtonSquare--expandText:hover .ButtonSquare__text {
+  max-width: 200px; /* ✅ augmente aussi */
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.ButtonSquare.ButtonSquare--expandText svg {
+  display: block;
+}

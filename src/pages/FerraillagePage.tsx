@@ -1,3 +1,4 @@
+// src/pages/FerraillagePage.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaRegEdit, FaRegEye, FaTrashAlt } from "react-icons/fa";
@@ -6,6 +7,8 @@ import TablePagination from "@/components/tablePagination";
 import { ferraillageApi, type FerRapportDTO, isApiError as isFerApiError } from "@/lib/ferraillageApi";
 import { APP_HREFS } from "@/routes/paths";
 import CreateRapportWizard from "@/components/ferraillage/CreateRapportWizard";
+import CreateProjetWizard from "@/components/ferraillage/CreateProjetWizard";
+import EditRapportWizard from "@/components/ferraillage/EditProjectData";
 
 const PAGE_SIZE = 12;
 
@@ -28,6 +31,10 @@ export default function FerraillagePage() {
   const debounceRef = useRef<number | null>(null);
 
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [projectWizardOpen, setProjectWizardOpen] = useState(false);
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [editItem, setEditItem] = useState<FerRapportDTO | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -91,8 +98,9 @@ export default function FerraillagePage() {
     nav(APP_HREFS.ferraillageRapportView(id));
   }
 
-  function onEdit(id: string) {
-    nav(APP_HREFS.ferraillageRapportEdit(id));
+  function onEdit(item: FerRapportDTO) {
+    setEditItem(item);
+    setEditOpen(true);
   }
 
   async function onDelete(id: string) {
@@ -116,9 +124,15 @@ export default function FerraillagePage() {
       <div className="flex h-16 justify-between items-start">
         <h1 className="text-3xl font-bold uppercase">Ferraillage</h1>
 
-        <button className="btn-fit-white-outline" onClick={() => setWizardOpen(true)}>
-          Créer Rapport
-        </button>
+        <div className="flex items-center gap-2">
+          <button className="btn-fit-white-outline" type="button" onClick={() => setProjectWizardOpen(true)}>
+            Créer Projet
+          </button>
+
+          <button className="btn-fit-white-outline" type="button" onClick={() => setWizardOpen(true)}>
+            Créer Rapport
+          </button>
+        </div>
       </div>
 
       <div className="flex justify-between items-end gap-6 h-17.5">
@@ -168,13 +182,13 @@ export default function FerraillagePage() {
                     <td className="py-2 text-center">{fmtDate(r.updatedAt)}</td>
                     <td className="py-2 w-2/9">
                       <div className="flex justify-center items-center gap-2">
-                        <button onClick={() => onEdit(r.id)} className="ButtonSquare" title="Modifier">
+                        <button onClick={() => onEdit(r)} className="ButtonSquare" title="Modifier" type="button">
                           <FaRegEdit size={14} />
                         </button>
-                        <button onClick={() => onView(r.id)} className="ButtonSquare" title="Voir">
+                        <button onClick={() => onView(r.id)} className="ButtonSquare" title="Voir" type="button">
                           <FaRegEye size={14} />
                         </button>
-                        <button onClick={() => void onDelete(r.id)} className="ButtonSquareDelete" title="Supprimer">
+                        <button onClick={() => void onDelete(r.id)} className="ButtonSquareDelete" title="Supprimer" type="button">
                           <FaTrashAlt size={14} />
                         </button>
                       </div>
@@ -198,6 +212,16 @@ export default function FerraillagePage() {
       </div>
 
       <CreateRapportWizard open={wizardOpen} onClose={() => setWizardOpen(false)} />
+      <CreateProjetWizard open={projectWizardOpen} onClose={() => setProjectWizardOpen(false)} />
+
+      <EditRapportWizard
+        open={editOpen}
+        rapport={editItem}
+        onClose={() => {
+          setEditOpen(false);
+          setEditItem(null);
+        }}
+      />
     </div>
   );
 }

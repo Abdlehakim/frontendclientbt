@@ -5,21 +5,18 @@ import { CiCircleRemove } from "react-icons/ci";
 import Stepper from "@/components/Stepper";
 import { attFerraillageApi, isApiError as isFerApiError } from "@/lib/attFerraillageApi";
 
-import StepProjetDiametres from "./steps/StepProjetDiametres";
-import StepRapportAttachement from "./steps/StepRapportAttachement";
-import StepCalculeQuantite from "./steps/StepCalculeQuantite";
-import StepAvancesPaiement from "./steps/StepAvancesPaiement";
-import StepVerificationFinale from "./steps/StepVerificationFinale";
+import StepProjetDiametres from "./stepsRapport/StepProjetDiametres";
+import StepRapportAttachement from "./stepsRapport/StepRapportAttachement";
+import StepCalculeQuantite from "./stepsRapport/StepCalculeQuantite";
+import StepAvancesPaiement from "./stepsRapport/StepAvancesPaiement";
+import StepVerificationFinale from "./stepsRapport/StepVerificationFinale";
+
+import type { WizardData } from "@/types/wizard";
+export type { WizardData } from "@/types/wizard";
 
 type Props = {
   open: boolean;
   onClose: () => void;
-};
-
-export type WizardData = {
-  chantierName: string;
-  sousTraitant: string;
-  selectedMms: number[];
 };
 
 const STEPS = [
@@ -40,14 +37,17 @@ function uniqSorted(nums: number[]) {
   return Array.from(new Set(nums)).sort((a, b) => a - b);
 }
 
-function CreateRapportWizardInner({ onClose }: { onClose: () => void }) {
+const INITIAL_DATA: WizardData = {
+  chantierName: "",
+  sousTraitant: "",
+  acierType: "F500",
+  selectedMms: [],
+};
+
+export default function CreateRapportWizard({ open, onClose }: Props) {
   const [step, setStep] = useState(0);
 
-  const [data, setData] = useState<WizardData>({
-    chantierName: "",
-    sousTraitant: "",
-    selectedMms: [],
-  });
+  const [data, setData] = useState<WizardData>(INITIAL_DATA);
 
   const [extraMms, setExtraMms] = useState<number[]>([]);
   const [loadingDiam, setLoadingDiam] = useState(false);
@@ -56,6 +56,21 @@ function CreateRapportWizardInner({ onClose }: { onClose: () => void }) {
   const panelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (!open) return;
+
+    const t = window.setTimeout(() => {
+      setStep(0);
+      setExtraMms([]);
+      setErr("");
+      setData(INITIAL_DATA);
+    }, 0);
+
+    return () => window.clearTimeout(t);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+
     let cancelled = false;
 
     queueMicrotask(() => {
@@ -81,16 +96,18 @@ function CreateRapportWizardInner({ onClose }: { onClose: () => void }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [open]);
 
   useEffect(() => {
+    if (!open) return;
+
     const onKeyDown = (ev: KeyboardEvent) => {
       if (ev.key === "Escape") onClose();
     };
 
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [onClose]);
+  }, [open, onClose]);
 
   const baseMms = useMemo(() => rangeInts(5, 21), []);
   const baseSet = useMemo(() => new Set(baseMms), [baseMms]);
@@ -158,7 +175,9 @@ function CreateRapportWizardInner({ onClose }: { onClose: () => void }) {
   };
 
   const isStepValid = useMemo(() => {
-    if (step === 0) return data.selectedMms.length > 0;
+    if (step === 0) {
+      return data.selectedMms.length > 0;
+    }
     return true;
   }, [step, data.selectedMms.length]);
 
@@ -172,6 +191,8 @@ function CreateRapportWizardInner({ onClose }: { onClose: () => void }) {
   const closeOnBackdrop = (ev: React.MouseEvent<HTMLDivElement>) => {
     if (panelRef.current && !panelRef.current.contains(ev.target as Node)) onClose();
   };
+
+  if (!open) return null;
 
   const renderStep = () => {
     switch (step) {
@@ -287,9 +308,4 @@ function CreateRapportWizardInner({ onClose }: { onClose: () => void }) {
     </div>,
     document.body,
   );
-}
-
-export default function CreateRapportWizard({ open, onClose }: Props) {
-  if (!open) return null;
-  return <CreateRapportWizardInner onClose={onClose} />;
 }

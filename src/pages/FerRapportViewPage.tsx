@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { FaSpinner } from "react-icons/fa6";
 import { ferraillageApi, type FerRapportDetailDTO, isApiError as isFerApiError } from "@/lib/ferraillageApi";
 import RapportAttachementTab from "@/pages/tabs/RapportAttachementTab";
+import CalculeTotalFerraillage from "@/pages/tabs/CalculeTotalFerraillage";
 
 function fmtDateTime(iso?: string | null) {
   if (!iso) return "—";
@@ -21,9 +22,10 @@ function maxIso(values: Array<string | null | undefined>) {
   return best;
 }
 
-type TabKey = "ATTACHEMENT" | "QUANTITE" | "AVANCES" | "FINALE";
+type TabKey = "TOTAL_FERRAILLAGE" | "ATTACHEMENT" | "QUANTITE" | "AVANCES" | "FINALE";
 
 const TABS: { key: TabKey; label: string }[] = [
+  { key: "TOTAL_FERRAILLAGE", label: "Calcule Totale De Ferraillage" },
   { key: "ATTACHEMENT", label: "Rapport d'attachement" },
   { key: "QUANTITE", label: "Calcule de Quantité" },
   { key: "AVANCES", label: "Avances de paiment" },
@@ -38,7 +40,7 @@ export default function FerRapportViewPage() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
-  const [tab, setTab] = useState<TabKey>("ATTACHEMENT");
+  const [tab, setTab] = useState<TabKey>("TOTAL_FERRAILLAGE");
 
   useEffect(() => {
     if (!rapportId) return;
@@ -74,10 +76,7 @@ export default function FerRapportViewPage() {
   const tabLabel = useMemo(() => TABS.find((t) => t.key === tab)?.label ?? "", [tab]);
 
   const lastEtatDate = useMemo(() => maxIso((rapport?.etats ?? []).map((e) => e.etatDate)), [rapport]);
-  const lastRestantDate = useMemo(
-    () => maxIso((rapport?.restants ?? []).map((r) => r.rapportDate)),
-    [rapport],
-  );
+  const lastRestantDate = useMemo(() => maxIso((rapport?.restants ?? []).map((r) => r.rapportDate)), [rapport]);
 
   if (loading) {
     return (
@@ -91,7 +90,7 @@ export default function FerRapportViewPage() {
     return (
       <div className="p-6 w-[80%] mx-auto">
         <p className="text-red-600">Error: {err}</p>
-        <button onClick={() => nav(-1)} className="mt-4 px-4 py-2 bg-(--primary) text-white rounded">
+        <button onClick={() => nav(-1)} className="mt-4 px-4 py-2 bg-(--primary) text-white rounded" type="button">
           Retour
         </button>
       </div>
@@ -102,7 +101,7 @@ export default function FerRapportViewPage() {
     return (
       <div className="p-6 w-[80%] mx-auto">
         <p className="text-gray-700">Rapport introuvable.</p>
-        <button onClick={() => nav(-1)} className="mt-4 px-4 py-2 bg-(--primary) text-white rounded">
+        <button onClick={() => nav(-1)} className="mt-4 px-4 py-2 bg-(--primary) text-white rounded" type="button">
           Retour
         </button>
       </div>
@@ -112,7 +111,7 @@ export default function FerRapportViewPage() {
   return (
     <div className="mx-auto px-4 py-4 flex flex-col gap-4 h-full bg-green-50 rounded-xl">
       <div className="flex items-center gap-4">
-        <button onClick={() => nav(-1)} className="px-4 py-2 bg-(--primary) text-white rounded">
+        <button onClick={() => nav(-1)} className="px-4 py-2 bg-(--primary) text-white rounded" type="button">
           Back to list
         </button>
         <h1 className="text-3xl font-bold">Ferraillage — Détails du rapport</h1>
@@ -141,8 +140,8 @@ export default function FerRapportViewPage() {
         </div>
       </div>
 
-      <div className="bg-white shadow rounded">
-        <div className="flex flex-wrap gap-2 border-b p-3">
+      <div className="">
+        <div className="flex flex-wrap gap-2 border-b-transparent p-3">
           {TABS.map((t) => {
             const active = t.key === tab;
             return (
@@ -154,6 +153,7 @@ export default function FerRapportViewPage() {
                     ? "px-4 py-2 rounded bg-(--primary) text-white font-semibold"
                     : "px-4 py-2 rounded bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
                 }
+                type="button"
               >
                 {t.label}
               </button>
@@ -161,8 +161,10 @@ export default function FerRapportViewPage() {
           })}
         </div>
 
-        <div className="p-6 min-h-65">
-          {tab === "ATTACHEMENT" ? (
+        <div className="p-4 min-h-65">
+          {tab === "TOTAL_FERRAILLAGE" ? (
+            <CalculeTotalFerraillage />
+          ) : tab === "ATTACHEMENT" ? (
             <RapportAttachementTab rapportId={rapport.id} />
           ) : (
             <div className="text-gray-500">
