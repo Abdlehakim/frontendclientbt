@@ -59,13 +59,13 @@ export default function TablePagination({ currentPage, totalPages, onPageChange 
   const nextDisabled = safeCurrent >= safeTotal || safeTotal <= 1;
 
   return (
-    <div className="flex justify-center items-center gap-2 w-full h-15">
+    <div className="flex justify-center items-center gap-2 w-full h-8">
       <button
         type="button"
         disabled={prevDisabled}
         onClick={() => goTo(safeCurrent - 1)}
         className={`flex items-center gap-1 ${
-          prevDisabled ? "opacity-20 cursor-not-allowed" : "text-primary hover:opacity-90"
+          prevDisabled ? "opacity-20 cursor-not-allowed" : "text-(--primary) hover:opacity-90"
         }`}
       >
         <FaArrowLeft />
@@ -83,7 +83,7 @@ export default function TablePagination({ currentPage, totalPages, onPageChange 
             type="button"
             onClick={() => goTo(p)}
             className={`text-xs rounded w-6 h-6 flex justify-center items-center ${
-              safeCurrent === p ? "bg-primary text-white" : "text-primary hover:bg-primary/10"
+              safeCurrent === p ? "bg-(--primary) text-white" : "text-(--primary) hover:bg-(--primary)/10"
             }`}
           >
             {p}
@@ -96,7 +96,7 @@ export default function TablePagination({ currentPage, totalPages, onPageChange 
         disabled={nextDisabled}
         onClick={() => goTo(safeCurrent + 1)}
         className={`flex items-center gap-1 ${
-          nextDisabled ? "opacity-20 cursor-not-allowed" : "text-primary hover:opacity-90"
+          nextDisabled ? "opacity-20 cursor-not-allowed" : "text-(--primary) hover:opacity-90"
         }`}
       >
         <span className="text-xs font-normal">suivant</span>

@@ -1,15 +1,18 @@
 // src/components/ferraillage/Edit/EditCalculeTotalFerraillage.tsx
-import { useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { FaRegEdit, FaTrashAlt } from "react-icons/fa";
 import { LuPlus } from "react-icons/lu";
 import { IoIosArrowDropdown, IoIosArrowDropup } from "react-icons/io";
-import { CiCircleRemove } from "react-icons/ci";
+import NiveauModalWindow from "./windows/NiveauModalWindow";
+import TotalRowModalWindow, { type TotalRowModalPayload, type RowForme } from "./windows/TotalRowModalWindow";
 
 type TotalRow = {
   id: string;
   designation: string;
+  typeName: string;
+  forme: RowForme;
   nb: number | null;
+  diametre: number;
   qtyByMm: Record<number, number>;
   poidsByMm: Record<number, number>;
 };
@@ -40,16 +43,7 @@ const DEFAULT_MMS = [6, 8, 10, 12, 14, 16, 20];
 const EMPTY_TOTAL_FERRAILLAGE: TotalFerraillageData = {
   rapportId: "",
   chantierName: "",
-  niveaux: [
-    {
-      id: "niv-0",
-      niveauName: "",
-      note: "",
-      diametres: DEFAULT_MMS,
-      sousTraitants: [],
-      rows: [],
-    },
-  ],
+  niveaux: [],
 };
 
 function fmtNumTrim3(n: number) {
@@ -82,11 +76,40 @@ function computeTotals(rows: TotalRow[], mms: number[]): Totals {
   return { qty, poids };
 }
 
-type MouvModalState = { mode: "edit"; id: string } | null;
-
 function makeId() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function AddRowInsideTable({
+  colSpan,
+  bottomOffsetPx,
+  onClick,
+  text,
+}: {
+  colSpan: number;
+  bottomOffsetPx: number;
+  onClick: () => void;
+  text: string;
+}) {
+  return (
+    <tr className="bg-white">
+      <td colSpan={colSpan} className="sticky h-22 z-20" style={{ bottom: `${bottomOffsetPx}px` }}>
+        <div className="w-full flex justify-center">
+          <button type="button" className="ButtonSquare ButtonSquare--expandText" title={text} aria-label={text} onClick={onClick}>
+            <LuPlus size={16} />
+            <span className="ButtonSquare__text">{text}</span>
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+function buildZerosByMm(mms: number[]) {
+  const out: Record<number, number> = {};
+  for (const mm of mms) out[mm] = 0;
+  return out;
 }
 
 function SousTraitantsField({
@@ -204,6 +227,7 @@ function NiveauModal({
   initial: { id: string; niveauName: string; note: string; sousTraitants: string[]; diametres: number[] };
 }) {
   const panelRef = useRef<HTMLDivElement | null>(null);
+  const isEdit = initial.id !== "add";
 
   const [draftSous, setDraftSous] = useState("");
   const [local, setLocal] = useState<{
@@ -216,7 +240,7 @@ function NiveauModal({
     id: initial.id,
     name: initial.niveauName ?? "",
     note: initial.note ?? "",
-    selectedMms: initial.diametres ?? [],
+    selectedMms: (initial.diametres?.length ? initial.diametres : [...DEFAULT_MMS]).slice().sort((a, b) => a - b),
     sousTraitants: initial.sousTraitants ?? [],
   }));
 
@@ -229,7 +253,7 @@ function NiveauModal({
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open, onClose]);
 
-  const closeOnBackdrop = (ev: React.MouseEvent<HTMLDivElement>) => {
+  const closeOnBackdrop = (ev: ReactMouseEvent<HTMLDivElement>) => {
     if (panelRef.current && !panelRef.current.contains(ev.target as Node)) onClose();
   };
 
@@ -259,7 +283,12 @@ function NiveauModal({
     setLocal((p) => ({ ...p, sousTraitants: (p.sousTraitants ?? []).filter((_, i) => i !== idx) }));
   };
 
+  const nameOk = (local.name ?? "").trim().length > 0;
+  const mmsOk = (local.selectedMms ?? []).length > 0;
+  const canSubmit = nameOk && mmsOk;
+
   const submit = () => {
+    if (!canSubmit) return;
     onSubmit({
       niveauName: (local.name ?? "").trim(),
       note: (local.note ?? "").trim(),
@@ -269,112 +298,48 @@ function NiveauModal({
     onClose();
   };
 
-  if (!open) return null;
-
-  return createPortal(
-    <div className="fixed inset-0 z-220">
-      <div className="absolute inset-0 bg-black/40" onMouseDown={closeOnBackdrop} />
-
-      <div className="absolute inset-0 flex items-center justify-center p-4">
-        <div ref={panelRef} className="w-full max-w-5xl rounded-xl bg-white shadow-xl border border-gray-200 flex flex-col overflow-hidden">
-          <div className="px-5 py-3 bg-gray-50 rounded-t-xl border-b border-gray-200 flex items-center justify-between">
-            <div className="text-sm font-semibold text-gray-900">Ajouter Niveau</div>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Fermer"
-              title="Fermer"
-              className="p-1 text-gray-700 hover:cursor-pointer hover:text-red-600 hover:scale-120 transition-transform"
-            >
-              <CiCircleRemove size={26} />
-            </button>
-          </div>
-
-          <div className="p-5">
-            <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="flex flex-col">
-                <label className="text-sm font-semibold text-gray-700 mb-1">Nom du niveau</label>
-                <input
-                  className={inputClass}
-                  value={local.name}
-                  onChange={(e) => setLocal((p) => ({ ...p, name: e.target.value }))}
-                  placeholder="Ex: Etage 1"
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <label className="text-sm font-semibold text-gray-700 mb-1">Note</label>
-                <input
-                  className={inputClass}
-                  value={local.note}
-                  onChange={(e) => setLocal((p) => ({ ...p, note: e.target.value }))}
-                  placeholder="Optionnel"
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <label className="text-sm font-semibold text-gray-700 mb-1">Entreprise - Mains d'oeuvres</label>
-
-                <SousTraitantsField
-                  niveauId={local.id}
-                  inputClass={inputClass}
-                  draftValue={draftSous}
-                  setDraftValue={setDraftSous}
-                  items={local.sousTraitants ?? []}
-                  onAdd={addEntreprise}
-                  onRemove={(idx) => removeEntreprise(idx)}
-                />
-              </div>
-            </div>
-
-            <div className="mt-6 border-t border-gray-200 pt-3">
-              <div className="text-sm font-semibold text-gray-700 mb-4">Diamètres actifs</div>
-
-              <div className="max-h-72 overflow-auto pr-1">
-                <div className="grid grid-cols-5 gap-2 items-start">
-                  {STANDARD_MMS.map((mm) => {
-                    const checked = (local.selectedMms ?? []).includes(mm);
-                    return (
-                      <label
-                        key={mm}
-                        className={[
-                          "flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium cursor-pointer select-none truncate",
-                          checked
-                            ? "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border-emerald-200"
-                            : "bg-white text-slate-700 hover:bg-emerald-50 border-gray-200",
-                        ].join(" ")}
-                      >
-                        <input className="h-4 w-4 accent-emerald-600" type="checkbox" checked={checked} onChange={() => toggleMm(mm)} />
-                        <span className="truncate">Fer {mm}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="px-5 py-3 bg-gray-50 rounded-b-xl border-t border-gray-200 flex items-center justify-end gap-2">
-            <button type="button" className="btn-fit-white-outline" onClick={onClose}>
-              Annuler
-            </button>
-            <button type="button" className="btn-fit-white-outline" onClick={submit}>
-              Ajouter
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>,
-    document.body
+  return (
+    <NiveauModalWindow
+      open={open}
+      title={isEdit ? "Mettre a jour niveau" : "Ajouter Niveau"}
+      panelRef={panelRef}
+      onClose={onClose}
+      closeOnBackdrop={closeOnBackdrop}
+      inputClass={inputClass}
+      nameValue={local.name}
+      onNameChange={(v) => setLocal((p) => ({ ...p, name: v }))}
+      noteValue={local.note}
+      onNoteChange={(v) => setLocal((p) => ({ ...p, note: v }))}
+      sousTraitantsField={
+        <SousTraitantsField
+          niveauId={local.id}
+          inputClass={inputClass}
+          draftValue={draftSous}
+          setDraftValue={setDraftSous}
+          items={local.sousTraitants ?? []}
+          onAdd={addEntreprise}
+          onRemove={(idx) => removeEntreprise(idx)}
+        />
+      }
+      standardMms={STANDARD_MMS}
+      selectedMms={local.selectedMms ?? []}
+      onToggleMm={toggleMm}
+      onSubmit={submit}
+      submitLabel={isEdit ? "Mettre a jour" : "Ajouter"}
+      canSubmit={canSubmit}
+      nameInvalid={!nameOk}
+      mmsInvalid={!mmsOk}
+    />
   );
 }
 
 export default function EditCalculeTotalFerraillage() {
   const [data, setData] = useState<TotalFerraillageData>(() => EMPTY_TOTAL_FERRAILLAGE);
-  const [, setMouvModal] = useState<MouvModalState>(null);
 
   const [openAdd, setOpenAdd] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
+
+  const [rowModal, setRowModal] = useState<{ mode: "add" | "edit"; niveauId: string; rowId?: string } | null>(null);
 
   const inputClass =
     "w-full rounded-md border px-3 py-2 text-sm font-medium truncate " +
@@ -388,6 +353,21 @@ export default function EditCalculeTotalFerraillage() {
   }, [editId, data.niveaux]);
 
   const openEdit = Boolean(editId && editingNiveau);
+
+  const rowEditingNiveau = useMemo(() => {
+    if (!rowModal) return null;
+    return (data.niveaux ?? []).find((n) => n.id === rowModal.niveauId) ?? null;
+  }, [rowModal, data.niveaux]);
+
+  const rowEditingRow = useMemo(() => {
+    if (!rowModal || rowModal.mode !== "edit" || !rowModal.rowId) return null;
+    return rowEditingNiveau?.rows?.find((r) => r.id === rowModal.rowId) ?? null;
+  }, [rowModal, rowEditingNiveau]);
+
+  const rowModalMms = useMemo(() => {
+    const arr = rowEditingNiveau?.diametres?.length ? rowEditingNiveau.diametres : DEFAULT_MMS;
+    return [...arr].sort((a, b) => a - b);
+  }, [rowEditingNiveau]);
 
   const removeNiveau = (id: string) => {
     setEditId((curr) => (curr === id ? null : curr));
@@ -418,10 +398,53 @@ export default function EditCalculeTotalFerraillage() {
 
   const allMms = useMemo(() => {
     const set = new Set<number>();
-    for (const n of data.niveaux) for (const mm of n.diametres) set.add(mm);
+    for (const n of data.niveaux ?? []) for (const mm of n.diametres ?? []) set.add(mm);
     const out = Array.from(set).sort((a, b) => a - b);
     return out.length ? out : [...DEFAULT_MMS];
   }, [data.niveaux]);
+
+  const addRowToNiveau = (niveauId: string, payload: TotalRowModalPayload) => {
+    setData((p) => ({
+      ...p,
+      niveaux: (p.niveaux ?? []).map((n) => {
+        if (n.id !== niveauId) return n;
+        const mms = [...(n.diametres?.length ? n.diametres : DEFAULT_MMS)].sort((a, b) => a - b);
+        const pickedMm = mms.includes(payload.diametreMm) ? payload.diametreMm : mms[0] ?? 0;
+        const qtyByMm = buildZerosByMm(mms);
+        const poidsByMm = buildZerosByMm(mms);
+        const row: TotalRow = {
+          id: makeId(),
+          designation: payload.designation,
+          typeName: payload.typeName,
+          forme: payload.forme,
+          nb: payload.nb,
+          diametre: pickedMm,
+          qtyByMm,
+          poidsByMm,
+        };
+        return { ...n, rows: [...(n.rows ?? []), row] };
+      }),
+    }));
+  };
+
+  const updateRowInNiveau = (niveauId: string, rowId: string, payload: TotalRowModalPayload) => {
+    setData((p) => ({
+      ...p,
+      niveaux: (p.niveaux ?? []).map((n) => {
+        if (n.id !== niveauId) return n;
+        const mms = [...(n.diametres?.length ? n.diametres : DEFAULT_MMS)].sort((a, b) => a - b);
+        const pickedMm = mms.includes(payload.diametreMm) ? payload.diametreMm : mms[0] ?? 0;
+        return {
+          ...n,
+          rows: (n.rows ?? []).map((r) =>
+            r.id !== rowId
+              ? r
+              : { ...r, designation: payload.designation, typeName: payload.typeName, nb: payload.nb, forme: payload.forme, diametre: pickedMm },
+          ),
+        };
+      }),
+    }));
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -458,34 +481,71 @@ export default function EditCalculeTotalFerraillage() {
         />
       ) : null}
 
-      {data.niveaux.map((niv) => (
+      {rowModal ? (
+        <TotalRowModalWindow
+          key={`${rowModal.mode}-${rowModal.niveauId}-${rowModal.rowId ?? "add"}`}
+          open
+          title={rowModal.mode === "edit" ? "Mettre a jour ligne" : "Ajouter une ligne"}
+          submitLabel={rowModal.mode === "edit" ? "Mettre a jour" : "Ajouter"}
+          inputClass={inputClass}
+          mms={rowModalMms}
+          initial={
+            rowModal.mode === "edit" && rowEditingRow
+              ? {
+                  designation: rowEditingRow.designation ?? "",
+                  typeName: rowEditingRow.typeName ?? "",
+                  nb: rowEditingRow.nb,
+                  forme: rowEditingRow.forme ?? "BARRE",
+                  diametreMm: rowEditingRow.diametre,
+                }
+              : {
+                  designation: "",
+                  typeName: "",
+                  nb: null,
+                  forme: "BARRE",
+                  diametreMm: rowModalMms[0] ?? 0,
+                }
+          }
+          onClose={() => setRowModal(null)}
+          onSubmit={(payload) => {
+            if (rowModal.mode === "edit" && rowModal.rowId) {
+              updateRowInNiveau(rowModal.niveauId, rowModal.rowId, payload);
+              setRowModal(null);
+              return;
+            }
+            addRowToNiveau(rowModal.niveauId, payload);
+            setRowModal(null);
+          }}
+        />
+      ) : null}
+
+      {(data.niveaux ?? []).map((niv) => (
         <NiveauBlock
           key={niv.id}
           niveau={niv}
-          onEdit={() => {
-            setMouvModal({ mode: "edit", id: niv.id });
-            setEditId(niv.id);
-          }}
+          onEdit={() => setEditId(niv.id)}
           onDelete={() => removeNiveau(niv.id)}
+          onAddRow={() => setRowModal({ mode: "add", niveauId: niv.id })}
+          onEditRow={(rowId) => setRowModal({ mode: "edit", niveauId: niv.id, rowId })}
         />
       ))}
 
-      <RecapByNiveau niveaux={data.niveaux} allMms={allMms} />
+      {(data.niveaux ?? []).length ? <RecapByNiveau niveaux={data.niveaux ?? []} allMms={allMms} /> : null}
     </div>
   );
 }
 
 function RecapByNiveau({ niveaux, allMms }: { niveaux: NiveauTotal[]; allMms: number[] }) {
   const rows = useMemo(() => {
-    return (niveaux.length ? niveaux : [{ id: "empty", niveauName: "", note: "", diametres: allMms, sousTraitants: [], rows: [] }]).map((n) => ({
+    return niveaux.map((n) => ({
       id: n.id,
       name: n.niveauName || "—",
-      totals: computeTotals(n.rows, allMms),
+      totals: computeTotals(n.rows ?? [], allMms),
     }));
   }, [niveaux, allMms]);
 
   const grandTotals = useMemo(() => {
-    const allRows = niveaux.flatMap((n) => n.rows);
+    const allRows = niveaux.flatMap((n) => n.rows ?? []);
     return computeTotals(allRows, allMms);
   }, [niveaux, allMms]);
 
@@ -599,9 +659,24 @@ function RecapByNiveau({ niveaux, allMms }: { niveaux: NiveauTotal[]; allMms: nu
   );
 }
 
-function NiveauBlock({ niveau, onEdit, onDelete }: { niveau: NiveauTotal; onEdit: () => void; onDelete: () => void }) {
+function NiveauBlock({
+  niveau,
+  onEdit,
+  onDelete,
+  onAddRow,
+  onEditRow,
+}: {
+  niveau: NiveauTotal;
+  onEdit: () => void;
+  onDelete: () => void;
+  onAddRow: () => void;
+  onEditRow: (rowId: string) => void;
+}) {
   const mms = useMemo(() => [...(niveau.diametres?.length ? niveau.diametres : DEFAULT_MMS)].sort((a, b) => a - b), [niveau.diametres]);
   const totals = useMemo(() => computeTotals(niveau.rows ?? [], mms), [niveau.rows, mms]);
+
+  const stickyTotalH = 40;
+  const colSpan = 2 + 2 * mms.length;
 
   return (
     <div className="bg-white shadow-sm overflow-hidden">
@@ -637,8 +712,8 @@ function NiveauBlock({ niveau, onEdit, onDelete }: { niveau: NiveauTotal; onEdit
 
               {niveau.sousTraitants?.length ? (
                 <ul className="list-disc list-inside text-xs text-gray-700 leading-relaxed space-y-0.5">
-                  {niveau.sousTraitants.map((st) => (
-                    <li key={st} className="wrap-break-word">
+                  {niveau.sousTraitants.map((st, idx) => (
+                    <li key={`${idx}-${st}`} className="wrap-break-word">
                       {st}
                     </li>
                   ))}
@@ -652,7 +727,7 @@ function NiveauBlock({ niveau, onEdit, onDelete }: { niveau: NiveauTotal; onEdit
       </div>
 
       <div className="p-4">
-        <div className="relative overflow-auto">
+        <div className="relative overflow-auto pb-10">
           <table className="border-collapse table-fixed w-full min-w-350">
             <thead>
               <tr className="bg-(--primary) text-white">
@@ -683,10 +758,7 @@ function NiveauBlock({ niveau, onEdit, onDelete }: { niveau: NiveauTotal; onEdit
                 {mms.map((mm, idx) => (
                   <th
                     key={`p-${niveau.id}-${mm}`}
-                    className={[
-                      "py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-21.25",
-                      idx < mms.length - 1 ? "border-r-2" : "",
-                    ].join(" ")}
+                    className={["py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-21.25", idx < mms.length - 1 ? "border-r-2" : ""].join(" ")}
                   >
                     Fer {mm} (T)
                   </th>
@@ -697,15 +769,23 @@ function NiveauBlock({ niveau, onEdit, onDelete }: { niveau: NiveauTotal; onEdit
             <tbody>
               {(niveau.rows ?? []).length === 0 ? (
                 <tr className="bg-white">
-                  <td colSpan={2 + 2 * mms.length} className="py-6 text-center text-gray-600">
+                  <td colSpan={colSpan} className="py-8 text-center text-gray-600">
                     Aucune ligne.
                   </td>
                 </tr>
               ) : (
                 (niveau.rows ?? []).map((row, idx) => (
-                  <tr key={row.id} className={idx % 2 === 0 ? "bg-white" : "bg-gray-100"}>
+                  <tr
+                    key={row.id}
+                    className={idx % 2 === 0 ? "bg-white cursor-pointer" : "bg-gray-100 cursor-pointer"}
+                    onDoubleClick={() => onEditRow(row.id)}
+                    title="Double clic pour modifier"
+                  >
                     <td className="py-2 px-2 text-xs border-r-2">
-                      <div className="whitespace-pre-wrap wrap-break-word">{row.designation || "—"}</div>
+                      <div className="whitespace-pre-wrap wrap-break-word">
+                        <div className="font-semibold">{row.designation || "—"}</div>
+                        <div className="text-[11px] text-gray-600">{row.typeName || "—"}</div>
+                      </div>
                     </td>
 
                     <td className="py-2 text-center text-xs border-r-2">{row.nb == null ? "" : fmtNumTrim3(row.nb)}</td>
@@ -724,6 +804,8 @@ function NiveauBlock({ niveau, onEdit, onDelete }: { niveau: NiveauTotal; onEdit
                   </tr>
                 ))
               )}
+
+              <AddRowInsideTable colSpan={colSpan} bottomOffsetPx={stickyTotalH} onClick={onAddRow} text="Ajouter une ligne" />
 
               <tr className="bg-(--primary) text-white">
                 <td colSpan={2} className="sticky bottom-0 z-30 bg-(--primary) text-white py-2 text-[11px] font-semibold text-center uppercase tracking-wide border-r-2">

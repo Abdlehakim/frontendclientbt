@@ -358,7 +358,7 @@ function EditProjectDataPanel({ onClose, rapport }: { onClose: () => void; rappo
                 })}
               </div>
 
-              <div className="p-4 min-h-65">
+              <div className="min-h-65">
                 {tab === "TOTAL_FERRAILLAGE" ? (
                   <CalculeTotalFerraillage />
                 ) : tab === "ATTACHEMENT" ? (

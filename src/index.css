@@ -151,7 +151,7 @@ textarea {
 
 .ButtonSquare.ButtonSquare--expandText:hover {
   gap: 8px;
-  width: 240px;     /* ✅ augmente pour que le texte rentre */
+  width: fit-content;
   padding: 0 12px;
 }
 
