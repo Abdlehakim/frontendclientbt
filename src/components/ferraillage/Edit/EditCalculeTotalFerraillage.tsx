@@ -4,7 +4,11 @@ import { FaRegEdit, FaTrashAlt } from "react-icons/fa";
 import { LuPlus } from "react-icons/lu";
 import { IoIosArrowDropdown, IoIosArrowDropup } from "react-icons/io";
 import NiveauModalWindow from "./windows/NiveauModalWindow";
-import TotalRowModalWindow, { type TotalRowModalPayload, type RowForme } from "./windows/TotalRowModalWindow";
+import TotalRowModalWindow, {
+  type TotalRowModalPayload,
+  type RowForme,
+  type ExtraBoxKind,
+} from "./windows/TotalRowModalWindow";
 
 type TotalRow = {
   id: string;
@@ -15,6 +19,7 @@ type TotalRow = {
   diametre: number;
   qtyByMm: Record<number, number>;
   poidsByMm: Record<number, number>;
+  payload?: TotalRowModalPayload;
 };
 
 type NiveauTotal = {
@@ -110,6 +115,116 @@ function buildZerosByMm(mms: number[]) {
   const out: Record<number, number> = {};
   for (const mm of mms) out[mm] = 0;
   return out;
+}
+
+function kgPerMeter(mm: number) {
+  return (mm * mm) / 162;
+}
+
+function computeExtraPerimetreNum(kind: ExtraBoxKind, longueur: number, ancrage: number) {
+  if (kind === "EPINGLE") return longueur + 2 * ancrage;
+  return 2 * longueur + 2 * ancrage;
+}
+
+function computeCadrePerimetreNum(forme: Exclude<RowForme, "BARRE">, longueur: number, largeur: number, diamCercle: number, ancrage: number) {
+  if (forme === "CARRE") return 4 * longueur + 2 * ancrage;
+  if (forme === "CIRCULAIRE") return diamCercle * Math.PI + 2 * ancrage;
+  if (forme === "RECTANGULAIRE") return 2 * (longueur + largeur) + 2 * ancrage;
+  return 0;
+}
+
+function normalizePayloadDiameters(payload: TotalRowModalPayload, mms: number[]) {
+  const pick = (d: number) => (mms.includes(d) ? d : mms[0] ?? d);
+
+  const extraFormes = (payload.extraFormes ?? []).map((x) => ({
+    ...x,
+    diametreMm: pick(x.diametreMm),
+  }));
+
+  const extraBoxes = (payload.extraBoxes ?? []).map((b) => ({
+    ...b,
+    diametreMm: pick(b.diametreMm),
+  }));
+
+  return { ...payload, diametreMm: pick(payload.diametreMm), extraFormes, extraBoxes };
+}
+
+function computeQtyPoidsByMmFromPayload(payloadIn: TotalRowModalPayload, mms: number[]) {
+  const payload = normalizePayloadDiameters(payloadIn, mms);
+
+  const qtyByMm = buildZerosByMm(mms);
+  const poidsByMm = buildZerosByMm(mms);
+
+  const nb = payload.nb ?? 0;
+  const h = payload.hauteur ?? 0;
+
+  const addQty = (dia: number, qtyM: number) => {
+    if (!Number.isFinite(qtyM) || qtyM <= 0) return;
+    if (!(dia in qtyByMm)) return;
+    qtyByMm[dia] = (qtyByMm[dia] ?? 0) + qtyM;
+  };
+
+  const handleBarre = (dia: number, nBarre: number, ancrage: number, attente: number) => {
+    const qtyM = nb * (nBarre * (h + attente + ancrage));
+    addQty(dia, qtyM);
+  };
+
+  const handleCadre = (forme: Exclude<RowForme, "BARRE">, dia: number, longueur: number, largeur: number, diamCercle: number, ancrage: number, espacement: number) => {
+    const per = computeCadrePerimetreNum(forme, longueur, largeur, diamCercle, ancrage);
+    const ratio = espacement > 0 ? h / espacement : 0;
+    const qtyM = nb * per * ratio;
+    addQty(dia, qtyM);
+  };
+
+  const mainDia = payload.diametreMm;
+
+  if (payload.forme === "BARRE") {
+    handleBarre(mainDia, payload.nBarre ?? 0, payload.ancrage ?? 0, payload.attenteBarre ?? 0);
+  } else {
+    handleCadre(
+      payload.forme,
+      mainDia,
+      payload.longueur ?? 0,
+      payload.largeur ?? 0,
+      payload.rayon ?? 0,
+      payload.ancrage ?? 0,
+      payload.espacement ?? 0,
+    );
+  }
+
+  for (const x of payload.extraFormes ?? []) {
+    const dia = x.diametreMm;
+    if (x.forme === "BARRE") {
+      handleBarre(dia, x.nBarre ?? 0, x.ancrage ?? 0, x.attenteBarre ?? 0);
+    } else {
+      handleCadre(
+        x.forme as Exclude<RowForme, "BARRE">,
+        dia,
+        x.longueur ?? 0,
+        x.largeur ?? 0,
+        x.rayon ?? 0,
+        x.ancrage ?? 0,
+        x.espacement ?? 0,
+      );
+    }
+  }
+
+  for (const b of payload.extraBoxes ?? []) {
+    const dia = b.diametreMm;
+    const per = computeExtraPerimetreNum(b.kind, b.longueur ?? 0, b.ancrage ?? 0);
+    const esp = b.espacement ?? 0;
+    const ratio = esp > 0 ? h / esp : 0;
+    const qtyM = nb * ((b.n ?? 0) * per) * ratio;
+    addQty(dia, qtyM);
+  }
+
+  for (const mm of mms) {
+    const q = qtyByMm[mm] ?? 0;
+    const t = (q * kgPerMeter(mm)) / 1000;
+    poidsByMm[mm] = Number.isFinite(t) && t > 0 ? t : 0;
+  }
+
+  return { qtyByMm, poidsByMm, payload };
 }
 
 function SousTraitantsField({
@@ -409,18 +524,19 @@ export default function EditCalculeTotalFerraillage() {
       niveaux: (p.niveaux ?? []).map((n) => {
         if (n.id !== niveauId) return n;
         const mms = [...(n.diametres?.length ? n.diametres : DEFAULT_MMS)].sort((a, b) => a - b);
-        const pickedMm = mms.includes(payload.diametreMm) ? payload.diametreMm : mms[0] ?? 0;
-        const qtyByMm = buildZerosByMm(mms);
-        const poidsByMm = buildZerosByMm(mms);
+
+        const { qtyByMm, poidsByMm, payload: normalizedPayload } = computeQtyPoidsByMmFromPayload(payload, mms);
+
         const row: TotalRow = {
           id: makeId(),
-          designation: payload.designation,
-          typeName: payload.typeName,
-          forme: payload.forme,
-          nb: payload.nb,
-          diametre: pickedMm,
+          designation: normalizedPayload.designation,
+          typeName: normalizedPayload.typeName,
+          forme: normalizedPayload.forme,
+          nb: normalizedPayload.nb,
+          diametre: normalizedPayload.diametreMm,
           qtyByMm,
           poidsByMm,
+          payload: normalizedPayload,
         };
         return { ...n, rows: [...(n.rows ?? []), row] };
       }),
@@ -433,13 +549,25 @@ export default function EditCalculeTotalFerraillage() {
       niveaux: (p.niveaux ?? []).map((n) => {
         if (n.id !== niveauId) return n;
         const mms = [...(n.diametres?.length ? n.diametres : DEFAULT_MMS)].sort((a, b) => a - b);
-        const pickedMm = mms.includes(payload.diametreMm) ? payload.diametreMm : mms[0] ?? 0;
+
+        const { qtyByMm, poidsByMm, payload: normalizedPayload } = computeQtyPoidsByMmFromPayload(payload, mms);
+
         return {
           ...n,
           rows: (n.rows ?? []).map((r) =>
             r.id !== rowId
               ? r
-              : { ...r, designation: payload.designation, typeName: payload.typeName, nb: payload.nb, forme: payload.forme, diametre: pickedMm },
+              : {
+                  ...r,
+                  designation: normalizedPayload.designation,
+                  typeName: normalizedPayload.typeName,
+                  nb: normalizedPayload.nb,
+                  forme: normalizedPayload.forme,
+                  diametre: normalizedPayload.diametreMm,
+                  qtyByMm,
+                  poidsByMm,
+                  payload: normalizedPayload,
+                },
           ),
         };
       }),
@@ -469,7 +597,7 @@ export default function EditCalculeTotalFerraillage() {
           key={editingNiveau.id}
           open={openEdit}
           onClose={() => setEditId(null)}
-          onSubmit={(payload) => updateFromModal(editingNiveau.id, payload)}
+          onSubmit={(payload: { niveauName: string; note: string; sousTraitants: string[]; diametres: number[] }) => updateFromModal(editingNiveau.id, payload)}
           inputClass={inputClass}
           initial={{
             id: editingNiveau.id,
@@ -490,24 +618,30 @@ export default function EditCalculeTotalFerraillage() {
           inputClass={inputClass}
           mms={rowModalMms}
           initial={
-            rowModal.mode === "edit" && rowEditingRow
-              ? {
-                  designation: rowEditingRow.designation ?? "",
-                  typeName: rowEditingRow.typeName ?? "",
-                  nb: rowEditingRow.nb,
-                  forme: rowEditingRow.forme ?? "BARRE",
-                  diametreMm: rowEditingRow.diametre,
-                }
-              : {
-                  designation: "",
-                  typeName: "",
-                  nb: null,
-                  forme: "BARRE",
-                  diametreMm: rowModalMms[0] ?? 0,
-                }
+            rowModal.mode === "edit" && rowEditingRow?.payload
+              ? rowEditingRow.payload
+              : rowModal.mode === "edit" && rowEditingRow
+                ? {
+                    designation: rowEditingRow.designation ?? "",
+                    typeName: rowEditingRow.typeName ?? "",
+                    nb: rowEditingRow.nb,
+                    hauteur: null,
+                    enrobage: null,
+                    forme: rowEditingRow.forme ?? "BARRE",
+                    diametreMm: rowEditingRow.diametre,
+                  }
+                : {
+                    designation: "",
+                    typeName: "",
+                    nb: null,
+                    hauteur: null,
+                    enrobage: null,
+                    forme: "BARRE",
+                    diametreMm: rowModalMms[0] ?? 0,
+                  }
           }
           onClose={() => setRowModal(null)}
-          onSubmit={(payload) => {
+          onSubmit={(payload: TotalRowModalPayload) => {
             if (rowModal.mode === "edit" && rowModal.rowId) {
               updateRowInNiveau(rowModal.niveauId, rowModal.rowId, payload);
               setRowModal(null);
@@ -526,7 +660,7 @@ export default function EditCalculeTotalFerraillage() {
           onEdit={() => setEditId(niv.id)}
           onDelete={() => removeNiveau(niv.id)}
           onAddRow={() => setRowModal({ mode: "add", niveauId: niv.id })}
-          onEditRow={(rowId) => setRowModal({ mode: "edit", niveauId: niv.id, rowId })}
+          onEditRow={(rowId: string) => setRowModal({ mode: "edit", niveauId: niv.id, rowId })}
         />
       ))}
 
