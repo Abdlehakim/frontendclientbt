@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { parsePositiveInt, parsePositiveNumber } from "../utils";
 
 export type RecapLine = {
@@ -7,6 +8,8 @@ export type RecapLine = {
   qtyM: number;
   nt: number;
   cutLenM: number;
+  steelType?: string;
+  litLabel?: string;
 };
 
 export type RecapData = {
@@ -41,12 +44,23 @@ export default function RecapPanel({
   enrobageStr: string;
   recap: RecapData;
 }) {
+  const designationLabel = useMemo(() => (designation ?? "").trim(), [designation]);
+
+  const usesLongueurLabel = useMemo(() => {
+    const v = designationLabel.toLowerCase();
+    return ["longrines", "raidisseurs", "linteaux", "chaînages", "poutres", "nervures"].includes(v);
+  }, [designationLabel]);
+
+  const hauteurLabel = usesLongueurLabel ? "Longueur" : "Hauteur";
+  const headTitle = designationLabel || "—";
+  const subTitle = (typeName ?? "").trim();
+
   return (
     <div className="hidden lg:flex w-85 shrink-0 rounded-xl bg-white shadow-xl border border-gray-200 overflow-hidden flex-col">
       <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
         <div className="text-sm font-semibold text-gray-900">Récapitulatif</div>
         <div className="text-xs text-gray-600 mt-0.5">
-          {(designation ?? "").trim() || "—"} {((typeName ?? "").trim() && `• ${typeName.trim()}`) || ""}
+          {headTitle} {(subTitle && `• ${subTitle}`) || ""}
         </div>
       </div>
 
@@ -55,7 +69,7 @@ export default function RecapPanel({
           <div className="text-gray-500">NB</div>
           <div className="font-semibold text-gray-900 text-right">{fmtNum(parsePositiveInt(nbStr) ?? null, 0)}</div>
 
-          <div className="text-gray-500">Hauteur</div>
+          <div className="text-gray-500">{hauteurLabel}</div>
           <div className="font-semibold text-gray-900 text-right">{fmtNum(parsePositiveNumber(hauteurStr) ?? null)} m</div>
 
           <div className="text-gray-500">Enrobage</div>
@@ -105,10 +119,29 @@ export default function RecapPanel({
             {recap.linesBarres.map((l) => (
               <div key={l.key} className="rounded-md border border-gray-200 bg-white px-3 py-2">
                 <div className="flex items-center justify-between text-xs">
-                  <div className="font-semibold text-gray-900">N.T.Barre</div>
+                  <div className="font-semibold text-gray-900">{l.label || "N.T.Barre"}</div>
                   <div className="text-gray-600">{l.dia != null ? ferLabel(l.dia) : "—"}</div>
                 </div>
-                <div className="mt-1 grid grid-cols-2 gap-2 text-xs">
+
+                {(l.steelType || l.litLabel) ? (
+                  <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                    {l.steelType ? (
+                      <>
+                        <div className="text-gray-500">Type d’acier</div>
+                        <div className="text-right font-semibold text-gray-900">{l.steelType}</div>
+                      </>
+                    ) : null}
+
+                    {l.litLabel ? (
+                      <>
+                        <div className="text-gray-500">Lit</div>
+                        <div className="text-right font-semibold text-gray-900">{l.litLabel}</div>
+                      </>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
                   <div className="text-gray-500">N.T.</div>
                   <div className="text-right font-semibold text-gray-900">{fmtNum(l.nt)}</div>
                   <div className="text-gray-500">Quantités</div>

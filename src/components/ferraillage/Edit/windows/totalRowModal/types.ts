@@ -11,16 +11,17 @@ export type PortalPos =
 export type RowForme = "BARRE" | "CARRE" | "CIRCULAIRE" | "RECTANGULAIRE";
 
 export type ExtraFormePayload = {
-  forme: RowForme;
+  forme: "BARRE" | "CARRE" | "CIRCULAIRE" | "RECTANGULAIRE";
   diametreMm: number;
+  barreCategorie?: string;
   nBarre: number | null;
   longueur: number | null;
   largeur: number | null;
   rayon: number | null;
   ancrage: number | null;
+  attenteBarre: number | null;
   perimetre: number | null;
   espacement: number | null;
-  attenteBarre?: number | null;
 };
 
 export type ExtraBoxKind = "EPINGLE" | "ETRIERS";
@@ -42,30 +43,33 @@ export type TotalRowModalPayload = {
   hauteur: number | null;
   enrobage: number | null;
 
-  forme: RowForme;
+  forme: "BARRE" | "CARRE" | "CIRCULAIRE" | "RECTANGULAIRE";
   diametreMm: number;
+  barreCategorie?: string;
+
   nBarre: number | null;
   longueur: number | null;
   largeur: number | null;
   rayon: number | null;
-
   ancrage: number | null;
-  attenteBarre?: number | null;
-
+  attenteBarre: number | null;
   perimetre: number | null;
   espacement: number | null;
 
-  epingle: number | null;
-  etriers: number | null;
+  epingle?: number | null;
+  etriers?: number | null;
 
   extraFormes?: ExtraFormePayload[];
   extraBoxes?: ExtraBoxPayload[];
 };
 
+
 export type FormeState = {
   id: string;
-  forme: RowForme;
+  forme: "BARRE" | "CARRE" | "CIRCULAIRE" | "RECTANGULAIRE";
   diametreMm: number;
+  barreCategorie?: string;
+
   nBarreStr: string;
   longueurStr: string;
   largeurStr: string;
@@ -74,6 +78,9 @@ export type FormeState = {
   attenteStr: string;
   perimetreStr: string;
   espacementStr: string;
+
+  cadreCalcMode?: "ESPACEMENT" | "NB_CADRE";
+  nbCadreStr?: string;
 };
 
 export type ExtraBoxState = {
@@ -85,6 +92,8 @@ export type ExtraBoxState = {
   ancrageStr: string;
   perimetreStr: string;
   espacementStr: string;
+  extraCalcMode?: "ESPACEMENT" | "NB";
+  nbExtraStr?: string;
 };
 
 export type Card = { kind: "FORME"; id: string } | { kind: "EXTRA"; id: string };

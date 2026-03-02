@@ -305,9 +305,9 @@ function FerraillageCalcPanel({
   const [lenM, setLenM] = useState<string>("0");
   const [nbBarres, setNbBarres] = useState<string>("1");
 
-  useEffect(() => {
-    if (!mms.length) return;
-    if (!mms.includes(calcMm)) setCalcMm(mms[0]);
+  const activeCalcMm = useMemo(() => {
+    if (!mms.length) return 0;
+    return mms.includes(calcMm) ? calcMm : mms[0];
   }, [mms, calcMm]);
 
   const len = useMemo(() => Math.max(0, parseTnNumber(lenM)), [lenM]);
@@ -317,9 +317,9 @@ function FerraillageCalcPanel({
   }, [nbBarres]);
 
   const kg = useMemo(() => {
-    if (!calcMm) return 0;
-    return kgPerMeter(calcMm) * len * nb;
-  }, [calcMm, len, nb]);
+    if (!activeCalcMm) return 0;
+    return kgPerMeter(activeCalcMm) * len * nb;
+  }, [activeCalcMm, len, nb]);
 
   const tn = useMemo(() => kg / 1000, [kg]);
 
@@ -338,16 +338,16 @@ function FerraillageCalcPanel({
     "focus:outline-none focus:ring-2 focus:ring-emerald-400";
 
   const applyReplace = () => {
-    if (!calcMm) return;
-    setValuesByMm((p) => ({ ...p, [calcMm]: resultTnStr }));
+    if (!activeCalcMm) return;
+    setValuesByMm((p) => ({ ...p, [activeCalcMm]: resultTnStr }));
   };
 
   const applyAdd = () => {
-    if (!calcMm) return;
+    if (!activeCalcMm) return;
     setValuesByMm((p) => {
-      const cur = parseTnNumber(p[calcMm] ?? "0");
+      const cur = parseTnNumber(p[activeCalcMm] ?? "0");
       const next = cur + tn;
-      return { ...p, [calcMm]: fmtTnNumber(next) };
+      return { ...p, [activeCalcMm]: fmtTnNumber(next) };
     });
   };
 
@@ -361,7 +361,7 @@ function FerraillageCalcPanel({
         <div className="grid grid-cols-1 gap-4">
           <div className="flex flex-col">
             <label className="text-sm font-semibold text-gray-700 mb-1">Diamètre</label>
-            <DiametreDropdown mms={mms} value={calcMm} onChange={setCalcMm} />
+            <DiametreDropdown mms={mms} value={activeCalcMm} onChange={setCalcMm} />
           </div>
 
           <div className="flex flex-col">
@@ -383,10 +383,10 @@ function FerraillageCalcPanel({
 
           <div className="mt-3 flex flex-col gap-2">
             <button type="button" className={emeraldBtn} onClick={applyReplace}>
-              Remplacer la valeur de “Fer {calcMm}”
+              Remplacer la valeur de “Fer {activeCalcMm}”
             </button>
             <button type="button" className={emeraldBtn} onClick={applyAdd}>
-              Ajouter à la valeur de “Fer {calcMm}”
+              Ajouter à la valeur de “Fer {activeCalcMm}”
             </button>
           </div>
 
@@ -395,7 +395,7 @@ function FerraillageCalcPanel({
           </div>
 
           <div className="mt-2 text-[11px] text-emerald-900/70">
-            Valeur actuelle “Fer {calcMm}” : <span className="font-semibold">{valuesByMm[calcMm] ?? "0"}</span>
+            Valeur actuelle “Fer {activeCalcMm}” : <span className="font-semibold">{valuesByMm[activeCalcMm] ?? "0"}</span>
           </div>
         </div>
       </div>

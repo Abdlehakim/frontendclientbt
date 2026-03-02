@@ -162,7 +162,6 @@ export default function AddPlusDropdown({
         onClick={() => setOpen((v) => !v)}
         title="Ajouter"
       >
-        <PlusIcon />
         <span>Ajouter Elements</span>
         {open ? <IoIosArrowDropup className="shrink-0" size={18} /> : <IoIosArrowDropdown className="shrink-0" size={18} />}
       </button>

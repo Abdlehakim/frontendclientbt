@@ -3,7 +3,15 @@ import { createPortal } from "react-dom";
 import { CiCircleRemove } from "react-icons/ci";
 import TablePagination from "@/components/tablePagination";
 
-import type { Card, ExtraBoxKind, ExtraBoxPayload, ExtraBoxState, ExtraFormePayload, FormeState, TotalRowModalPayload } from "./types";
+import type {
+  Card,
+  ExtraBoxKind,
+  ExtraBoxPayload,
+  ExtraBoxState,
+  ExtraFormePayload,
+  FormeState,
+  TotalRowModalPayload,
+} from "./types";
 import {
   clamp,
   formeNeedsParams,
@@ -15,7 +23,7 @@ import {
   parsePositiveNumber,
   resetFieldsForForme,
 } from "./utils";
-import { AddPlusDropdown, DesignationDropdown, ExtraBoxCard, FormeCard } from "./components";
+import { AddPlusDropdown, DesignationDropdown, ExtraBoxCard, FormeBarre, FormeCard } from "./components";
 import RecapPanel, { type RecapData } from "./components/RecapPanel";
 
 function computeExtraPerimetre(kind: ExtraBoxKind, longueurStr: string, ancrageStr: string) {
@@ -55,12 +63,16 @@ function computeCadrePerimetre(
   return null;
 }
 
-function buildInitialExtraBoxes(shouldHydrate: boolean, initial: Partial<TotalRowModalPayload> | undefined, initDia: number): ExtraBoxState[] {
+function buildInitialExtraBoxes(
+  shouldHydrate: boolean,
+  initial: Partial<TotalRowModalPayload> | undefined,
+  initDia: number,
+): ExtraBoxState[] {
   if (!shouldHydrate) return [];
   const out: ExtraBoxState[] = [];
 
-  if (Array.isArray(initial?.extraBoxes) && initial!.extraBoxes!.length) {
-    for (const b of initial!.extraBoxes!) {
+  if (Array.isArray(initial?.extraBoxes) && initial.extraBoxes.length) {
+    for (const b of initial.extraBoxes) {
       out.push({
         id: makeId(),
         kind: b.kind,
@@ -70,6 +82,8 @@ function buildInitialExtraBoxes(shouldHydrate: boolean, initial: Partial<TotalRo
         ancrageStr: b.ancrage == null ? "0" : String(b.ancrage),
         perimetreStr: b.perimetre == null ? "0" : String(b.perimetre),
         espacementStr: b.espacement == null ? "0" : String(b.espacement),
+        extraCalcMode: "ESPACEMENT",
+        nbExtraStr: "0",
       });
     }
     return out;
@@ -85,6 +99,8 @@ function buildInitialExtraBoxes(shouldHydrate: boolean, initial: Partial<TotalRo
       ancrageStr: "0",
       perimetreStr: "0",
       espacementStr: "0",
+      extraCalcMode: "ESPACEMENT",
+      nbExtraStr: "0",
     });
   }
 
@@ -98,19 +114,26 @@ function buildInitialExtraBoxes(shouldHydrate: boolean, initial: Partial<TotalRo
       ancrageStr: "0",
       perimetreStr: "0",
       espacementStr: "0",
+      extraCalcMode: "ESPACEMENT",
+      nbExtraStr: "0",
     });
   }
 
   return out;
 }
 
-function buildInitialFormes(shouldHydrate: boolean, initial: Partial<TotalRowModalPayload> | undefined, initDia: number): FormeState[] {
+function buildInitialFormes(
+  shouldHydrate: boolean,
+  initial: Partial<TotalRowModalPayload> | undefined,
+  initDia: number,
+): FormeState[] {
   if (!shouldHydrate) return [];
   if (!initial?.forme) return [];
 
   const main: Omit<FormeState, "id"> = {
     forme: initial.forme ?? "BARRE",
     diametreMm: typeof initial.diametreMm === "number" ? initial.diametreMm : initDia,
+    barreCategorie: initial.barreCategorie ?? "",
     nBarreStr: initial.nBarre == null ? "0" : String(initial.nBarre),
     longueurStr: initial.longueur == null ? "0" : String(initial.longueur),
     largeurStr: initial.largeur == null ? "0" : String(initial.largeur),
@@ -119,6 +142,8 @@ function buildInitialFormes(shouldHydrate: boolean, initial: Partial<TotalRowMod
     attenteStr: initial.attenteBarre == null ? "0" : String(initial.attenteBarre),
     perimetreStr: initial.perimetre == null ? "0" : String(initial.perimetre),
     espacementStr: initial.espacement == null ? "0" : String(initial.espacement),
+    cadreCalcMode: "ESPACEMENT",
+    nbCadreStr: "0",
   };
 
   const mainCleaned = resetFieldsForForme(main.forme, main);
@@ -128,6 +153,7 @@ function buildInitialFormes(shouldHydrate: boolean, initial: Partial<TotalRowMod
     const seed: Omit<FormeState, "id"> = {
       forme: x.forme ?? "CARRE",
       diametreMm: typeof x.diametreMm === "number" ? x.diametreMm : initDia,
+      barreCategorie: x.barreCategorie ?? "",
       nBarreStr: x.nBarre == null ? "0" : String(x.nBarre),
       longueurStr: x.longueur == null ? "0" : String(x.longueur),
       largeurStr: x.largeur == null ? "0" : String(x.largeur),
@@ -136,6 +162,8 @@ function buildInitialFormes(shouldHydrate: boolean, initial: Partial<TotalRowMod
       attenteStr: x.attenteBarre == null ? "0" : String(x.attenteBarre),
       perimetreStr: x.perimetre == null ? "0" : String(x.perimetre),
       espacementStr: x.espacement == null ? "0" : String(x.espacement),
+      cadreCalcMode: "ESPACEMENT",
+      nbCadreStr: "0",
     };
     const cleaned = resetFieldsForForme(seed.forme, seed);
     return { id: makeId(), ...seed, ...cleaned };
@@ -221,16 +249,16 @@ export default function TotalRowModalWindowInner({
       initial?.rayon != null ||
       initial?.perimetre != null ||
       initial?.espacement != null;
-    const anyExtra = Array.isArray(initial?.extraFormes) && initial!.extraFormes!.length > 0;
-    const anyExtraBoxes = Array.isArray(initial?.extraBoxes) && initial!.extraBoxes!.length > 0;
+    const anyExtra = Array.isArray(initial?.extraFormes) && initial.extraFormes.length > 0;
+    const anyExtraBoxes = Array.isArray(initial?.extraBoxes) && initial.extraBoxes.length > 0;
     return !!(d || t || anyNumbers || anyExtra || anyExtraBoxes);
   }, [initial]);
 
   const [designation, setDesignation] = useState(() => initial?.designation ?? "");
-  const [typeName, setTypeName] = useState(() => initial?.typeName ?? "");
-  const [nbStr, setNbStr] = useState(() => (initial?.nb == null ? "0" : String(initial?.nb)));
-  const [hauteurStr, setHauteurStr] = useState(() => (initial?.hauteur == null ? "0" : String(initial?.hauteur)));
-  const [enrobageStr, setEnrobageStr] = useState(() => (initial?.enrobage == null ? "0" : String(initial?.enrobage)));
+  const [nomenclature, setNomenclature] = useState(() => initial?.typeName ?? "");
+  const [nbStr, setNbStr] = useState(() => (initial?.nb == null ? "0" : String(initial.nb)));
+  const [hauteurStr, setHauteurStr] = useState(() => (initial?.hauteur == null ? "0" : String(initial.hauteur)));
+  const [enrobageStr, setEnrobageStr] = useState(() => (initial?.enrobage == null ? "0" : String(initial.enrobage)));
 
   const [st, setSt] = useState<{
     extraBoxes: ExtraBoxState[];
@@ -286,6 +314,33 @@ export default function TotalRowModalWindowInner({
     };
   }, [formes]);
 
+  const barreLitIndexById = useMemo(() => {
+    const tracked = new Set(["Acier inférieur", "Acier supérieur", "Chapeau"]);
+    const counts = new Map<string, number>();
+    const indexById = new Map<string, number>();
+
+    for (const f of formes) {
+      if (f.forme !== "BARRE") continue;
+
+      const cat = (f.barreCategorie ?? "").trim();
+      if (!tracked.has(cat)) continue;
+
+      const next = (counts.get(cat) ?? 0) + 1;
+      counts.set(cat, next);
+      indexById.set(f.id, next);
+    }
+
+    return indexById;
+  }, [formes]);
+
+  const usesLongueurLabel = useMemo(() => {
+    const v = (designation ?? "").trim().toLowerCase();
+    return ["longrines", "raidisseurs", "linteaux", "chaînages", "poutres", "nervures"].includes(v);
+  }, [designation]);
+
+  const hauteurLabel = usesLongueurLabel ? "Longueur (m)" : "Hauteur";
+  const hauteurPlaceholder = usesLongueurLabel ? "Ex: 6,5" : "Ex: 2.8";
+
   const totalCount = cards.length;
   const totalPages = useMemo(() => Math.max(1, Math.ceil(totalCount / FORMS_PER_PAGE)), [totalCount]);
 
@@ -315,10 +370,15 @@ export default function TotalRowModalWindowInner({
           ancrageStr: "0",
           perimetreStr: "0",
           espacementStr: "0",
+          extraCalcMode: "ESPACEMENT",
+          nbExtraStr: "0",
         },
       ];
 
-      const { nextOrder, nextPage } = insertCardAtEndOfCurrentPage(prev.cardOrder, prev.page, FORMS_PER_PAGE, { kind: "EXTRA", id });
+      const { nextOrder, nextPage } = insertCardAtEndOfCurrentPage(prev.cardOrder, prev.page, FORMS_PER_PAGE, {
+        kind: "EXTRA",
+        id,
+      });
       return { ...prev, extraBoxes: nextBoxes, cardOrder: nextOrder, page: nextPage };
     });
   };
@@ -375,6 +435,7 @@ export default function TotalRowModalWindowInner({
       const seed: Omit<FormeState, "id"> = {
         forme: nextForme,
         diametreMm: last?.diametreMm ?? initDia,
+        barreCategorie: "",
         nBarreStr: "0",
         longueurStr: "0",
         largeurStr: "0",
@@ -383,12 +444,17 @@ export default function TotalRowModalWindowInner({
         attenteStr: "0",
         perimetreStr: "0",
         espacementStr: "0",
+        cadreCalcMode: "ESPACEMENT",
+        nbCadreStr: "0",
       };
 
       const cleaned = resetFieldsForForme(seed.forme, seed);
       const nextFormes = [...prev.formes, { id, ...seed, ...cleaned }];
 
-      const { nextOrder, nextPage } = insertCardAtEndOfCurrentPage(prev.cardOrder, prev.page, FORMS_PER_PAGE, { kind: "FORME", id });
+      const { nextOrder, nextPage } = insertCardAtEndOfCurrentPage(prev.cardOrder, prev.page, FORMS_PER_PAGE, {
+        kind: "FORME",
+        id,
+      });
       return { ...prev, formes: nextFormes, cardOrder: nextOrder, page: nextPage };
     });
   };
@@ -399,6 +465,7 @@ export default function TotalRowModalWindowInner({
       const seed: Omit<FormeState, "id"> = {
         forme: "BARRE",
         diametreMm: initDia,
+        barreCategorie: "",
         nBarreStr: "0",
         longueurStr: "0",
         largeurStr: "0",
@@ -407,12 +474,17 @@ export default function TotalRowModalWindowInner({
         attenteStr: "0",
         perimetreStr: "0",
         espacementStr: "0",
+        cadreCalcMode: "ESPACEMENT",
+        nbCadreStr: "0",
       };
 
       const cleaned = resetFieldsForForme(seed.forme, seed);
       const nextFormes = [...prev.formes, { id, ...seed, ...cleaned }];
 
-      const { nextOrder, nextPage } = insertCardAtEndOfCurrentPage(prev.cardOrder, prev.page, FORMS_PER_PAGE, { kind: "FORME", id });
+      const { nextOrder, nextPage } = insertCardAtEndOfCurrentPage(prev.cardOrder, prev.page, FORMS_PER_PAGE, {
+        kind: "FORME",
+        id,
+      });
       return { ...prev, formes: nextFormes, cardOrder: nextOrder, page: nextPage };
     });
   };
@@ -455,11 +527,20 @@ export default function TotalRowModalWindowInner({
         const n = parseNonNegativeInt(f.nBarreStr) ?? 0;
         const anc = parseNonNegativeNumber(f.ancrageStr) ?? 0;
         const att = parseNonNegativeNumber(f.attenteStr) ?? 0;
+        const barLen = parseNonNegativeNumber(f.longueurStr) ?? 0;
 
         const nt = nb * n;
-        const qtyM = nb * (n * (h + att + anc));
+        const qtyM = usesLongueurLabel ? nb * (n * (barLen + anc)) : nb * (n * (h + att + anc));
         const safeNt = nt > 0 ? nt : 0;
         const cutLenM = safeNt > 0 ? qtyM / safeNt : 0;
+
+        const steelType =
+          usesLongueurLabel && (f.barreCategorie ?? "").trim()
+            ? (f.barreCategorie ?? "").trim()
+            : undefined;
+
+        const litIndex = usesLongueurLabel ? barreLitIndexById.get(f.id) : undefined;
+        const litLabel = litIndex != null ? `Lit ${litIndex}` : undefined;
 
         linesBarres.push({
           key: f.id,
@@ -468,6 +549,8 @@ export default function TotalRowModalWindowInner({
           qtyM: qtyM > 0 ? qtyM : 0,
           nt: nt > 0 ? nt : 0,
           cutLenM: cutLenM > 0 ? cutLenM : 0,
+          steelType,
+          litLabel,
         });
 
         addQty(f.diametreMm, qtyM > 0 ? qtyM : 0);
@@ -475,9 +558,11 @@ export default function TotalRowModalWindowInner({
       }
 
       const per = computeCadrePerimetre(f.forme, f.longueurStr, f.largeurStr, f.rayonStr, f.ancrageStr) ?? 0;
+      const calcMode = f.cadreCalcMode === "NB_CADRE" ? "NB_CADRE" : "ESPACEMENT";
+      const nbCadre = parseNonNegativeInt(f.nbCadreStr ?? "0") ?? 0;
       const esp = parsePositiveNumber(f.espacementStr) ?? 0;
 
-      const ratio = esp > 0 ? h / esp : 0;
+      const ratio = calcMode === "NB_CADRE" ? nbCadre : esp > 0 ? h / esp : 0;
       const nt = nb * ratio;
       const qtyM = nb * per * ratio;
       const safeNt = nt > 0 ? nt : 0;
@@ -507,11 +592,13 @@ export default function TotalRowModalWindowInner({
     for (const b of extraBoxes) {
       const n = parseNonNegativeInt(b.valueStr) ?? 0;
       const per = computeExtraPerimetre(b.kind, b.longueurStr, b.ancrageStr) ?? 0;
+      const calcMode = b.extraCalcMode === "NB" ? "NB" : "ESPACEMENT";
+      const nbExtra = parseNonNegativeInt(b.nbExtraStr ?? "0") ?? 0;
       const esp = parsePositiveNumber(b.espacementStr) ?? 0;
 
-      const ratio = esp > 0 ? h / esp : 0;
+      const ratio = calcMode === "NB" ? nbExtra : esp > 0 ? h / esp : 0;
       const nt = nb * ratio;
-      const qtyM = nb * (n * per) * ratio;
+      const qtyM = n * per * nt;
       const safeNt = nt > 0 ? nt : 0;
       const cutLenM = safeNt > 0 ? qtyM / safeNt : 0;
 
@@ -535,7 +622,7 @@ export default function TotalRowModalWindowInner({
       .map(([dia, v]) => ({ dia, qtyM: v }));
 
     return { totals, linesCadres, linesBarres, linesExtras };
-  }, [extraBoxes, formes, nbStr, hauteurStr]);
+  }, [extraBoxes, formes, nbStr, hauteurStr, usesLongueurLabel, barreLitIndexById]);
 
   const submit = () => {
     if (!canSubmit) return;
@@ -573,7 +660,10 @@ export default function TotalRowModalWindowInner({
     const mainShow = formeNeedsParams(main.forme);
 
     const mainNBarre = main.forme === "BARRE" ? parsePositiveInt(main.nBarreStr) : null;
-    const mainLongueur = main.forme === "CARRE" || main.forme === "RECTANGULAIRE" ? parsePositiveNumber(main.longueurStr) : null;
+    const mainLongueur =
+      main.forme === "BARRE" || main.forme === "CARRE" || main.forme === "RECTANGULAIRE"
+        ? parsePositiveNumber(main.longueurStr)
+        : null;
     const mainLargeur = main.forme === "RECTANGULAIRE" ? parsePositiveNumber(main.largeurStr) : null;
     const mainRayon = main.forme === "CIRCULAIRE" ? parsePositiveNumber(main.rayonStr) : null;
 
@@ -591,8 +681,12 @@ export default function TotalRowModalWindowInner({
       return {
         forme: x.forme,
         diametreMm: x.diametreMm,
+        barreCategorie: x.barreCategorie?.trim() || undefined,
         nBarre: x.forme === "BARRE" ? parsePositiveInt(x.nBarreStr) : null,
-        longueur: x.forme === "CARRE" || x.forme === "RECTANGULAIRE" ? parsePositiveNumber(x.longueurStr) : null,
+        longueur:
+          x.forme === "BARRE" || x.forme === "CARRE" || x.forme === "RECTANGULAIRE"
+            ? parsePositiveNumber(x.longueurStr)
+            : null,
         largeur: x.forme === "RECTANGULAIRE" ? parsePositiveNumber(x.largeurStr) : null,
         rayon: x.forme === "CIRCULAIRE" ? parsePositiveNumber(x.rayonStr) : null,
         ancrage: parseNonNegativeNumber(x.ancrageStr) ?? null,
@@ -604,12 +698,13 @@ export default function TotalRowModalWindowInner({
 
     onSubmit({
       designation: (designation ?? "").trim(),
-      typeName: (typeName ?? "").trim(),
+      typeName: (nomenclature ?? "").trim(),
       nb,
       hauteur,
       enrobage,
       forme: main.forme,
       diametreMm: main.diametreMm,
+      barreCategorie: main.barreCategorie?.trim() || undefined,
       nBarre: mainNBarre,
       longueur: mainLongueur,
       largeur: mainLargeur,
@@ -631,7 +726,14 @@ export default function TotalRowModalWindowInner({
 
       <div className="absolute inset-0 flex items-center justify-center p-4">
         <div ref={panelRef} className="w-full max-w-[85%] min-h-[75%] flex gap-4 items-stretch">
-          <RecapPanel designation={designation} typeName={typeName} nbStr={nbStr} hauteurStr={hauteurStr} enrobageStr={enrobageStr} recap={recap} />
+          <RecapPanel
+            designation={designation}
+            typeName={nomenclature}
+            nbStr={nbStr}
+            hauteurStr={hauteurStr}
+            enrobageStr={enrobageStr}
+            recap={recap}
+          />
 
           <div className="flex-1 rounded-xl bg-white shadow-xl border border-gray-200 flex flex-col overflow-hidden">
             <div className="px-5 py-3 bg-gray-50 rounded-t-xl border-b border-gray-200 flex items-center justify-between">
@@ -654,8 +756,13 @@ export default function TotalRowModalWindowInner({
                 </div>
 
                 <div className="flex flex-col md:col-span-3">
-                  <label className="text-sm font-semibold text-gray-700 mb-1">Type</label>
-                  <input className={inputClass} value={typeName} onChange={(e) => setTypeName(e.target.value)} placeholder="Ex: T1 / T10 /P1 ..." />
+                  <label className="text-sm font-semibold text-gray-700 mb-1">Nomenclature</label>
+                  <input
+                    className={inputClass}
+                    value={nomenclature}
+                    onChange={(e) => setNomenclature(e.target.value)}
+                    placeholder="Ex: Code nomenclature"
+                  />
                 </div>
 
                 <div className="flex flex-col md:col-span-1">
@@ -664,8 +771,14 @@ export default function TotalRowModalWindowInner({
                 </div>
 
                 <div className="flex flex-col md:col-span-2">
-                  <label className="text-sm font-semibold text-gray-700 mb-1">Hauteur</label>
-                  <input className={inputClass} value={hauteurStr} onChange={(e) => setHauteurStr(e.target.value)} placeholder="Ex: 2.8" inputMode="decimal" />
+                  <label className="text-sm font-semibold text-gray-700 mb-1">{hauteurLabel}</label>
+                  <input
+                    className={inputClass}
+                    value={hauteurStr}
+                    onChange={(e) => setHauteurStr(e.target.value)}
+                    placeholder={hauteurPlaceholder}
+                    inputMode="decimal"
+                  />
                 </div>
 
                 <div className="flex flex-col md:col-span-2">
@@ -674,7 +787,12 @@ export default function TotalRowModalWindowInner({
                 </div>
 
                 <div className="md:col-span-12 flex items-center justify-end border-t border-gray-200 pt-3">
-                  <AddPlusDropdown onAddCadre={addCadre} onAddBarre={addBarre} onAddEpingle={() => addExtraBox("EPINGLE")} onAddEtriers={() => addExtraBox("ETRIERS")} />
+                  <AddPlusDropdown
+                    onAddCadre={addCadre}
+                    onAddBarre={addBarre}
+                    onAddEpingle={() => addExtraBox("EPINGLE")}
+                    onAddEtriers={() => addExtraBox("ETRIERS")}
+                  />
                 </div>
 
                 {visibleCards.map((c) => {
@@ -685,13 +803,18 @@ export default function TotalRowModalWindowInner({
                     const idx = extraMeta.indexById.get(b.id) ?? 1;
                     const totalForKind = extraMeta.countByKind[b.kind];
                     const titleLabel =
-                      totalForKind > 1 ? `${b.kind === "EPINGLE" ? "Épingle" : "Étriers"} ${idx}` : b.kind === "EPINGLE" ? "Épingle" : "Étriers";
+                      totalForKind > 1
+                        ? `${b.kind === "EPINGLE" ? "Épingle" : "Étriers"} ${idx}`
+                        : b.kind === "EPINGLE"
+                          ? "Épingle"
+                          : "Étriers";
 
                     return (
                       <ExtraBoxCard
                         key={b.id}
                         b={b}
                         titleLabel={titleLabel}
+                        designation={designation}
                         safeMms={safeMms}
                         inputClass={inputClass}
                         twoColGrid={twoColGrid}
@@ -716,6 +839,37 @@ export default function TotalRowModalWindowInner({
                     : formeMeta.totalCadres > 1
                       ? `Cadre ${idx}`
                       : "Cadre";
+
+                  if (isBarre) {
+                    return (
+                      <div key={x.id} className={["h-100 md:col-span-4 rounded-lg min-h-12.5 border p-4", "border-slate-200 bg-slate-50/60"].join(" ")}>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="text-sm font-semibold text-slate-900">{label}</div>
+                          <button
+                            type="button"
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-red-600 hover:cursor-pointer"
+                            onClick={() => removeForme(x.id)}
+                            title="Supprimer"
+                            aria-label="Supprimer"
+                          >
+                            <CiCircleRemove size={28} />
+                          </button>
+                        </div>
+
+                        <FormeBarre
+                          x={x}
+                          designation={designation}
+                          safeMms={safeMms}
+                          inputClass={inputClass}
+                          twoColGrid={twoColGrid}
+                          nbStr={nbStr}
+                          hauteurStr={hauteurStr}
+                          barreLitIndex={barreLitIndexById.get(x.id) ?? null}
+                          onPatch={(patch) => updateForme(x.id, patch)}
+                        />
+                      </div>
+                    );
+                  }
 
                   return (
                     <FormeCard

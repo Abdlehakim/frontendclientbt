@@ -3,6 +3,8 @@ import { CiCircleRemove } from "react-icons/ci";
 import type { ExtraBoxState } from "../types";
 import DiametreDropdown from "./DiametreDropdown";
 
+type ExtraCalcMode = "ESPACEMENT" | "NB";
+
 function parseNum(raw: string) {
   const s = (raw ?? "").trim();
   if (!s) return 0;
@@ -27,9 +29,24 @@ function fmt(n: number) {
   return s.replace(".", ",");
 }
 
+function computeNTFromEspacement(nbStr: string, hauteurStr: string, espacementStr: string) {
+  const nb = parseIntNum(nbStr);
+  const h = parseNum(hauteurStr);
+  const e = parseNum(espacementStr);
+  if (e <= 0) return 0;
+  return nb * (h / e);
+}
+
+function computeNTFromNb(nbStr: string, nbExtraStr: string) {
+  const nb = parseIntNum(nbStr);
+  const count = parseIntNum(nbExtraStr);
+  return nb * count;
+}
+
 export default function ExtraBoxCard({
   b,
   titleLabel,
+  designation,
   safeMms,
   inputClass,
   twoColGrid,
@@ -40,6 +57,7 @@ export default function ExtraBoxCard({
 }: {
   b: ExtraBoxState;
   titleLabel: string;
+  designation: string;
   safeMms: number[];
   inputClass: string;
   twoColGrid: string;
@@ -49,6 +67,10 @@ export default function ExtraBoxCard({
   onRemove: () => void;
 }) {
   const isEpingle = b.kind === "EPINGLE";
+  const calcMode: ExtraCalcMode = b.extraCalcMode === "NB" ? "NB" : "ESPACEMENT";
+  const nbExtraStr = b.nbExtraStr ?? "0";
+
+  const designationLabel = (designation ?? "").trim() || "élément";
 
   const computedPerimetre = useMemo(() => {
     const L = parseNum(b.longueurStr);
@@ -58,27 +80,33 @@ export default function ExtraBoxCard({
 
   const computedPerimetreStr = useMemo(() => fmt(computedPerimetre), [computedPerimetre]);
 
-  const computedNTStr = useMemo(() => {
-    const nb = parseIntNum(nbStr);
-    const h = parseNum(hauteurStr);
-    const e = parseNum(b.espacementStr);
-    if (e <= 0) return "0";
-    const nt = nb * (h / e);
-    return fmt(nt);
-  }, [nbStr, hauteurStr, b.espacementStr]);
+  const computedNT = useMemo(() => {
+    if (calcMode === "NB") return computeNTFromNb(nbStr, nbExtraStr);
+    return computeNTFromEspacement(nbStr, hauteurStr, b.espacementStr);
+  }, [calcMode, nbStr, nbExtraStr, hauteurStr, b.espacementStr]);
+
+  const computedNTStr = useMemo(() => fmt(computedNT), [computedNT]);
 
   const computedQtyFerStr = useMemo(() => {
     const n = parseIntNum(b.valueStr);
-    const nb = parseIntNum(nbStr);
-    const h = parseNum(hauteurStr);
-    const e = parseNum(b.espacementStr);
-    if (e <= 0) return "0";
-    const nt = nb * (h / e);
-    const q = n * computedPerimetre * nt;
+    const q = n * computedPerimetre * computedNT;
     return fmt(q);
-  }, [b.valueStr, nbStr, hauteurStr, b.espacementStr, computedPerimetre]);
+  }, [b.valueStr, computedPerimetre, computedNT]);
 
   const ntLabel = isEpingle ? "N.T.Épingle" : "N.T.Étriers";
+  const countLabel = isEpingle ? "Nb. Épingles" : "Nb. Étriers";
+
+  const valuePerCadreLabel = isEpingle
+    ? "Nb. Épingles par cadre"
+    : "Nb. Étriers par cadre";
+
+  const valuePerDesignationLabel = isEpingle
+    ? `Nb. Épingles par ${designationLabel}`
+    : `Nb. Étriers par ${designationLabel}`;
+
+  const modeBtnBase = "inline-flex items-center px-3 py-2 text-sm font-medium transition-colors";
+  const modeBtnActive = "text-emerald-800";
+  const modeBtnInactive = "bg-white text-slate-600";
 
   return (
     <div className={["h-100 md:col-span-4 rounded-lg border p-4", "border-slate-200 bg-slate-50/60"].join(" ")}>
@@ -101,17 +129,6 @@ export default function ExtraBoxCard({
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-700 mb-1">{isEpingle ? "N.Épingles" : "N.Étriers"}</label>
-          <input
-            className={inputClass}
-            value={b.valueStr}
-            onChange={(e) => onUpdate({ valueStr: e.target.value })}
-            placeholder={isEpingle ? "Ex: 2" : "Ex: 10"}
-            inputMode="numeric"
-          />
-        </div>
-
-        <div className="flex flex-col">
           <label className="text-sm font-semibold text-gray-700 mb-1">Longueur (m)</label>
           <input
             className={inputClass}
@@ -123,7 +140,7 @@ export default function ExtraBoxCard({
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-700 mb-1">Ancrage (m)</label>
+          <label className="text-sm font-semibold text-gray-700 mb-1">Crochet (m)</label>
           <input
             className={inputClass}
             value={b.ancrageStr}
@@ -148,16 +165,98 @@ export default function ExtraBoxCard({
           />
         </div>
 
-        <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-700 mb-1">Espacement (m)</label>
-          <input
-            className={inputClass}
-            value={b.espacementStr}
-            onChange={(e) => onUpdate({ espacementStr: e.target.value })}
-            placeholder="Ex: 15"
-            inputMode="decimal"
-          />
+        <div className="sm:col-span-2 flex flex-col">
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              className={[
+                modeBtnBase,
+                "gap-2 justify-start",
+                calcMode === "ESPACEMENT" ? modeBtnActive : modeBtnInactive,
+              ].join(" ")}
+              onClick={() => onUpdate({ extraCalcMode: "ESPACEMENT" })}
+              aria-pressed={calcMode === "ESPACEMENT"}
+            >
+              <span
+                className={[
+                  "inline-flex h-4 w-4 items-center justify-center rounded-full border",
+                  calcMode === "ESPACEMENT" ? "border-emerald-500" : "border-slate-300",
+                ].join(" ")}
+              >
+                <span
+                  className={[
+                    "h-2 w-2 rounded-full",
+                    calcMode === "ESPACEMENT" ? "bg-emerald-500" : "bg-transparent",
+                  ].join(" ")}
+                />
+              </span>
+              <span>Espacement</span>
+            </button>
+
+            <button
+              type="button"
+              className={[
+                modeBtnBase,
+                "gap-2 justify-start",
+                calcMode === "NB" ? modeBtnActive : modeBtnInactive,
+              ].join(" ")}
+              onClick={() => onUpdate({ extraCalcMode: "NB" })}
+              aria-pressed={calcMode === "NB"}
+            >
+              <span
+                className={[
+                  "inline-flex h-4 w-4 items-center justify-center rounded-full border",
+                  calcMode === "NB" ? "border-emerald-500" : "border-slate-300",
+                ].join(" ")}
+              >
+                <span
+                  className={[
+                    "h-2 w-2 rounded-full",
+                    calcMode === "NB" ? "bg-emerald-500" : "bg-transparent",
+                  ].join(" ")}
+                />
+              </span>
+              <span>{countLabel}</span>
+            </button>
+          </div>
         </div>
+
+        {calcMode === "ESPACEMENT" ? (
+          <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex flex-col">
+              <label className="text-sm font-semibold text-gray-700 mb-1">{valuePerCadreLabel}</label>
+              <input
+                className={inputClass}
+                value={b.valueStr}
+                onChange={(e) => onUpdate({ valueStr: e.target.value })}
+                placeholder={isEpingle ? "Ex: 2" : "Ex: 10"}
+                inputMode="numeric"
+              />
+            </div>
+
+            <div className="flex flex-col">
+              <label className="text-sm font-semibold text-gray-700 mb-1">Espacement (m)</label>
+              <input
+                className={inputClass}
+                value={b.espacementStr}
+                onChange={(e) => onUpdate({ espacementStr: e.target.value })}
+                placeholder="Ex: 15"
+                inputMode="decimal"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col">
+            <label className="text-sm font-semibold text-gray-700 mb-1">{valuePerDesignationLabel}</label>
+            <input
+              className={inputClass}
+              value={nbExtraStr}
+              onChange={(e) => onUpdate({ nbExtraStr: e.target.value })}
+              placeholder="Ex: 12"
+              inputMode="numeric"
+            />
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:col-span-2">
           <div className="flex flex-col">

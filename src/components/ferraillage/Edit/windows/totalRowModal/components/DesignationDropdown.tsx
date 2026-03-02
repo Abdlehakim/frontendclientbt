@@ -20,7 +20,11 @@ export default function DesignationDropdown({
   const [open, setOpen] = useState(false);
   const pos = usePortalPos(open, btnRef);
 
-  const DEFAULTS = useMemo(() => ["Poteaux", "Semelles", "Dalle", "Longrines"], []);
+  const DEFAULTS = useMemo(
+    () => ["Poteaux","Longrines", "Raidisseurs", "Linteaux", "Chaînages", "Poutres", "Nervures"],
+    [],
+  );
+
   const OPTIONS = useMemo(() => {
     const v = (value ?? "").trim();
     if (v && !DEFAULTS.includes(v)) return [v, ...DEFAULTS];
