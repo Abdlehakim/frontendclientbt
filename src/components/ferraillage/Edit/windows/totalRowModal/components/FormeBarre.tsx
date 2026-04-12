@@ -1,172 +1,43 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { IoIosArrowDropdown, IoIosArrowDropup } from "react-icons/io";
+import { useEffect, useRef } from "react";
 import type { FormeState } from "../types";
-import { parseNonNegativeInt, parseNonNegativeNumber } from "../utils";
-import DiametreDropdown from "./DiametreDropdown";
-import { CheckIcon } from "../icons";
+import FieldInput from "./common/FieldInput";
+import DiametreField from "./common/DiametreField";
+import SelectDropdown from "./common/SelectDropdown";
+import BarreSteelSection from "./formeBarreSections/BarreSteelSection";
+import ResultSingleSection from "./formeBarreSections/ResultSingleSection";
+import ResultDualSection from "./formeBarreSections/ResultDualSection";
 
-type BarreCategorie =
-  | "Acier inférieur"
-  | "Acier supérieur"
-  | "Acier de peau"
-  | "Acier de renfort"
-  | "Chapeau"
-  | "Barre en bateau";
+import {
+  SLAB_CALC_METHODS,
+  SLAB_NAPPES,
+  SLAB_RELATIONS,
+  SLAB_SPACING_MODES,
+  SLAB_SPACING_RELATIONS,
+  SEMELLE_NAPPES,
+  SEMELLE_RELATIONS,
+} from "../config/formeBarreOptions";
 
-const BARRE_DESIGNATIONS = ["longrines", "raidisseurs", "linteaux", "chaînages", "poutres", "nervures"];
-const LIT_CATEGORIES = new Set<BarreCategorie>(["Acier inférieur", "Acier supérieur", "Chapeau"]);
+import {
+  fmt,
+  getNappeLabel,
+  getSemelleRelationLabel,
+  getSlabCalcMethodLabel,
+  getSlabRelationLabel,
+  getSlabSpacingModeLabel,
+  getSlabSpacingRelationLabel,
+} from "../config/formeBarreLabels";
 
-function fmt(n: number) {
-  const r = Math.round(n * 1000) / 1000;
-  return String(r).replace(".", ",");
-}
+import { useFormeBarreBaseState } from "../hooks/useFormeBarreBaseState";
+import { useSemelleState } from "../hooks/useSemelleState";
+import { useSlabState } from "../hooks/useSlabState";
+import { useBarreAutoValues } from "../hooks/useBarreAutoValues";
+import { useSemelleAutoValues } from "../hooks/useSemelleAutoValues";
+import { useSlabAutoValues } from "../hooks/useSlabAutoValues";
 
-function computeBarreNT(nbStr: string, nBarreStr: string) {
-  const NB = parseNonNegativeInt(nbStr);
-  const N = parseNonNegativeInt(nBarreStr);
-
-  const hasAny = NB != null || N != null;
-  if (!hasAny) return 0;
-
-  const nb = NB ?? 0;
-  const n = N ?? 0;
-
-  return nb * n;
-}
-
-function computeBarreQteStandard(nbStr: string, nBarreStr: string, hauteurStr: string, attenteStr: string, ancrageStr: string) {
-  const NB = parseNonNegativeInt(nbStr);
-  const N = parseNonNegativeInt(nBarreStr);
-  const H = parseNonNegativeNumber(hauteurStr);
-  const AT = parseNonNegativeNumber(attenteStr);
-  const A = parseNonNegativeNumber(ancrageStr);
-
-  const hasAny = NB != null || N != null || H != null || AT != null || A != null;
-  if (!hasAny) return 0;
-
-  const nb = NB ?? 0;
-  const n = N ?? 0;
-  const h = H ?? 0;
-  const at = AT ?? 0;
-  const a = A ?? 0;
-
-  return nb * (n * (h + at + a));
-}
-
-function computeBarreQteLongueur(nbStr: string, nBarreStr: string, longueurBarreStr: string, ancrageStr: string) {
-  const NB = parseNonNegativeInt(nbStr);
-  const N = parseNonNegativeInt(nBarreStr);
-  const L = parseNonNegativeNumber(longueurBarreStr);
-  const A = parseNonNegativeNumber(ancrageStr);
-
-  const hasAny = NB != null || N != null || L != null || A != null;
-  if (!hasAny) return 0;
-
-  const nb = NB ?? 0;
-  const n = N ?? 0;
-  const l = L ?? 0;
-  const a = A ?? 0;
-
-  return nb * (n * (l + a));
-}
-
-function BarreCategorieDropdown({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: BarreCategorie) => void;
-}) {
-  const wrapRef = useRef<HTMLDivElement | null>(null);
-  const [open, setOpen] = useState(false);
-
-  const OPTIONS: BarreCategorie[] = [
-    "Acier inférieur",
-    "Acier supérieur",
-    "Acier de peau",
-    "Acier de renfort",
-    "Chapeau",
-    "Barre en bateau",
-  ];
-
-  useEffect(() => {
-    function onDown(e: MouseEvent) {
-      if (!wrapRef.current) return;
-      if (!wrapRef.current.contains(e.target as Node)) setOpen(false);
-    }
-
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, []);
-
-  const shown = (value ?? "").trim() || "Choisir...";
-
-  return (
-    <div className="flex flex-col" ref={wrapRef}>
-      <label className="text-sm font-semibold text-gray-700 mb-1">Type d’acier</label>
-
-      <button
-        type="button"
-        className="w-full inline-flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm font-medium cursor-pointer truncate bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-400"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-      >
-        <span className="truncate">{shown}</span>
-        {open ? <IoIosArrowDropup className="shrink-0" size={18} /> : <IoIosArrowDropdown className="shrink-0" size={18} />}
-      </button>
-
-      {open ? (
-        <div className="relative">
-          <div
-            className="absolute z-50 mt-1 w-full rounded-md border bg-white shadow-lg max-h-60 overflow-auto border-emerald-200"
-            role="listbox"
-          >
-            {OPTIONS.map((opt) => {
-              const selected = opt === value;
-              return (
-                <button
-                  key={opt}
-                  type="button"
-                  onClick={() => {
-                    onChange(opt);
-                    setOpen(false);
-                  }}
-                  className={[
-                    "w-full px-3 py-2 text-sm text-left flex items-center gap-2",
-                    selected ? "bg-emerald-50 text-emerald-700" : "text-slate-700",
-                    "hover:bg-emerald-100 hover:text-emerald-800",
-                  ].join(" ")}
-                  role="option"
-                  aria-selected={selected}
-                >
-                  <span
-                    className={[
-                      "inline-flex h-4 w-4 items-center justify-center rounded-sm border",
-                      selected ? "border-emerald-500 bg-emerald-500 text-white" : "border-slate-300 text-transparent",
-                    ].join(" ")}
-                  >
-                    <CheckIcon />
-                  </span>
-                  <span className="truncate">{opt}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ) : null}
-    </div>
-  );
-}
+type FormeStateWithSlabExtras = FormeState & {
+  slabPerimetreStr?: string;
+  slabAncrageLineaireStr?: string;
+};
 
 export default function FormeBarre({
   x,
@@ -189,134 +60,624 @@ export default function FormeBarre({
   barreLitIndex: number | null;
   onPatch: (patch: Partial<FormeState>) => void;
 }) {
-  const showBarreOptions = useMemo(() => {
-    const v = (designation ?? "").trim().toLowerCase();
-    return BARRE_DESIGNATIONS.includes(v);
-  }, [designation]);
+  const base = useFormeBarreBaseState({
+    designation,
+    safeMms,
+    x,
+    barreLitIndex,
+  });
 
-  const selectedCategorie = (x.barreCategorie ?? "").trim() as BarreCategorie;
-  const showLitField = showBarreOptions && LIT_CATEGORIES.has(selectedCategorie);
-  const litValue = showLitField && barreLitIndex != null ? `Lit ${barreLitIndex}` : "";
+  const semelle = useSemelleState({
+    isSemelle: base.isSemelle,
+    x,
+    fallbackDiametreValue: base.fallbackDiametreValue,
+  });
 
-  const showAncrageField =
-    showBarreOptions &&
-    (selectedCategorie === "Acier inférieur" || selectedCategorie === "Acier supérieur");
+  const slab = useSlabState({
+    isSlab: base.isSlab,
+    isDallePleine: base.isDallePleine,
+    x,
+    fallbackDiametreValue: base.fallbackDiametreValue,
+  });
 
-  const effectiveAncrageStr = showBarreOptions ? (showAncrageField ? x.ancrageStr : "0") : x.ancrageStr;
+  const prevDesignationRef = useRef<string>(base.normalizedDesignation);
 
-  const barreQteAuto = useMemo(() => {
-    if (showBarreOptions) {
-      return computeBarreQteLongueur(nbStr, x.nBarreStr, x.longueurStr, effectiveAncrageStr);
+  useEffect(() => {
+    if (prevDesignationRef.current === base.normalizedDesignation) return;
+    prevDesignationRef.current = base.normalizedDesignation;
+
+    const resetPatch: Partial<FormeStateWithSlabExtras> = {
+      barreCategorie: "",
+      semelleRelation: "ab_equal_same_if",
+      semelleLongueurAStr: "0",
+      semelleLongueurBStr: "0",
+      semelleNBarreAStr: "0",
+      semelleNBarreBStr: "0",
+      semelleDiametreAMm: null,
+      semelleDiametreBMm: null,
+
+      slabCalcMethod: "SURFACE_TOTAL",
+      slabSurfaceStr: "0",
+      slabQtePerM2Str: "0",
+      slabRelation: "ab_equal_same_if",
+      slabSpacingMode: "ESPACEMENT",
+      slabSpacingRelation: "EA_EQ_EB",
+      slabLongueurAStr: "0",
+      slabLongueurBStr: "0",
+      slabDiametreAMm: null,
+      slabDiametreBMm: null,
+      slabNBarreAStr: "0",
+      slabNBarreBStr: "0",
+      slabEspacementAStr: "0",
+      slabEspacementBStr: "0",
+      slabNbCadreAStr: "0",
+      slabNbCadreBStr: "0",
+      slabPerimetreStr: "0",
+      slabAncrageLineaireStr: "0",
+
+      diametreMm: base.fallbackDiametreValue,
+      nBarreStr: "0",
+      longueurStr: "0",
+      attenteStr: "0",
+      ancrageStr: "0",
+    };
+
+    onPatch(resetPatch);
+  }, [base.normalizedDesignation, base.fallbackDiametreValue, onPatch]);
+
+  useEffect(() => {
+    if (base.isSemelle && !(x.barreCategorie ?? "").trim()) {
+      onPatch({ barreCategorie: "Nappe inférieur" });
     }
-    return computeBarreQteStandard(nbStr, x.nBarreStr, hauteurStr, x.attenteStr, x.ancrageStr);
-  }, [showBarreOptions, nbStr, x.nBarreStr, x.longueurStr, hauteurStr, x.attenteStr, x.ancrageStr, effectiveAncrageStr]);
+  }, [base.isSemelle, x.barreCategorie, onPatch]);
 
-  const barreNTAuto = useMemo(() => {
-    return computeBarreNT(nbStr, x.nBarreStr);
-  }, [nbStr, x.nBarreStr]);
+  useEffect(() => {
+    if (base.isSlab && !(x.barreCategorie ?? "").trim()) {
+      onPatch({ barreCategorie: "Nappe inférieur" });
+    }
+  }, [base.isSlab, x.barreCategorie, onPatch]);
 
-  const blueAutoStyle = { backgroundColor: "#EFF6FF", borderColor: "#3B82F6", color: "#1E40AF" } as const;
+  useEffect(() => {
+    if (base.isSemelle && !(x.semelleRelation ?? "").trim()) {
+      onPatch({ semelleRelation: "ab_equal_same_if" });
+    }
+  }, [base.isSemelle, x.semelleRelation, onPatch]);
+
+  useEffect(() => {
+    if (!base.isSlab) return;
+
+    const patch: Partial<FormeState> = {};
+
+    if (!(x.slabCalcMethod ?? "").trim()) patch.slabCalcMethod = "SURFACE_TOTAL";
+    if (!(x.slabRelation ?? "").trim()) patch.slabRelation = "ab_equal_same_if";
+    if (!(x.slabSpacingMode ?? "").trim()) patch.slabSpacingMode = "ESPACEMENT";
+    if (
+      !(
+        (x.slabSpacingRelation ?? "").trim() === "EA_EQ_EB" ||
+        (x.slabSpacingRelation ?? "").trim() === "EA_NE_EB"
+      )
+    ) {
+      patch.slabSpacingRelation = "EA_EQ_EB";
+    }
+
+    if (Object.keys(patch).length > 0) onPatch(patch);
+  }, [
+    base.isSlab,
+    x.slabCalcMethod,
+    x.slabRelation,
+    x.slabSpacingMode,
+    x.slabSpacingRelation,
+    onPatch,
+  ]);
+
+  const slabAutoValues = useSlabAutoValues({
+    x,
+    nbStr,
+    isSlab: base.isSlab,
+    slabDiffSharedActive: slab.slabDiffSharedActive,
+    showSlabSharedSpacingInput: slab.showSlabSharedSpacingInput,
+    showSlabDualSpacingInputs: slab.showSlabDualSpacingInputs,
+    showSlabModeAndSharedNbBarRow: slab.showSlabModeAndSharedNbBarRow,
+    showSlabSharedNbCadreInput: slab.showSlabSharedNbCadreInput,
+    showSlabModeAndDualNbBarRow: slab.showSlabModeAndDualNbBarRow,
+    showSlabDualNbCadreInputs: slab.showSlabDualNbCadreInputs,
+    slabSurfacePerM2Mode: slab.slabSurfacePerM2Mode,
+    slabEffectiveSpacingModeValue: slab.slabEffectiveSpacingModeValue,
+  });
+
+  const semelleAncrage = base.isSemelle && semelle.isChaise ? "0" : x.ancrageStr;
+
+  const effectiveAncrageStr =
+    base.showBarreOptions && !base.isSemelle && !base.isSlab
+      ? base.barreCategorieValue === "Acier inférieur" ||
+        base.barreCategorieValue === "Acier supérieur"
+        ? x.ancrageStr
+        : "0"
+      : x.ancrageStr;
+
+  const barreAuto = useBarreAutoValues({
+    x,
+    nbStr,
+    hauteurStr,
+    isSlab: base.isSlab,
+    slabQte: slabAutoValues.auto.qte,
+    slabNt: slabAutoValues.auto.nt,
+    isSemelle: base.isSemelle,
+    isChaise: semelle.isChaise,
+    semelleEqualSharedActive: semelle.semelleEqualSharedActive,
+    semelleEqualDualActive: semelle.semelleEqualDualActive,
+    semelleDiffSharedActive: semelle.semelleDiffSharedActive,
+    semelleDiffDualActive: semelle.semelleDiffDualActive,
+    showBarreOptions: base.showBarreOptions,
+    effectiveAncrageStr,
+    semelleAncrage,
+  });
+
+  const semelleAuto = useSemelleAutoValues({
+    active: semelle.semelleDualActive,
+    equalDual: semelle.semelleEqualDualActive,
+    nbStr,
+    nBarreAStr: x.semelleNBarreAStr,
+    nBarreBStr: x.semelleNBarreBStr,
+    longueurAStr: x.semelleLongueurAStr,
+    longueurBStr: x.semelleLongueurBStr,
+    ancrageStr: semelle.isChaise ? "0" : x.ancrageStr,
+    semelleDiametreAValue: semelle.semelleDiametreAValue,
+    semelleDiametreBValue: semelle.semelleDiametreBValue,
+  });
+
+  const renderSlabLinearMetricInputs = () => {
+    if (slab.slabSurfacePerM2Mode) {
+      return (
+        <>
+          <FieldInput
+            label="Périmètre"
+            value={slabAutoValues.slabPerimetreStr}
+            onChange={(value) =>
+              onPatch({ slabPerimetreStr: value } as Partial<FormeStateWithSlabExtras>)
+            }
+            inputClass={inputClass}
+            placeholder="Ex: 0,4"
+          />
+          <FieldInput
+            label="Ancrage / mètre linéaire"
+            value={slabAutoValues.slabAncrageLineaireStr}
+            onChange={(value) =>
+              onPatch({
+                slabAncrageLineaireStr: value,
+              } as Partial<FormeStateWithSlabExtras>)
+            }
+            inputClass={inputClass}
+            placeholder="Ex: 0,4"
+          />
+        </>
+      );
+    }
+
+    return (
+      <FieldInput
+        label="Ancrage (m)"
+        value={x.ancrageStr}
+        onChange={(value) => onPatch({ ancrageStr: value })}
+        inputClass={inputClass}
+        placeholder="Ex: 0,4"
+      />
+    );
+  };
 
   return (
     <div className={twoColGrid}>
-      {showBarreOptions ? (
-        showLitField ? (
-          <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <BarreCategorieDropdown value={selectedCategorie} onChange={(v) => onPatch({ barreCategorie: v })} />
+      {base.isSemelle ? (
+        <>
+          <div className="flex flex-col sm:col-span-2">
+            <SelectDropdown
+              label="Type de nappe"
+              value={semelle.semelleNappeShown}
+              onChange={(v) => onPatch({ barreCategorie: v })}
+              options={SEMELLE_NAPPES}
+              getOptionLabel={getNappeLabel}
+            />
+          </div>
 
-            <div className="flex flex-col">
-              <label className="text-sm font-semibold text-gray-700 mb-1">Lit</label>
-              <input
-                className={[inputClass, "font-semibold"].join(" ")}
-                value={litValue}
-                readOnly
-                aria-readonly="true"
-                style={blueAutoStyle}
+          {!semelle.isChaise && !semelle.showSemelleRelationAndSharedLengthRow ? (
+            <div className="flex flex-col sm:col-span-2">
+              <SelectDropdown
+                label="Re. entre a et b"
+                value={semelle.semelleRelationValue}
+                onChange={(v) => onPatch({ semelleRelation: v })}
+                options={SEMELLE_RELATIONS}
+                getOptionLabel={getSemelleRelationLabel}
               />
             </div>
+          ) : null}
+
+          {semelle.showSemelleRelationAndSharedLengthRow ? (
+            <div className="grid grid-cols-1 gap-2 sm:col-span-2 sm:grid-cols-2">
+              <SelectDropdown
+                label="Re. entre a et b"
+                value={semelle.semelleRelationValue}
+                onChange={(v) => onPatch({ semelleRelation: v })}
+                options={SEMELLE_RELATIONS}
+                getOptionLabel={getSemelleRelationLabel}
+              />
+
+              <FieldInput
+                label="L. Barre a ou b (m)"
+                value={x.semelleLongueurAStr ?? "0"}
+                onChange={(value) =>
+                  onPatch({
+                    semelleLongueurAStr: value,
+                    semelleLongueurBStr: value,
+                  })
+                }
+                inputClass={inputClass}
+                placeholder="Ex: 2,4"
+              />
+            </div>
+          ) : null}
+
+          {semelle.showSemelleCombinedLengthAnchorDiaRow ? (
+            <div className="grid grid-cols-1 gap-2 sm:col-span-2 sm:grid-cols-2">
+              <FieldInput
+                label="Ancrage (m)"
+                value={x.ancrageStr}
+                onChange={(value) => onPatch({ ancrageStr: value })}
+                inputClass={inputClass}
+                placeholder="Ex: 0,4"
+              />
+
+              <DiametreField
+                label="Di. a et b"
+                mms={safeMms}
+                value={base.diametreValue}
+                onChange={(v) => onPatch({ diametreMm: v })}
+              />
+            </div>
+          ) : null}
+
+          {semelle.showInlineLengthAndAncrageRow ? (
+            <FieldInput
+              label="Ancrage (m)"
+              value={x.ancrageStr}
+              onChange={(value) => onPatch({ ancrageStr: value })}
+              inputClass={inputClass}
+              placeholder="Ex: 0,4"
+              className="sm:col-span-2"
+            />
+          ) : null}
+
+          {semelle.showInlineDiffLengthAndAncrageRow ? (
+            <div className="grid grid-cols-1 gap-2 sm:col-span-2 sm:grid-cols-3">
+              <FieldInput
+                label="L. Barre a (m)"
+                value={x.semelleLongueurAStr ?? "0"}
+                onChange={(value) => onPatch({ semelleLongueurAStr: value })}
+                inputClass={inputClass}
+                placeholder="Ex: 2,4"
+              />
+              <FieldInput
+                label="L. Barre b (m)"
+                value={x.semelleLongueurBStr ?? "0"}
+                onChange={(value) => onPatch({ semelleLongueurBStr: value })}
+                inputClass={inputClass}
+                placeholder="Ex: 2,4"
+              />
+              <FieldInput
+                label="Ancrage (m)"
+                value={x.ancrageStr}
+                onChange={(value) => onPatch({ ancrageStr: value })}
+                inputClass={inputClass}
+                placeholder="Ex: 0,4"
+              />
+            </div>
+          ) : null}
+        </>
+      ) : null}
+
+      {base.isSlab ? (
+        <>
+          <div className="grid grid-cols-2 gap-2 sm:col-span-2">
+            <SelectDropdown
+              label="Type de nappe"
+              value={slab.slabNappeShown}
+              onChange={(v) => onPatch({ barreCategorie: v })}
+              options={SLAB_NAPPES}
+              getOptionLabel={getNappeLabel}
+            />
+
+            <SelectDropdown
+              label="Méthode de calcul"
+              value={slab.slabCalcMethodValue}
+              onChange={(v) => onPatch({ slabCalcMethod: v })}
+              options={SLAB_CALC_METHODS}
+              getOptionLabel={getSlabCalcMethodLabel}
+            />
           </div>
-        ) : (
+
           <div className="flex flex-col sm:col-span-2">
-            <BarreCategorieDropdown value={selectedCategorie} onChange={(v) => onPatch({ barreCategorie: v })} />
+            <SelectDropdown
+              label="Re. entre a et b"
+              value={slab.slabRelationValue}
+              onChange={(v) =>
+                onPatch({
+                  slabRelation: v,
+                  slabSpacingMode: "ESPACEMENT",
+                  slabSpacingRelation: "EA_EQ_EB",
+                })
+              }
+              options={SLAB_RELATIONS}
+              getOptionLabel={getSlabRelationLabel}
+            />
           </div>
-        )
+
+          {slab.showSlabCombinedLengthRow ? (
+            <FieldInput
+              label="L. Barre a ou b (m)"
+              value={x.slabLongueurAStr ?? "0"}
+              onChange={(value) =>
+                onPatch({
+                  slabLongueurAStr: value,
+                  slabLongueurBStr: value,
+                })
+              }
+              inputClass={inputClass}
+              placeholder="Ex: 2,4"
+              className="sm:col-span-2"
+            />
+          ) : null}
+
+          {slab.showSlabSeparateLengthRow ? (
+            <div className="grid grid-cols-1 gap-2 sm:col-span-2 sm:grid-cols-2">
+              <FieldInput
+                label="L. Barre a (m)"
+                value={x.slabLongueurAStr ?? "0"}
+                onChange={(value) => onPatch({ slabLongueurAStr: value })}
+                inputClass={inputClass}
+                placeholder="Ex: 2,4"
+              />
+              <FieldInput
+                label="L. Barre b (m)"
+                value={x.slabLongueurBStr ?? "0"}
+                onChange={(value) => onPatch({ slabLongueurBStr: value })}
+                inputClass={inputClass}
+                placeholder="Ex: 2,4"
+              />
+            </div>
+          ) : null}
+
+          <div className="grid grid-cols-1 gap-2 sm:col-span-2 sm:grid-cols-2">
+            {renderSlabLinearMetricInputs()}
+          </div>
+
+          {slab.showSlabSharedDiaAndCount ? (
+            <div className="grid grid-cols-1 gap-2 sm:col-span-2 sm:grid-cols-2">
+              <DiametreField
+                label="Di. a et b"
+                mms={safeMms}
+                value={base.diametreValue}
+                onChange={(v) => onPatch({ diametreMm: v })}
+              />
+              {!base.isDallePleine ? (
+                <FieldInput
+                  label="Nb. Barres a et b"
+                  value={x.nBarreStr}
+                  onChange={(value) => onPatch({ nBarreStr: value })}
+                  inputClass={inputClass}
+                  placeholder="Ex: 4"
+                  inputMode="numeric"
+                />
+              ) : null}
+            </div>
+          ) : null}
+
+          {slab.showSlabDualDiaAndCount ? (
+            <div className="grid grid-cols-1 gap-2 sm:col-span-2 sm:grid-cols-2 lg:grid-cols-4">
+              <DiametreField
+                label="Di. Fer a"
+                mms={safeMms}
+                value={slab.slabDiametreAValue}
+                onChange={(v) => onPatch({ slabDiametreAMm: v })}
+              />
+              {!slab.hideEarlySlabDualCountFieldsForDallePleine ? (
+                <FieldInput
+                  label="Nb. Barres a"
+                  value={x.slabNBarreAStr ?? "0"}
+                  onChange={(value) => onPatch({ slabNBarreAStr: value })}
+                  inputClass={inputClass}
+                  placeholder="Ex: 4"
+                  inputMode="numeric"
+                />
+              ) : null}
+              <DiametreField
+                label="Di. Fer b"
+                mms={safeMms}
+                value={slab.slabDiametreBValue}
+                onChange={(v) => onPatch({ slabDiametreBMm: v })}
+              />
+              {!slab.hideEarlySlabDualCountFieldsForDallePleine ? (
+                <FieldInput
+                  label="Nb. Barres b"
+                  value={x.slabNBarreBStr ?? "0"}
+                  onChange={(value) => onPatch({ slabNBarreBStr: value })}
+                  inputClass={inputClass}
+                  placeholder="Ex: 4"
+                  inputMode="numeric"
+                />
+              ) : null}
+            </div>
+          ) : null}
+
+          {slab.showSlabSpacingMode ? (
+            <div className="grid grid-cols-1 gap-2 sm:col-span-2 sm:grid-cols-2">
+              <SelectDropdown
+                label="Mode de calcul"
+                value={slab.slabSpacingModeValue}
+                onChange={(v) => onPatch({ slabSpacingMode: v })}
+                options={SLAB_SPACING_MODES}
+                getOptionLabel={getSlabSpacingModeLabel}
+              />
+              <SelectDropdown
+                label="Re. Es."
+                value={slab.slabSpacingRelationValue}
+                onChange={(v) => onPatch({ slabSpacingRelation: v })}
+                options={SLAB_SPACING_RELATIONS}
+                getOptionLabel={getSlabSpacingRelationLabel}
+              />
+            </div>
+          ) : null}
+
+          {slab.showSlabSharedSpacingInput ? (
+            <FieldInput
+              label="Es. a et b"
+              value={x.slabEspacementAStr ?? "0"}
+              onChange={(value) =>
+                onPatch({
+                  slabEspacementAStr: value,
+                  slabEspacementBStr: value,
+                })
+              }
+              inputClass={inputClass}
+              placeholder="Ex: 0,2"
+              className="sm:col-span-2"
+            />
+          ) : null}
+
+          {slab.showSlabDualSpacingInputs ? (
+            <div className="grid grid-cols-1 gap-2 sm:col-span-2 sm:grid-cols-2">
+              <FieldInput
+                label="Es. a"
+                value={x.slabEspacementAStr ?? "0"}
+                onChange={(value) => onPatch({ slabEspacementAStr: value })}
+                inputClass={inputClass}
+                placeholder="Ex: 0,2"
+              />
+              <FieldInput
+                label="Es. b"
+                value={x.slabEspacementBStr ?? "0"}
+                onChange={(value) => onPatch({ slabEspacementBStr: value })}
+                inputClass={inputClass}
+                placeholder="Ex: 0,2"
+              />
+            </div>
+          ) : null}
+
+          {slab.showSlabSharedNbCadreInput || slab.showSlabModeAndSharedNbBarRow ? (
+            <FieldInput
+              label="Nb. Barres a et b"
+              value={x.slabNbCadreAStr ?? "0"}
+              onChange={(value) =>
+                onPatch({
+                  slabNbCadreAStr: value,
+                  slabNbCadreBStr: value,
+                })
+              }
+              inputClass={inputClass}
+              placeholder="Ex: 10"
+              inputMode="numeric"
+              className="sm:col-span-2"
+            />
+          ) : null}
+
+          {slab.showSlabDualNbCadreInputs || slab.showSlabModeAndDualNbBarRow ? (
+            <div className="grid grid-cols-1 gap-2 sm:col-span-2 sm:grid-cols-2">
+              <FieldInput
+                label="Nb. Barres a"
+                value={x.slabNbCadreAStr ?? "0"}
+                onChange={(value) => onPatch({ slabNbCadreAStr: value })}
+                inputClass={inputClass}
+                placeholder="Ex: 10"
+                inputMode="numeric"
+              />
+              <FieldInput
+                label="Nb. Barres b"
+                value={x.slabNbCadreBStr ?? "0"}
+                onChange={(value) => onPatch({ slabNbCadreBStr: value })}
+                inputClass={inputClass}
+                placeholder="Ex: 10"
+                inputMode="numeric"
+              />
+            </div>
+          ) : null}
+        </>
       ) : null}
 
-      <div className="flex flex-col">
-        <DiametreDropdown label="Diamètre" mms={safeMms} value={x.diametreMm} onChange={(v) => onPatch({ diametreMm: v })} />
-      </div>
-
-      <div className="flex flex-col">
-        <label className="text-sm font-semibold text-gray-700 mb-1">N.barre</label>
-        <input
-          className={inputClass}
-          value={x.nBarreStr}
-          onChange={(e) => onPatch({ nBarreStr: e.target.value })}
-          placeholder="Ex: 4"
-          inputMode="numeric"
+      {base.showBarreOptions && !base.isSemelle && !base.isSlab ? (
+        <BarreSteelSection
+          showLitField={base.showLitField}
+          barreCategorieValue={base.barreCategorieValue}
+          litValue={base.litValue}
+          inputClass={inputClass}
+          onChange={(value) => onPatch({ barreCategorie: value })}
         />
-      </div>
-
-      {showBarreOptions ? (
-        <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-700 mb-1">Longueur de barre (m)</label>
-          <input
-            className={inputClass}
-            value={x.longueurStr}
-            onChange={(e) => onPatch({ longueurStr: e.target.value })}
-            placeholder="Ex: 6,5"
-            inputMode="decimal"
-          />
-        </div>
-      ) : (
-        <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-700 mb-1">Attente barre (m)</label>
-          <input
-            className={inputClass}
-            value={x.attenteStr}
-            onChange={(e) => onPatch({ attenteStr: e.target.value })}
-            placeholder="Ex: 0,6"
-            inputMode="decimal"
-          />
-        </div>
-      )}
-
-      {(!showBarreOptions || showAncrageField) ? (
-        <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-700 mb-1">Ancrage (m)</label>
-          <input
-            className={inputClass}
-            value={x.ancrageStr}
-            onChange={(e) => onPatch({ ancrageStr: e.target.value })}
-            placeholder="Ex: 0,4"
-            inputMode="decimal"
-          />
-        </div>
       ) : null}
 
-      <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-700 mb-1">Quantités de Fer (m)</label>
-          <input
-            className={[inputClass, "font-semibold"].join(" ")}
-            value={fmt(barreQteAuto)}
-            readOnly
-            aria-readonly="true"
-            style={blueAutoStyle}
+      {!base.isSemelle && !base.isSlab ? (
+        <>
+          <DiametreField
+            label="Di. Fer"
+            mms={safeMms}
+            value={base.diametreValue}
+            onChange={(v) => onPatch({ diametreMm: v })}
           />
-        </div>
 
-        <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-700 mb-1">N.T.Barre</label>
-          <input
-            className={[inputClass, "font-semibold"].join(" ")}
-            value={fmt(barreNTAuto)}
-            readOnly
-            aria-readonly="true"
-            style={blueAutoStyle}
+          <FieldInput
+            label="N.barre"
+            value={x.nBarreStr}
+            onChange={(value) => onPatch({ nBarreStr: value })}
+            inputClass={inputClass}
+            placeholder="Ex: 4"
+            inputMode="numeric"
           />
-        </div>
-      </div>
+
+          {base.showBarreOptions ? (
+            <FieldInput
+              label="L. de barre (m)"
+              value={x.longueurStr}
+              onChange={(value) => onPatch({ longueurStr: value })}
+              inputClass={inputClass}
+              placeholder="Ex: 6,5"
+            />
+          ) : (
+            <FieldInput
+              label="Attente barre (m)"
+              value={x.attenteStr}
+              onChange={(value) => onPatch({ attenteStr: value })}
+              inputClass={inputClass}
+              placeholder="Ex: 0,6"
+            />
+          )}
+
+          {base.showAncrageField ? (
+            <FieldInput
+              label="Ancrage (m)"
+              value={x.ancrageStr}
+              onChange={(value) => onPatch({ ancrageStr: value })}
+              inputClass={inputClass}
+              placeholder="Ex: 0,4"
+            />
+          ) : null}
+        </>
+      ) : null}
+
+      {semelle.semelleDualActive ? (
+        <ResultDualSection
+          inputClass={inputClass}
+          qteLabelA={semelleAuto.qteLabelA}
+          qteLabelB={semelleAuto.qteLabelB}
+          ntLabelA={semelleAuto.ntLabelA}
+          ntLabelB={semelleAuto.ntLabelB}
+          qteA={fmt(semelleAuto.dual.qteA)}
+          qteB={fmt(semelleAuto.dual.qteB)}
+          ntA={fmt(semelleAuto.dual.ntA)}
+          ntB={fmt(semelleAuto.dual.ntB)}
+        />
+      ) : (
+        <ResultSingleSection
+          inputClass={inputClass}
+          qteValue={fmt(barreAuto.qte)}
+          ntValue={fmt(barreAuto.nt)}
+        />
+      )}
     </div>
   );
 }

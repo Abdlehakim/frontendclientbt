@@ -109,7 +109,7 @@ export default function ExtraBoxCard({
   const modeBtnInactive = "bg-white text-slate-600";
 
   return (
-    <div className={["h-100 md:col-span-4 rounded-lg border p-4", "border-slate-200 bg-slate-50/60"].join(" ")}>
+    <div className={["h-120 md:col-span-4 rounded-lg border p-4", "border-slate-200 bg-slate-50/60"].join(" ")}>
       <div className="flex items-center justify-between mb-3">
         <div className="text-sm font-semibold text-slate-900">{titleLabel}</div>
         <button

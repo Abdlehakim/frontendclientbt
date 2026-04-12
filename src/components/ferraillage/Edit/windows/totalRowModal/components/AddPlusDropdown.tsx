@@ -82,25 +82,6 @@ function usePortalPos(open: boolean, btnRef: RefObject<HTMLElement | null>) {
   return pos;
 }
 
-function PlusIcon() {
-  return (
-    <svg
-      stroke="currentColor"
-      fill="none"
-      strokeWidth="2"
-      viewBox="0 0 24 24"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      height="16"
-      width="16"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="M12 5v14" />
-      <path d="M5 12h14" />
-    </svg>
-  );
-}
-
 export default function AddPlusDropdown({
   onAddCadre,
   onAddBarre,
@@ -198,9 +179,6 @@ export default function AddPlusDropdown({
                   className="w-full px-3 py-2 text-sm text-left flex items-center justify-between gap-2 text-slate-700 hover:bg-emerald-100 hover:text-emerald-800"
                 >
                   <span className="truncate">{it.label}</span>
-                  <span className="inline-flex h-4 w-4 items-center justify-center rounded-sm border border-emerald-300 text-emerald-600">
-                    <PlusIcon />
-                  </span>
                 </button>
               ))}
             </div>,

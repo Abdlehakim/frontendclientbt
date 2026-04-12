@@ -3,13 +3,17 @@ import { FaArrowLeft, FaArrowRight } from "react-icons/fa6";
 
 type PageItem = number | "...";
 
-interface TablePaginationProps {
+interface DotsPaginationProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (pageNumber: number) => void;
 }
 
-export default function TablePagination({ currentPage, totalPages, onPageChange }: TablePaginationProps) {
+export default function DotsPagination({
+  currentPage,
+  totalPages,
+  onPageChange,
+}: DotsPaginationProps) {
   const safeTotal = Math.max(totalPages, 1);
   const safeCurrent = Math.min(Math.max(currentPage, 1), safeTotal);
 
@@ -52,6 +56,7 @@ export default function TablePagination({ currentPage, totalPages, onPageChange 
     push(cp + 1);
     push("...");
     push(tp);
+
     return out;
   }, [safeCurrent, safeTotal]);
 
@@ -59,47 +64,60 @@ export default function TablePagination({ currentPage, totalPages, onPageChange 
   const nextDisabled = safeCurrent >= safeTotal || safeTotal <= 1;
 
   return (
-    <div className="flex justify-center items-center gap-2 w-full h-8">
+    <div className="flex justify-center items-center gap-3 px-8">
       <button
         type="button"
         disabled={prevDisabled}
         onClick={() => goTo(safeCurrent - 1)}
         className={`flex items-center gap-1 ${
-          prevDisabled ? "opacity-20 " : "text-(--primary) hover:opacity-90"
+          prevDisabled
+            ? "opacity-20 "
+            : "text-(--primary) hover:opacity-90"
         }`}
       >
         <FaArrowLeft />
-        <span className="text-xs font-normal">avant</span>
       </button>
 
-      {pages.map((p, idx) =>
-        p === "..." ? (
-          <span key={`dots-${idx}`} className="text-xs select-none">
-            ...
-          </span>
-        ) : (
-          <button
-            key={p}
-            type="button"
-            onClick={() => goTo(p)}
-            className={`text-xs rounded w-6 h-6 flex justify-center items-center ${
-              safeCurrent === p ? "bg-(--primary) text-white" : "text-(--primary) hover:bg-(--primary)/10"
-            }`}
-          >
-            {p}
-          </button>
-        )
-      )}
+      <div className="flex items-center gap-2">
+        {pages.map((p, idx) =>
+          p === "..." ? (
+            <span
+              key={`dots-${idx}`}
+              className="flex items-center gap-1 px-1 select-none"
+              aria-hidden="true"
+            >
+              <span className="w-1 h-1 rounded-full bg-(--primary)/50" />
+              <span className="w-1 h-1 rounded-full bg-(--primary)/50" />
+              <span className="w-1 h-1 rounded-full bg-(--primary)/50" />
+            </span>
+          ) : (
+            <button
+              key={p}
+              type="button"
+              onClick={() => goTo(p)}
+              aria-label={`Aller à la page ${p}`}
+              aria-current={safeCurrent === p ? "page" : undefined}
+              className={`flex items-center justify-center rounded-full transition-all ${
+                safeCurrent === p
+                  ? "w-3 h-3 bg-(--primary)"
+                  : "w-2.5 h-2.5 bg-(--primary)/35 hover:bg-(--primary)/70"
+              }`}
+              title={`Page ${p}`}
+            />
+          )
+        )}
+      </div>
 
       <button
         type="button"
         disabled={nextDisabled}
         onClick={() => goTo(safeCurrent + 1)}
         className={`flex items-center gap-1 ${
-          nextDisabled ? "opacity-20 " : "text-(--primary) hover:opacity-90"
+          nextDisabled
+            ? "opacity-20 "
+            : "text-(--primary) hover:opacity-90"
         }`}
       >
-        <span className="text-xs font-normal">suivant</span>
         <FaArrowRight />
       </button>
     </div>

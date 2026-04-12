@@ -59,7 +59,7 @@ export default function DiametreDropdown({
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="truncate">{`Fer de ${value}`}</span>
+        <span className="truncate">{`Fer ${value}`}</span>
         {open ? <IoIosArrowDropup className="shrink-0" size={18} /> : <IoIosArrowDropdown className="shrink-0" size={18} />}
       </button>
 
@@ -106,7 +106,7 @@ export default function DiametreDropdown({
                     >
                       <CheckIcon />
                     </span>
-                    <span className="truncate">{`Fer de ${mm}`}</span>
+                    <span className="truncate">{`Fer ${mm}`}</span>
                   </button>
                 );
               })}

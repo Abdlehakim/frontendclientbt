@@ -20,10 +20,23 @@ export default function DesignationDropdown({
   const [open, setOpen] = useState(false);
   const pos = usePortalPos(open, btnRef);
 
-  const DEFAULTS = useMemo(
-    () => ["Poteaux","Longrines", "Raidisseurs", "Linteaux", "Chaînages", "Poutres", "Nervures"],
-    [],
-  );
+const DEFAULTS = useMemo(
+  () => [
+    "Poteaux",
+    "Longrines",
+    "Semelles",
+    "Raidisseurs",
+    "Linteaux",
+    "Chaînages",
+    "Poutres",
+    "Nervures",
+    "Dalle pleine",
+    "Chape",
+    "Radier",
+    "Voile",
+  ],
+  [],
+);
 
   const OPTIONS = useMemo(() => {
     const v = (value ?? "").trim();
