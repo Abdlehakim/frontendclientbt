@@ -1,6 +1,6 @@
-import type { BarreCategorie } from "../../config/formeBarreOptions";
-import { BARRE_CATEGORIES } from "../../config/formeBarreOptions";
-import SelectDropdown from "../common/SelectDropdown";
+import type { BarreCategorie } from "../../../config/formeBarreOptions";
+import { BARRE_CATEGORIES } from "../../../config/formeBarreOptions";
+import SelectDropdown from "../../common/SelectDropdown";
 
 export default function BarreSteelSection({
   showLitField,

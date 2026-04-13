@@ -1,65 +1,49 @@
-import SelectDropdown from "../common/SelectDropdown";
-import FieldInput from "../common/FieldInput";
-import DiametreField from "../common/DiametreField";
+import type { FormeState } from "../../types";
 import {
   SEMELLE_NAPPES,
   SEMELLE_RELATIONS,
-  type SemelleNappe,
-  type SemelleRelation,
 } from "../../config/formeBarreOptions";
 import {
   getNappeLabel,
   getSemelleRelationLabel,
 } from "../../config/formeBarreLabels";
+import DiametreField from "../common/DiametreField";
+import FieldInput from "../common/FieldInput";
+import SelectDropdown from "../common/SelectDropdown";
+import type { FormeBarreBaseView, FormeBarrePatch, SemelleView } from "./FormeBarreFields.types";
 
-export default function SemelleHeaderSection({
-  semelleNappeShown,
-  semelleRelationValue,
-  isChaise,
-  showSemelleRelationAndSharedLengthRow,
-  showSemelleCombinedLengthAnchorDiaRow,
-  showInlineLengthAndAncrageRow,
-  showInlineDiffLengthAndAncrageRow,
-  diametreValue,
+export default function SemelleFields({
+  x,
+  base,
+  semelle,
   safeMms,
   inputClass,
-  semelleLongueurAStr,
-  semelleLongueurBStr,
-  ancrageStr,
   onPatch,
 }: {
-  semelleNappeShown: SemelleNappe;
-  semelleRelationValue: SemelleRelation;
-  isChaise: boolean;
-  showSemelleRelationAndSharedLengthRow: boolean;
-  showSemelleCombinedLengthAnchorDiaRow: boolean;
-  showInlineLengthAndAncrageRow: boolean;
-  showInlineDiffLengthAndAncrageRow: boolean;
-  diametreValue: number;
+  x: FormeState;
+  base: FormeBarreBaseView;
+  semelle: SemelleView;
   safeMms: number[];
   inputClass: string;
-  semelleLongueurAStr: string;
-  semelleLongueurBStr: string;
-  ancrageStr: string;
-  onPatch: (patch: Record<string, unknown>) => void;
+  onPatch: FormeBarrePatch;
 }) {
   return (
     <>
-      <div className="flex flex-col sm:col-span-2">
+      <div className="flex flex-col">
         <SelectDropdown
           label="Type de nappe"
-          value={semelleNappeShown}
+          value={semelle.semelleNappeShown}
           onChange={(v) => onPatch({ barreCategorie: v })}
           options={SEMELLE_NAPPES}
           getOptionLabel={getNappeLabel}
         />
       </div>
 
-      {!isChaise && !showSemelleRelationAndSharedLengthRow ? (
+      {!semelle.isChaise && !semelle.showSemelleRelationAndSharedLengthRow ? (
         <div className="flex flex-col sm:col-span-2">
           <SelectDropdown
             label="Re. entre a et b"
-            value={semelleRelationValue}
+            value={semelle.semelleRelationValue}
             onChange={(v) => onPatch({ semelleRelation: v })}
             options={SEMELLE_RELATIONS}
             getOptionLabel={getSemelleRelationLabel}
@@ -67,19 +51,21 @@ export default function SemelleHeaderSection({
         </div>
       ) : null}
 
-      {showSemelleRelationAndSharedLengthRow ? (
-        <div className="grid grid-cols-1 gap-2 sm:col-span-2 sm:grid-cols-2">
-          <SelectDropdown
-            label="Re. entre a et b"
-            value={semelleRelationValue}
-            onChange={(v) => onPatch({ semelleRelation: v })}
-            options={SEMELLE_RELATIONS}
-            getOptionLabel={getSemelleRelationLabel}
-          />
+      {semelle.showSemelleRelationAndSharedLengthRow ? (
+        <>
+          <div className="flex flex-col">
+            <SelectDropdown
+              label="Re. entre a et b"
+              value={semelle.semelleRelationValue}
+              onChange={(v) => onPatch({ semelleRelation: v })}
+              options={SEMELLE_RELATIONS}
+              getOptionLabel={getSemelleRelationLabel}
+            />
+          </div>
 
           <FieldInput
             label="L. Barre a ou b (m)"
-            value={semelleLongueurAStr}
+            value={x.semelleLongueurAStr ?? "0"}
             onChange={(value) =>
               onPatch({
                 semelleLongueurAStr: value,
@@ -89,14 +75,14 @@ export default function SemelleHeaderSection({
             inputClass={inputClass}
             placeholder="Ex: 2,4"
           />
-        </div>
+        </>
       ) : null}
 
-      {showSemelleCombinedLengthAnchorDiaRow ? (
-        <div className="grid grid-cols-1 gap-2 sm:col-span-2 sm:grid-cols-2">
+      {semelle.showSemelleCombinedLengthAnchorDiaRow ? (
+        <>
           <FieldInput
             label="Ancrage (m)"
-            value={ancrageStr}
+            value={x.ancrageStr}
             onChange={(value) => onPatch({ ancrageStr: value })}
             inputClass={inputClass}
             placeholder="Ex: 0,4"
@@ -105,16 +91,16 @@ export default function SemelleHeaderSection({
           <DiametreField
             label="Di. a et b"
             mms={safeMms}
-            value={diametreValue}
+            value={base.diametreValue}
             onChange={(v) => onPatch({ diametreMm: v })}
           />
-        </div>
+        </>
       ) : null}
 
-      {showInlineLengthAndAncrageRow ? (
+      {semelle.showInlineLengthAndAncrageRow ? (
         <FieldInput
           label="Ancrage (m)"
-          value={ancrageStr}
+          value={x.ancrageStr}
           onChange={(value) => onPatch({ ancrageStr: value })}
           inputClass={inputClass}
           placeholder="Ex: 0,4"
@@ -122,33 +108,33 @@ export default function SemelleHeaderSection({
         />
       ) : null}
 
-      {showInlineDiffLengthAndAncrageRow ? (
-        <div className="grid grid-cols-1 gap-2 sm:col-span-2 sm:grid-cols-3">
+      {semelle.showInlineDiffLengthAndAncrageRow ? (
+        <>
           <FieldInput
             label="L. Barre a (m)"
-            value={semelleLongueurAStr}
+            value={x.semelleLongueurAStr ?? "0"}
             onChange={(value) => onPatch({ semelleLongueurAStr: value })}
             inputClass={inputClass}
             placeholder="Ex: 2,4"
           />
-
           <FieldInput
             label="L. Barre b (m)"
-            value={semelleLongueurBStr}
+            value={x.semelleLongueurBStr ?? "0"}
             onChange={(value) => onPatch({ semelleLongueurBStr: value })}
             inputClass={inputClass}
             placeholder="Ex: 2,4"
           />
-
           <FieldInput
             label="Ancrage (m)"
-            value={ancrageStr}
+            value={x.ancrageStr}
             onChange={(value) => onPatch({ ancrageStr: value })}
             inputClass={inputClass}
             placeholder="Ex: 0,4"
+            className="sm:col-span-2"
           />
-        </div>
+        </>
       ) : null}
     </>
   );
 }
+

@@ -134,7 +134,9 @@ function computeCadrePerimetreNum(forme: Exclude<RowForme, "BARRE">, longueur: n
 }
 
 function normalizePayloadDiameters(payload: TotalRowModalPayload, mms: number[]) {
-  const pick = (d: number) => (mms.includes(d) ? d : mms[0] ?? d);
+  const fallbackDia = mms[0] ?? 6;
+  const pick = (d: number | null | undefined) =>
+    typeof d === "number" && mms.includes(d) ? d : fallbackDia;
 
   const extraFormes = (payload.extraFormes ?? []).map((x) => ({
     ...x,
@@ -146,7 +148,15 @@ function normalizePayloadDiameters(payload: TotalRowModalPayload, mms: number[])
     diametreMm: pick(b.diametreMm),
   }));
 
-  return { ...payload, diametreMm: pick(payload.diametreMm), extraFormes, extraBoxes };
+  return {
+    ...payload,
+    typeName: payload.typeName ?? "",
+    forme: payload.forme ?? "BARRE",
+    nb: payload.nb ?? null,
+    diametreMm: pick(payload.diametreMm),
+    extraFormes,
+    extraBoxes,
+  };
 }
 
 function computeQtyPoidsByMmFromPayload(payloadIn: TotalRowModalPayload, mms: number[]) {

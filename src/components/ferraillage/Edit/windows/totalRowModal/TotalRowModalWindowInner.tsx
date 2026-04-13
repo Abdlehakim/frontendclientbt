@@ -1,45 +1,68 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { createPortal } from "react-dom";
-import { CiCircleRemove } from "react-icons/ci";
-import { IoInformationCircleOutline } from "react-icons/io5";
-import DotsPagination from "@/components/DotsPagination";
 
 import type {
   Card,
   ExtraBoxKind,
-  ExtraBoxPayload,
   ExtraBoxState,
-  ExtraFormePayload,
+  FormeKind,
   FormeState,
   TotalRowModalPayload,
 } from "./types";
 import {
   clamp,
-  formeNeedsParams,
   formeValid,
-  makeId,
   parseNonNegativeInt,
   parseNonNegativeNumber,
   parsePositiveInt,
   parsePositiveNumber,
-  resetFieldsForForme,
 } from "./utils";
 import {
-  AddPlusDropdown,
-  DesignationDropdown,
   ExtraBoxCard,
-  FormeBarre,
   FormeCard,
 } from "./components";
-import RecapPanel, { type RecapData } from "./components/RecapPanel";
-import FormeBarreAbbreviationsModal from "./components/FormeBarreAbbreviationsModal";
-
-type FormeKind = NonNullable<TotalRowModalPayload["forme"]>;
-type SemelleRelation = NonNullable<FormeState["semelleRelation"]>;
-type SlabCalcMethod = NonNullable<FormeState["slabCalcMethod"]>;
-type SlabRelation = NonNullable<FormeState["slabRelation"]>;
-type SlabSpacingMode = NonNullable<FormeState["slabSpacingMode"]>;
-type SlabSpacingRelation = NonNullable<FormeState["slabSpacingRelation"]>;
+import {
+  computeSlabQte,
+  computeSpecialSlabSpacingRecapMetrics,
+} from "./calculations/recapCalculations";
+import {
+  computeCadrePerimetre,
+  computeExtraPerimetre,
+} from "./calculations/shapeCalculations";
+import RecapPanel, { type RecapData } from "./components/recap/RecapPanel";
+import FormeBarreAbbreviationsModal from "./components/formeBarre/FormeBarreAbbreviationsModal";
+import BarreCard from "./components/modal/BarreCard";
+import ModalFooter from "./components/modal/ModalFooter";
+import ModalHeader from "./components/modal/ModalHeader";
+import ModalTopFields from "./components/modal/ModalTopFields";
+import { buildInitialOrder, insertCardAtEndOfCurrentPage } from "./state/cardOrder";
+import {
+  buildInitialExtraBoxes,
+  createExtraBoxState,
+  mergeExtraBoxState,
+} from "./state/extraBoxStateFactory";
+import {
+  buildInitialFormes,
+  createFormeState,
+  mergeFormeState,
+} from "./state/formeStateFactory";
+import {
+  asObjectRecord,
+  asSemelleRelation,
+  asSlabCalcMethod,
+  asSlabRelation,
+  asSlabSpacingMode,
+  asSlabSpacingRelation,
+  asString,
+  asTrimmedString,
+  hasAnyValue,
+  isFormeKind,
+  isSlabDesignationValue,
+  normalizeDesignation,
+  normalizeSlabSpacingRelationValue,
+} from "./state/guards";
+import { isSemelleBarreValid, isSlabBarreValid } from "./state/validators";
+import { buildTotalRowModalPayload } from "./state/payloadMapper";
 
 type ModalState = {
   extraBoxes: ExtraBoxState[];
@@ -47,681 +70,6 @@ type ModalState = {
   cardOrder: Card[];
   page: number;
 };
-
-const SEMELLE_RELATIONS: readonly SemelleRelation[] = [
-  "ab_equal_same_if",
-  "ab_equal_diff_if",
-  "ab_diff_same_if",
-  "ab_diff_diff_if",
-];
-
-const SLAB_RELATIONS: readonly SlabRelation[] = [
-  "ab_equal_same_if",
-  "ab_equal_diff_if",
-  "ab_diff_same_if",
-  "ab_diff_diff_if",
-];
-
-const SLAB_SPACING_MODES: readonly SlabSpacingMode[] = [
-  "ESPACEMENT",
-  "NB_CADRE",
-];
-
-const SLAB_SPACING_RELATIONS: readonly SlabSpacingRelation[] = [
-  "EA_EQ_EB",
-  "EA_NE_EB",
-];
-
-const SLAB_DESIGNATIONS = ["dalle pleine", "chape", "radier"] as const;
-
-function isFormeKind(value: unknown): value is FormeKind {
-  return value === "BARRE" || value === "CARRE" || value === "CIRCULAIRE" || value === "RECTANGULAIRE";
-}
-
-function isSemelleRelation(value: unknown): value is SemelleRelation {
-  return typeof value === "string" && (SEMELLE_RELATIONS as readonly string[]).includes(value);
-}
-
-function isSlabCalcMethod(value: unknown): value is SlabCalcMethod {
-  return value === "SURFACE_TOTAL" || value === "SURFACE_TOTAL_PER_M2";
-}
-
-function isSlabRelation(value: unknown): value is SlabRelation {
-  return typeof value === "string" && (SLAB_RELATIONS as readonly string[]).includes(value);
-}
-
-function isSlabSpacingMode(value: unknown): value is SlabSpacingMode {
-  return typeof value === "string" && (SLAB_SPACING_MODES as readonly string[]).includes(value);
-}
-
-function isSlabSpacingRelation(value: unknown): value is SlabSpacingRelation {
-  return typeof value === "string" && (SLAB_SPACING_RELATIONS as readonly string[]).includes(value);
-}
-
-function asString(value: unknown, fallback = "0") {
-  return typeof value === "string" ? value : fallback;
-}
-
-function asTrimmedString(value: unknown, fallback = "") {
-  return typeof value === "string" ? value.trim() : fallback;
-}
-
-function asFiniteNumber(value: unknown, fallback: number) {
-  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
-}
-
-function asNullableFiniteNumber(value: unknown): number | null {
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
-}
-
-function asCadreCalcMode(value: unknown): "ESPACEMENT" | "NB_CADRE" {
-  return value === "NB_CADRE" ? "NB_CADRE" : "ESPACEMENT";
-}
-
-function asExtraCalcMode(value: unknown): "ESPACEMENT" | "NB" {
-  return value === "NB" ? "NB" : "ESPACEMENT";
-}
-
-function asSemelleRelation(value: unknown): SemelleRelation {
-  return isSemelleRelation(value) ? value : "ab_equal_same_if";
-}
-
-function asSlabCalcMethod(value: unknown): SlabCalcMethod {
-  return isSlabCalcMethod(value) ? value : "SURFACE_TOTAL";
-}
-
-function asSlabRelation(value: unknown): SlabRelation {
-  return isSlabRelation(value) ? value : "ab_equal_same_if";
-}
-
-function asSlabSpacingMode(value: unknown): SlabSpacingMode {
-  return isSlabSpacingMode(value) ? value : "ESPACEMENT";
-}
-
-function asSlabSpacingRelation(value: unknown): SlabSpacingRelation {
-  return isSlabSpacingRelation(value) ? value : "EA_EQ_EB";
-}
-
-function normalizeSlabSpacingRelationValue(value: unknown): SlabSpacingRelation {
-  const raw = typeof value === "string" ? value.trim() : "";
-
-  if (raw === "EA_NE_EB" || raw === "E_A_NE_E_B" || raw === "EA_NEQ_EB" || raw === "EA_NOT_EQ_EB") {
-    return "EA_NE_EB";
-  }
-
-  if (raw === "EA_EQ_EB" || raw === "E_A_EQ_E_B") {
-    return "EA_EQ_EB";
-  }
-
-  return "EA_EQ_EB";
-}
-
-function normalizeDesignation(value: unknown) {
-  return asTrimmedString(value, "").toLowerCase();
-}
-
-function isSlabDesignationValue(value: unknown) {
-  const normalized = normalizeDesignation(value);
-  return SLAB_DESIGNATIONS.includes(normalized as (typeof SLAB_DESIGNATIONS)[number]);
-}
-
-function asObjectRecord(value: unknown): Record<string, unknown> {
-  return value != null && typeof value === "object" ? (value as Record<string, unknown>) : {};
-}
-
-function pickFirst(source: Record<string, unknown>, keys: string[]) {
-  for (const key of keys) {
-    if (key in source) return source[key];
-  }
-  return undefined;
-}
-
-function readStringish(source: Record<string, unknown>, keys: string[], fallback = "0") {
-  const value = pickFirst(source, keys);
-  if (typeof value === "string") return value;
-  if (value == null) return fallback;
-  return String(value);
-}
-
-function readNullableFiniteNumber(source: Record<string, unknown>, keys: string[]) {
-  return asNullableFiniteNumber(pickFirst(source, keys));
-}
-
-function hasAnyValue(source: Record<string, unknown>, keys: string[]) {
-  return keys.some((key) => {
-    const value = source[key];
-    return value !== undefined && value !== null && value !== "";
-  });
-}
-
-function computeSlabQte(calcMethod: SlabCalcMethod, surfaceStr: string, qtePerM2Str: string) {
-  const surface = parseNonNegativeNumber(surfaceStr);
-  const qtePerM2 = parseNonNegativeNumber(qtePerM2Str);
-
-  const hasAny = surface != null || qtePerM2 != null;
-  if (!hasAny) return 0;
-
-  if (calcMethod === "SURFACE_TOTAL_PER_M2") {
-    return (surface ?? 0) * (qtePerM2 ?? 0);
-  }
-
-  return surface ?? 0;
-}
-
-function computeSlabSharedSpacingNT(
-  nbStr: string,
-  longueurBarreStr: string,
-  spacingStr: string,
-) {
-  const NB = parseNonNegativeInt(nbStr);
-  const L = parseNonNegativeNumber(longueurBarreStr);
-  const ES = parseNonNegativeNumber(spacingStr);
-
-  const hasAny = NB != null || L != null || ES != null;
-  if (!hasAny) return 0;
-
-  const nb = NB ?? 0;
-  const longueur = L ?? 0;
-  const espacement = ES ?? 0;
-
-  if (longueur <= 0 || espacement <= 0) return 0;
-
-  // User rule:
-  // N.T.Barre = (L. Barre a ou b / Es. a et b) x 2
-  return nb * ((longueur / espacement) * 2);
-}
-
-function computeSlabSharedSpacingQte(
-  nbStr: string,
-  longueurBarreStr: string,
-  spacingStr: string,
-  ancrageStr: string,
-) {
-  const nt = computeSlabSharedSpacingNT(nbStr, longueurBarreStr, spacingStr);
-  const longueur = parseNonNegativeNumber(longueurBarreStr) ?? 0;
-  const ancrage = parseNonNegativeNumber(ancrageStr) ?? 0;
-
-  if (nt <= 0 && longueur <= 0 && ancrage <= 0) return 0;
-
-  return nt * (longueur + ancrage);
-}
-
-function computeSlabDualSpacingNT(
-  nbStr: string,
-  longueurBarreStr: string,
-  spacingAStr: string,
-  spacingBStr: string,
-) {
-  const NB = parseNonNegativeInt(nbStr);
-  const L = parseNonNegativeNumber(longueurBarreStr);
-  const ESA = parseNonNegativeNumber(spacingAStr);
-  const ESB = parseNonNegativeNumber(spacingBStr);
-
-  const hasAny = NB != null || L != null || ESA != null || ESB != null;
-  if (!hasAny) return 0;
-
-  const nb = NB ?? 0;
-  const longueur = L ?? 0;
-  const espacementA = ESA ?? 0;
-  const espacementB = ESB ?? 0;
-
-  if (longueur <= 0) return 0;
-
-  const partA = espacementA > 0 ? longueur / espacementA : 0;
-  const partB = espacementB > 0 ? longueur / espacementB : 0;
-
-  // User rule:
-  // N.T.Barre = L. Barre a ou b / Es. a + L. Barre a ou b / Es. b when E a ≠ E b
-  return nb * (partA + partB);
-}
-
-function computeSlabDualSpacingQte(
-  nbStr: string,
-  longueurBarreStr: string,
-  spacingAStr: string,
-  spacingBStr: string,
-  ancrageStr: string,
-) {
-  const nt = computeSlabDualSpacingNT(nbStr, longueurBarreStr, spacingAStr, spacingBStr);
-  const longueur = parseNonNegativeNumber(longueurBarreStr) ?? 0;
-  const ancrage = parseNonNegativeNumber(ancrageStr) ?? 0;
-
-  if (nt <= 0 && longueur <= 0 && ancrage <= 0) return 0;
-
-  return nt * (longueur + ancrage);
-}
-
-function computeSpecialSlabSpacingRecapMetrics(params: {
-  nbStr: string;
-  longueurBarreStr: string;
-  ancrageStr: string;
-  spacingMode: SlabSpacingMode;
-  spacingRelation: SlabSpacingRelation;
-  calcMethod: SlabCalcMethod;
-  relation: SlabRelation;
-  spacingAStr: string;
-  spacingBStr: string;
-}) {
-  const {
-    nbStr,
-    longueurBarreStr,
-    ancrageStr,
-    spacingMode,
-    spacingRelation,
-    calcMethod,
-    relation,
-    spacingAStr,
-    spacingBStr,
-  } = params;
-
-  const isSurfaceTotal = calcMethod === "SURFACE_TOTAL";
-  const isEqualShared = relation === "ab_equal_same_if";
-  const normalizedSpacingRelation = normalizeSlabSpacingRelationValue(spacingRelation);
-
-  if (!isSurfaceTotal || !isEqualShared || spacingMode !== "ESPACEMENT") {
-    return null;
-  }
-
-  if (normalizedSpacingRelation === "EA_EQ_EB") {
-    const nt = computeSlabSharedSpacingNT(nbStr, longueurBarreStr, spacingAStr);
-    const qtyM = computeSlabSharedSpacingQte(nbStr, longueurBarreStr, spacingAStr, ancrageStr);
-    return { nt, qtyM };
-  }
-
-  if (normalizedSpacingRelation === "EA_NE_EB") {
-    const nt = computeSlabDualSpacingNT(nbStr, longueurBarreStr, spacingAStr, spacingBStr);
-    const qtyM = computeSlabDualSpacingQte(nbStr, longueurBarreStr, spacingAStr, spacingBStr, ancrageStr);
-    return { nt, qtyM };
-  }
-
-  return null;
-}
-
-function isSemelleBarreValid(source: Partial<FormeState>) {
-  const nappe = asTrimmedString(source.barreCategorie, "") || "Nappe inférieur";
-
-  if (nappe === "Chaise") {
-    return (
-      parsePositiveInt(asString(source.nBarreStr)) != null &&
-      parsePositiveNumber(asString(source.longueurStr)) != null
-    );
-  }
-
-  const relation = asSemelleRelation(source.semelleRelation);
-
-  if (relation === "ab_equal_same_if") {
-    return (
-      parsePositiveInt(asString(source.nBarreStr)) != null &&
-      parsePositiveNumber(asString(source.semelleLongueurAStr)) != null
-    );
-  }
-
-  if (relation === "ab_equal_diff_if") {
-    return (
-      parsePositiveInt(asString(source.semelleNBarreAStr)) != null &&
-      parsePositiveInt(asString(source.semelleNBarreBStr)) != null &&
-      parsePositiveNumber(asString(source.semelleLongueurAStr)) != null
-    );
-  }
-
-  if (relation === "ab_diff_same_if") {
-    return (
-      parsePositiveInt(asString(source.nBarreStr)) != null &&
-      parsePositiveNumber(asString(source.semelleLongueurAStr)) != null &&
-      parsePositiveNumber(asString(source.semelleLongueurBStr)) != null
-    );
-  }
-
-  return (
-    parsePositiveInt(asString(source.semelleNBarreAStr)) != null &&
-    parsePositiveInt(asString(source.semelleNBarreBStr)) != null &&
-    parsePositiveNumber(asString(source.semelleLongueurAStr)) != null &&
-    parsePositiveNumber(asString(source.semelleLongueurBStr)) != null
-  );
-}
-
-function isSlabBarreValid(source: Partial<FormeState>) {
-  const surface = parsePositiveNumber(asString(source.slabSurfaceStr));
-  if (surface == null) return false;
-
-  const calcMethod = asSlabCalcMethod(source.slabCalcMethod);
-  if (calcMethod === "SURFACE_TOTAL_PER_M2") {
-    return parsePositiveNumber(asString(source.slabQtePerM2Str)) != null;
-  }
-
-  return true;
-}
-
-function getResettableFormeFields(source: Partial<FormeState>) {
-  return {
-    nBarreStr: asString(source.nBarreStr),
-    longueurStr: asString(source.longueurStr),
-    attenteStr: asString(source.attenteStr),
-    largeurStr: asString(source.largeurStr),
-    rayonStr: asString(source.rayonStr),
-    espacementStr: asString(source.espacementStr),
-    perimetreStr: asString(source.perimetreStr),
-    slabSurfaceStr: asString(source.slabSurfaceStr),
-    slabQtePerM2Str: asString(source.slabQtePerM2Str),
-  };
-}
-
-function getSafeResetPatch(forme: FormeKind, source: Partial<FormeState>): Partial<FormeState> {
-  const base = getResettableFormeFields(source);
-  const raw = resetFieldsForForme(forme, base) as Record<string, unknown> | undefined;
-
-  return {
-    nBarreStr: asString(raw?.nBarreStr, base.nBarreStr),
-    longueurStr: asString(raw?.longueurStr, base.longueurStr),
-    attenteStr: asString(raw?.attenteStr, base.attenteStr),
-    largeurStr: asString(raw?.largeurStr, base.largeurStr),
-    rayonStr: asString(raw?.rayonStr, base.rayonStr),
-    espacementStr: asString(raw?.espacementStr, base.espacementStr),
-    perimetreStr: asString(raw?.perimetreStr, base.perimetreStr),
-    slabSurfaceStr: asString(raw?.slabSurfaceStr, base.slabSurfaceStr),
-    slabQtePerM2Str: asString(raw?.slabQtePerM2Str, base.slabQtePerM2Str),
-  };
-}
-
-function createFormeState(
-  forme: FormeKind,
-  fallbackDia: number,
-  source?: Partial<FormeState> & { id?: string },
-): FormeState {
-  const base: FormeState = {
-    id: typeof source?.id === "string" ? source.id : makeId(),
-    forme,
-    diametreMm: asFiniteNumber(source?.diametreMm, fallbackDia),
-    barreCategorie: asTrimmedString(source?.barreCategorie, ""),
-    nBarreStr: asString(source?.nBarreStr),
-    longueurStr: asString(source?.longueurStr),
-    largeurStr: asString(source?.largeurStr),
-    rayonStr: asString(source?.rayonStr),
-    ancrageStr: asString(source?.ancrageStr),
-    attenteStr: asString(source?.attenteStr),
-    perimetreStr: asString(source?.perimetreStr),
-    espacementStr: asString(source?.espacementStr),
-    cadreCalcMode: asCadreCalcMode(source?.cadreCalcMode),
-    nbCadreStr: asString(source?.nbCadreStr),
-
-    semelleRelation: asSemelleRelation(source?.semelleRelation),
-    semelleLongueurAStr: asString(source?.semelleLongueurAStr),
-    semelleLongueurBStr: asString(source?.semelleLongueurBStr),
-    semelleNBarreAStr: asString(source?.semelleNBarreAStr),
-    semelleNBarreBStr: asString(source?.semelleNBarreBStr),
-    semelleDiametreAMm: asNullableFiniteNumber(source?.semelleDiametreAMm),
-    semelleDiametreBMm: asNullableFiniteNumber(source?.semelleDiametreBMm),
-
-    slabCalcMethod: asSlabCalcMethod(source?.slabCalcMethod),
-    slabSurfaceStr: asString(source?.slabSurfaceStr),
-    slabQtePerM2Str: asString(source?.slabQtePerM2Str),
-    slabRelation: asSlabRelation(source?.slabRelation),
-    slabSpacingMode: asSlabSpacingMode(source?.slabSpacingMode),
-    slabSpacingRelation: asSlabSpacingRelation(source?.slabSpacingRelation),
-    slabLongueurAStr: asString(source?.slabLongueurAStr),
-    slabLongueurBStr: asString(source?.slabLongueurBStr),
-    slabDiametreAMm: asNullableFiniteNumber(source?.slabDiametreAMm),
-    slabDiametreBMm: asNullableFiniteNumber(source?.slabDiametreBMm),
-    slabNBarreAStr: asString(source?.slabNBarreAStr),
-    slabNBarreBStr: asString(source?.slabNBarreBStr),
-    slabEspacementAStr: asString(source?.slabEspacementAStr),
-    slabEspacementBStr: asString(source?.slabEspacementBStr),
-    slabNbCadreAStr: asString(source?.slabNbCadreAStr),
-    slabNbCadreBStr: asString(source?.slabNbCadreBStr),
-  };
-
-  return {
-    ...base,
-    ...getSafeResetPatch(forme, base),
-  };
-}
-
-function mergeFormeState(current: FormeState, patch: Partial<FormeState>, fallbackDia: number): FormeState {
-  const nextForme = isFormeKind(patch.forme) ? patch.forme : isFormeKind(current.forme) ? current.forme : "BARRE";
-
-  const nextDia =
-    typeof patch.diametreMm === "number" && Number.isFinite(patch.diametreMm)
-      ? patch.diametreMm
-      : typeof current.diametreMm === "number" && Number.isFinite(current.diametreMm)
-        ? current.diametreMm
-        : fallbackDia;
-
-  return createFormeState(nextForme, nextDia, {
-    ...current,
-    ...patch,
-    id: current.id,
-  });
-}
-
-function createExtraBoxState(
-  kind: ExtraBoxKind,
-  fallbackDia: number,
-  source?: Partial<ExtraBoxState> & { id?: string },
-): ExtraBoxState {
-  return {
-    id: typeof source?.id === "string" ? source.id : makeId(),
-    kind,
-    diametreMm: asFiniteNumber(source?.diametreMm, fallbackDia),
-    valueStr: asString(source?.valueStr),
-    longueurStr: asString(source?.longueurStr),
-    ancrageStr: asString(source?.ancrageStr),
-    perimetreStr: asString(source?.perimetreStr),
-    espacementStr: asString(source?.espacementStr),
-    extraCalcMode: asExtraCalcMode(source?.extraCalcMode),
-    nbExtraStr: asString(source?.nbExtraStr),
-  };
-}
-
-function mergeExtraBoxState(current: ExtraBoxState, patch: Partial<ExtraBoxState>, fallbackDia: number): ExtraBoxState {
-  return createExtraBoxState(current.kind, fallbackDia, {
-    ...current,
-    ...patch,
-    id: current.id,
-  });
-}
-
-function computeExtraPerimetre(kind: ExtraBoxKind, longueurStr: string, ancrageStr: string) {
-  const L = parseNonNegativeNumber(longueurStr);
-  const A = parseNonNegativeNumber(ancrageStr);
-  if (L == null && A == null) return null;
-  const l = L ?? 0;
-  const a = A ?? 0;
-  if (kind === "EPINGLE") return l + 2 * a;
-  return 2 * l + 2 * a;
-}
-
-function computeCadrePerimetre(
-  forme: FormeKind,
-  longueurStr: string,
-  largeurStr: string,
-  diamCercleStr: string,
-  ancrageStr: string,
-) {
-  const L = parseNonNegativeNumber(longueurStr);
-  const W = parseNonNegativeNumber(largeurStr);
-  const D = parseNonNegativeNumber(diamCercleStr);
-  const A = parseNonNegativeNumber(ancrageStr);
-
-  const hasAny = L != null || W != null || D != null || A != null;
-  if (!hasAny) return null;
-
-  const l = L ?? 0;
-  const w = W ?? 0;
-  const d = D ?? 0;
-  const a = A ?? 0;
-
-  if (forme === "CARRE") return 4 * l + 2 * a;
-  if (forme === "CIRCULAIRE") return d * Math.PI + 2 * a;
-  if (forme === "RECTANGULAIRE") return 2 * (l + w) + 2 * a;
-
-  return null;
-}
-
-function buildInitialExtraBoxes(
-  shouldHydrate: boolean,
-  initial: Partial<TotalRowModalPayload> | undefined,
-  initDia: number,
-): ExtraBoxState[] {
-  if (!shouldHydrate) return [];
-
-  if (Array.isArray(initial?.extraBoxes) && initial.extraBoxes.length) {
-    return initial.extraBoxes.map((b) =>
-      createExtraBoxState(b.kind, initDia, {
-        diametreMm: typeof b.diametreMm === "number" ? b.diametreMm : initDia,
-        valueStr: b.n == null ? "0" : String(b.n),
-        longueurStr: b.longueur == null ? "0" : String(b.longueur),
-        ancrageStr: b.ancrage == null ? "0" : String(b.ancrage),
-        perimetreStr: b.perimetre == null ? "0" : String(b.perimetre),
-        espacementStr: b.espacement == null ? "0" : String(b.espacement),
-        extraCalcMode: "ESPACEMENT",
-        nbExtraStr: "0",
-      }),
-    );
-  }
-
-  const out: ExtraBoxState[] = [];
-
-  if (initial?.epingle != null) {
-    out.push(
-      createExtraBoxState("EPINGLE", initDia, {
-        valueStr: String(initial.epingle ?? 0),
-      }),
-    );
-  }
-
-  if (initial?.etriers != null) {
-    out.push(
-      createExtraBoxState("ETRIERS", initDia, {
-        valueStr: String(initial.etriers ?? 0),
-      }),
-    );
-  }
-
-  return out;
-}
-
-function buildInitialFormes(
-  shouldHydrate: boolean,
-  initial: Partial<TotalRowModalPayload> | undefined,
-  initDia: number,
-): FormeState[] {
-  if (!shouldHydrate) return [];
-
-  const initialForme = isFormeKind(initial?.forme) ? initial.forme : null;
-  if (!initialForme) return [];
-
-  const initialRaw = asObjectRecord(initial);
-
-  const main = createFormeState(initialForme, initDia, {
-    diametreMm: typeof initial?.diametreMm === "number" ? initial.diametreMm : initDia,
-    barreCategorie: initial?.barreCategorie ?? "",
-    nBarreStr: initial?.nBarre == null ? "0" : String(initial.nBarre),
-    longueurStr: initial?.longueur == null ? "0" : String(initial.longueur),
-    largeurStr: initial?.largeur == null ? "0" : String(initial.largeur),
-    rayonStr: initial?.rayon == null ? "0" : String(initial.rayon),
-    ancrageStr: initial?.ancrage == null ? "0" : String(initial.ancrage),
-    attenteStr: initial?.attenteBarre == null ? "0" : String(initial.attenteBarre),
-    perimetreStr: initial?.perimetre == null ? "0" : String(initial.perimetre),
-    espacementStr: initial?.espacement == null ? "0" : String(initial.espacement),
-    cadreCalcMode: "ESPACEMENT",
-    nbCadreStr: "0",
-
-    semelleRelation: pickFirst(initialRaw, ["semelleRelation"]) as FormeState["semelleRelation"],
-    semelleLongueurAStr: readStringish(initialRaw, ["semelleLongueurAStr", "semelleLongueurA"]),
-    semelleLongueurBStr: readStringish(initialRaw, ["semelleLongueurBStr", "semelleLongueurB"]),
-    semelleNBarreAStr: readStringish(initialRaw, ["semelleNBarreAStr", "semelleNBarreA"]),
-    semelleNBarreBStr: readStringish(initialRaw, ["semelleNBarreBStr", "semelleNBarreB"]),
-    semelleDiametreAMm: readNullableFiniteNumber(initialRaw, ["semelleDiametreAMm", "semelleDiametreA"]),
-    semelleDiametreBMm: readNullableFiniteNumber(initialRaw, ["semelleDiametreBMm", "semelleDiametreB"]),
-
-    slabCalcMethod: initial?.slabCalcMethod,
-    slabSurfaceStr: initial?.slabSurface == null ? "0" : String(initial.slabSurface),
-    slabQtePerM2Str: initial?.slabQtePerM2 == null ? "0" : String(initial.slabQtePerM2),
-    slabRelation: pickFirst(initialRaw, ["slabRelation"]) as FormeState["slabRelation"],
-    slabSpacingMode: pickFirst(initialRaw, ["slabSpacingMode"]) as FormeState["slabSpacingMode"],
-    slabSpacingRelation: pickFirst(initialRaw, ["slabSpacingRelation"]) as FormeState["slabSpacingRelation"],
-    slabLongueurAStr: readStringish(initialRaw, ["slabLongueurAStr", "slabLongueurA"]),
-    slabLongueurBStr: readStringish(initialRaw, ["slabLongueurBStr", "slabLongueurB"]),
-    slabDiametreAMm: readNullableFiniteNumber(initialRaw, ["slabDiametreAMm", "slabDiametreA"]),
-    slabDiametreBMm: readNullableFiniteNumber(initialRaw, ["slabDiametreBMm", "slabDiametreB"]),
-    slabNBarreAStr: readStringish(initialRaw, ["slabNBarreAStr", "slabNBarreA"]),
-    slabNBarreBStr: readStringish(initialRaw, ["slabNBarreBStr", "slabNBarreB"]),
-    slabEspacementAStr: readStringish(initialRaw, ["slabEspacementAStr", "slabEspacementA"]),
-    slabEspacementBStr: readStringish(initialRaw, ["slabEspacementBStr", "slabEspacementB"]),
-    slabNbCadreAStr: readStringish(initialRaw, ["slabNbCadreAStr", "slabNbCadreA"]),
-    slabNbCadreBStr: readStringish(initialRaw, ["slabNbCadreBStr", "slabNbCadreB"]),
-  });
-
-  const extras = (initial?.extraFormes ?? []).map((x) => {
-    const forme = isFormeKind(x.forme) ? x.forme : "CARRE";
-    const raw = asObjectRecord(x);
-
-    return createFormeState(forme, initDia, {
-      diametreMm: typeof x.diametreMm === "number" ? x.diametreMm : initDia,
-      barreCategorie: x.barreCategorie ?? "",
-      nBarreStr: x.nBarre == null ? "0" : String(x.nBarre),
-      longueurStr: x.longueur == null ? "0" : String(x.longueur),
-      largeurStr: x.largeur == null ? "0" : String(x.largeur),
-      rayonStr: x.rayon == null ? "0" : String(x.rayon),
-      ancrageStr: x.ancrage == null ? "0" : String(x.ancrage),
-      attenteStr: x.attenteBarre == null ? "0" : String(x.attenteBarre),
-      perimetreStr: x.perimetre == null ? "0" : String(x.perimetre),
-      espacementStr: x.espacement == null ? "0" : String(x.espacement),
-      cadreCalcMode: "ESPACEMENT",
-      nbCadreStr: "0",
-
-      semelleRelation: pickFirst(raw, ["semelleRelation"]) as FormeState["semelleRelation"],
-      semelleLongueurAStr: readStringish(raw, ["semelleLongueurAStr", "semelleLongueurA"]),
-      semelleLongueurBStr: readStringish(raw, ["semelleLongueurBStr", "semelleLongueurB"]),
-      semelleNBarreAStr: readStringish(raw, ["semelleNBarreAStr", "semelleNBarreA"]),
-      semelleNBarreBStr: readStringish(raw, ["semelleNBarreBStr", "semelleNBarreB"]),
-      semelleDiametreAMm: readNullableFiniteNumber(raw, ["semelleDiametreAMm", "semelleDiametreA"]),
-      semelleDiametreBMm: readNullableFiniteNumber(raw, ["semelleDiametreBMm", "semelleDiametreB"]),
-
-      slabCalcMethod: x.slabCalcMethod,
-      slabSurfaceStr: x.slabSurface == null ? "0" : String(x.slabSurface),
-      slabQtePerM2Str: x.slabQtePerM2 == null ? "0" : String(x.slabQtePerM2),
-      slabRelation: pickFirst(raw, ["slabRelation"]) as FormeState["slabRelation"],
-      slabSpacingMode: pickFirst(raw, ["slabSpacingMode"]) as FormeState["slabSpacingMode"],
-      slabSpacingRelation: pickFirst(raw, ["slabSpacingRelation"]) as FormeState["slabSpacingRelation"],
-      slabLongueurAStr: readStringish(raw, ["slabLongueurAStr", "slabLongueurA"]),
-      slabLongueurBStr: readStringish(raw, ["slabLongueurBStr", "slabLongueurB"]),
-      slabDiametreAMm: readNullableFiniteNumber(raw, ["slabDiametreAMm", "slabDiametreA"]),
-      slabDiametreBMm: readNullableFiniteNumber(raw, ["slabDiametreBMm", "slabDiametreB"]),
-      slabNBarreAStr: readStringish(raw, ["slabNBarreAStr", "slabNBarreA"]),
-      slabNBarreBStr: readStringish(raw, ["slabNBarreBStr", "slabNBarreB"]),
-      slabEspacementAStr: readStringish(raw, ["slabEspacementAStr", "slabEspacementA"]),
-      slabEspacementBStr: readStringish(raw, ["slabEspacementBStr", "slabEspacementB"]),
-      slabNbCadreAStr: readStringish(raw, ["slabNbCadreAStr", "slabNbCadreA"]),
-      slabNbCadreBStr: readStringish(raw, ["slabNbCadreBStr", "slabNbCadreB"]),
-    });
-  });
-
-  return [main, ...extras];
-}
-
-function buildInitialOrder(extraBoxesInit: ExtraBoxState[], formesInit: FormeState[]): Card[] {
-  const out: Card[] = [];
-  for (const b of extraBoxesInit) out.push({ kind: "EXTRA", id: b.id });
-  for (const f of formesInit) out.push({ kind: "FORME", id: f.id });
-  return out;
-}
-
-function insertCardAtEndOfCurrentPage(order: Card[], page: number, perPage: number, card: Card) {
-  const prevTotalPages = Math.max(1, Math.ceil(order.length / perPage));
-  const currentPage = clamp(page, 1, prevTotalPages);
-
-  const currentStart = (currentPage - 1) * perPage;
-  const currentCount = order.slice(currentStart, currentStart + perPage).length;
-
-  const insertIndex = currentStart + currentCount;
-  const nextOrder = [...order.slice(0, insertIndex), card, ...order.slice(insertIndex)];
-
-  const nextTotalPages = Math.max(1, Math.ceil(nextOrder.length / perPage));
-  const nextPage = clamp(Math.floor(insertIndex / perPage) + 1, 1, nextTotalPages);
-
-  return { nextOrder, nextPage };
-}
 
 export default function TotalRowModalWindowInner({
   open,
@@ -1375,134 +723,19 @@ export default function TotalRowModalWindowInner({
   const submit = () => {
     if (!canSubmit) return;
 
-    const nb = parsePositiveInt(nbStr) ?? null;
-    const hauteur = showHauteurField ? parsePositiveNumber(hauteurStr) ?? null : null;
-    const isSlabMode = isSlabDesignationValue(designation);
-
-    const extraBoxesPayload: ExtraBoxPayload[] = extraBoxes.map((b) => ({
-      kind: b.kind,
-      diametreMm: b.diametreMm,
-      n: parseNonNegativeInt(asString(b.valueStr)) ?? null,
-      longueur: parseNonNegativeNumber(asString(b.longueurStr)) ?? null,
-      ancrage: parseNonNegativeNumber(asString(b.ancrageStr)) ?? null,
-      perimetre: computeExtraPerimetre(b.kind, asString(b.longueurStr), asString(b.ancrageStr)),
-      espacement: parseNonNegativeNumber(asString(b.espacementStr)) ?? null,
-    }));
-
-    const epingleVals = extraBoxesPayload
-      .filter((b) => b.kind === "EPINGLE")
-      .map((b) => b.n)
-      .filter((v): v is number => v != null);
-
-    const etriersVals = extraBoxesPayload
-      .filter((b) => b.kind === "ETRIERS")
-      .map((b) => b.n)
-      .filter((v): v is number => v != null);
-
-    const epingle = epingleVals.length ? epingleVals.reduce((a, b) => a + b, 0) : null;
-    const etriers = etriersVals.length ? etriersVals.reduce((a, b) => a + b, 0) : null;
-
-    const main = formes[0];
-    if (!main) return;
-
-    const mainForme: FormeKind = isFormeKind(main.forme) ? main.forme : "BARRE";
-    const mainDia =
-      typeof main.diametreMm === "number" && Number.isFinite(main.diametreMm) ? main.diametreMm : initDia;
-    const mainShow = formeNeedsParams(mainForme);
-
-    const mainNBarre =
-      mainForme === "BARRE" && !isSlabMode ? parsePositiveInt(asString(main.nBarreStr)) : null;
-
-    const mainLongueur =
-      mainForme === "BARRE" && isSlabMode
-        ? null
-        : mainForme === "BARRE" || mainForme === "CARRE" || mainForme === "RECTANGULAIRE"
-          ? parsePositiveNumber(asString(main.longueurStr))
-          : null;
-
-    const mainLargeur = mainForme === "RECTANGULAIRE" ? parsePositiveNumber(asString(main.largeurStr)) : null;
-    const mainRayon = mainForme === "CIRCULAIRE" ? parsePositiveNumber(asString(main.rayonStr)) : null;
-
-    const mainAncrage = isSlabMode ? null : parseNonNegativeNumber(asString(main.ancrageStr)) ?? null;
-    const mainAttenteBarre =
-      mainForme === "BARRE" && !isSlabMode ? (parseNonNegativeNumber(asString(main.attenteStr)) ?? null) : null;
-
-    const mainPerCalc = computeCadrePerimetre(
-      mainForme,
-      asString(main.longueurStr),
-      asString(main.largeurStr),
-      asString(main.rayonStr),
-      asString(main.ancrageStr),
-    );
-
-    const mainPerimetre = mainShow ? (mainPerCalc != null && mainPerCalc > 0 ? mainPerCalc : null) : null;
-    const mainEspacement = mainShow ? (parsePositiveNumber(asString(main.espacementStr)) ?? null) : null;
-
-    const extras: ExtraFormePayload[] = formes.slice(1).map((x) => {
-      const forme: FormeKind = isFormeKind(x.forme) ? x.forme : "CARRE";
-      const per = computeCadrePerimetre(
-        forme,
-        asString(x.longueurStr),
-        asString(x.largeurStr),
-        asString(x.rayonStr),
-        asString(x.ancrageStr),
-      );
-      const xShow = formeNeedsParams(forme);
-
-      return {
-        forme,
-        diametreMm:
-          typeof x.diametreMm === "number" && Number.isFinite(x.diametreMm) ? x.diametreMm : initDia,
-        barreCategorie: asTrimmedString(x.barreCategorie, "") || undefined,
-        nBarre: forme === "BARRE" && !isSlabMode ? parsePositiveInt(asString(x.nBarreStr)) : null,
-        longueur:
-          forme === "BARRE" && isSlabMode
-            ? null
-            : forme === "BARRE" || forme === "CARRE" || forme === "RECTANGULAIRE"
-              ? parsePositiveNumber(asString(x.longueurStr))
-              : null,
-        largeur: forme === "RECTANGULAIRE" ? parsePositiveNumber(asString(x.largeurStr)) : null,
-        rayon: forme === "CIRCULAIRE" ? parsePositiveNumber(asString(x.rayonStr)) : null,
-        ancrage: isSlabMode ? null : parseNonNegativeNumber(asString(x.ancrageStr)) ?? null,
-        attenteBarre: forme === "BARRE" && !isSlabMode ? (parseNonNegativeNumber(asString(x.attenteStr)) ?? null) : null,
-        perimetre: xShow ? (per != null && per > 0 ? per : null) : null,
-        espacement: xShow ? (parsePositiveNumber(asString(x.espacementStr)) ?? null) : null,
-        slabCalcMethod: forme === "BARRE" && isSlabMode ? asSlabCalcMethod(x.slabCalcMethod) : undefined,
-        slabSurface: forme === "BARRE" && isSlabMode ? parseNonNegativeNumber(asString(x.slabSurfaceStr)) ?? null : null,
-        slabQtePerM2:
-          forme === "BARRE" && isSlabMode ? parseNonNegativeNumber(asString(x.slabQtePerM2Str)) ?? null : null,
-      };
+    const payload = buildTotalRowModalPayload({
+      designation,
+      nomenclature,
+      nbStr,
+      hauteurStr,
+      showHauteurField,
+      formes,
+      extraBoxes,
+      initDia,
     });
 
-    onSubmit({
-      designation: (designation ?? "").trim(),
-      typeName: (nomenclature ?? "").trim(),
-      nb,
-      hauteur,
-      enrobage: null,
-      forme: mainForme,
-      diametreMm: mainDia,
-      barreCategorie: asTrimmedString(main.barreCategorie, "") || undefined,
-      nBarre: mainNBarre,
-      longueur: mainLongueur,
-      largeur: mainLargeur,
-      rayon: mainRayon,
-      ancrage: mainAncrage,
-      attenteBarre: mainAttenteBarre,
-      perimetre: mainPerimetre,
-      espacement: mainEspacement,
-      epingle,
-      etriers,
-      extraFormes: extras.length ? extras : undefined,
-      extraBoxes: extraBoxesPayload.length ? extraBoxesPayload : undefined,
-      slabCalcMethod: mainForme === "BARRE" && isSlabMode ? asSlabCalcMethod(main.slabCalcMethod) : undefined,
-      slabSurface:
-        mainForme === "BARRE" && isSlabMode ? parseNonNegativeNumber(asString(main.slabSurfaceStr)) ?? null : null,
-      slabQtePerM2:
-        mainForme === "BARRE" && isSlabMode ? parseNonNegativeNumber(asString(main.slabQtePerM2Str)) ?? null : null,
-    });
+    if (payload) onSubmit(payload);
   };
-
   return createPortal(
     <div className="fixed inset-0 z-220">
       <div className="absolute inset-0 bg-black/40" onMouseDown={closeOnBackdrop} />
@@ -1522,72 +755,30 @@ export default function TotalRowModalWindowInner({
           />
 
           <div className="flex-1 min-h-0 max-h-full rounded-xl bg-white shadow-xl border border-gray-200 flex flex-col overflow-hidden">
-            <div className="px-5 py-3 bg-gray-50 rounded-t-xl border-b border-gray-200 flex items-center justify-between shrink-0">
-              <div className="text-sm font-semibold text-gray-900">{title}</div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  aria-label="Fermer"
-                  title="Fermer"
-                  className="p-1 text-gray-700 hover:cursor-pointer hover:text-red-600 hover:scale-120 transition-transform"
-                >
-                  <CiCircleRemove size={26} />
-                </button>
-              </div>
-            </div>
+            <ModalHeader title={title} onClose={onClose} />
 
             <div className="p-5 flex flex-1 min-h-0 flex-col overflow-hidden">
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-4 shrink-0">
-                <div className="flex flex-col md:col-span-4">
-                  <DesignationDropdown label="Designations" value={designation} onChange={setDesignation} />
-                </div>
-
-                <div className="flex flex-col md:col-span-3">
-                  <label className="text-sm font-semibold text-gray-700 mb-1">Nomenclature</label>
-                  <input
-                    className={inputClass}
-                    value={nomenclature}
-                    onChange={(e) => setNomenclature(e.target.value)}
-                    placeholder="Ex: Code nomenclature"
-                  />
-                </div>
-
-                <div className={`flex flex-col ${showHauteurField ? "md:col-span-2" : "md:col-span-5"}`}>
-                  <label className="text-sm font-semibold text-gray-700 mb-1">NB</label>
-                  <input
-                    className={inputClass}
-                    value={nbStr}
-                    onChange={(e) => setNbStr(e.target.value)}
-                    placeholder="Ex: 1"
-                    inputMode="numeric"
-                  />
-                </div>
-
-                {showHauteurField ? (
-                  <div className="flex flex-col md:col-span-3">
-                    <label className="text-sm font-semibold text-gray-700 mb-1">{hauteurLabel}</label>
-                    <input
-                      className={inputClass}
-                      value={hauteurStr}
-                      onChange={(e) => setHauteurStr(e.target.value)}
-                      placeholder={hauteurPlaceholder}
-                      inputMode="decimal"
-                    />
-                  </div>
-                ) : null}
-
-                <div className="md:col-span-12 flex justify-between border-t border-gray-200 pt-3">
-                  <DotsPagination currentPage={safePage} totalPages={totalPages} onPageChange={handlePageChange} />
-                  <AddPlusDropdown
-                    onAddCadre={addCadre}
-                    onAddBarre={addBarre}
-                    onAddEpingle={() => addExtraBox("EPINGLE")}
-                    onAddEtriers={() => addExtraBox("ETRIERS")}
-                  />
-                </div>
-              </div>
+              <ModalTopFields
+                designation={designation}
+                setDesignation={setDesignation}
+                nomenclature={nomenclature}
+                setNomenclature={setNomenclature}
+                nbStr={nbStr}
+                setNbStr={setNbStr}
+                hauteurStr={hauteurStr}
+                setHauteurStr={setHauteurStr}
+                showHauteurField={showHauteurField}
+                hauteurLabel={hauteurLabel}
+                hauteurPlaceholder={hauteurPlaceholder}
+                inputClass={inputClass}
+                safePage={safePage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+                onAddCadre={addCadre}
+                onAddBarre={addBarre}
+                onAddEpingle={() => addExtraBox("EPINGLE")}
+                onAddEtriers={() => addExtraBox("ETRIERS")}
+              />
 
               <div className="mt-4 flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-4 content-start">
@@ -1638,48 +829,21 @@ export default function TotalRowModalWindowInner({
 
                     if (isBarre) {
                       return (
-                        <div
+                        <BarreCard
                           key={x.id}
-                          className={["h-140 md:col-span-4 rounded-lg min-h-12.5 border p-4", "border-slate-200 bg-slate-50/60"].join(" ")}
-                        >
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="text-sm font-semibold text-slate-900">{label}</div>
-
-                            <div className="flex items-center gap-1">
-                              <button
-                                type="button"
-                                className="inline-flex items-center justify-center text-slate-600 hover:text-emerald-600 hover:cursor-pointer transition-colors"
-                                onClick={() => setShowAbbreviationHelp(true)}
-                                title="Afficher les abréviations"
-                                aria-label="Afficher les abréviations"
-                              >
-                                <IoInformationCircleOutline size={28} />
-                              </button>
-
-                              <button
-                                type="button"
-                                className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-red-600 hover:cursor-pointer"
-                                onClick={() => removeForme(x.id)}
-                                title="Supprimer"
-                                aria-label="Supprimer"
-                              >
-                                <CiCircleRemove size={28} />
-                              </button>
-                            </div>
-                          </div>
-
-                          <FormeBarre
-                            x={x}
-                            designation={designation}
-                            safeMms={safeMms}
-                            inputClass={inputClass}
-                            twoColGrid={twoColGrid}
-                            nbStr={nbStr}
-                            hauteurStr={showHauteurField ? hauteurStr : "0"}
-                            barreLitIndex={barreLitIndexById.get(x.id) ?? null}
-                            onPatch={(patch) => updateForme(x.id, patch)}
-                          />
-                        </div>
+                          x={x}
+                          label={label}
+                          designation={designation}
+                          safeMms={safeMms}
+                          inputClass={inputClass}
+                          twoColGrid={twoColGrid}
+                          nbStr={nbStr}
+                          hauteurStr={showHauteurField ? hauteurStr : "0"}
+                          barreLitIndex={barreLitIndexById.get(x.id) ?? null}
+                          onPatch={(patch) => updateForme(x.id, patch)}
+                          onRemove={() => removeForme(x.id)}
+                          onShowAbbreviations={() => setShowAbbreviationHelp(true)}
+                        />
                       );
                     }
 
@@ -1705,27 +869,12 @@ export default function TotalRowModalWindowInner({
               </div>
             </div>
 
-            <div
-              className="
-                rounded-b-xl bg-gray-50
-                border-t border-slate-900/10
-                px-3.5 pt-2.5 pb-3.5
-                flex items-center justify-between gap-3 shrink-0
-              "
-              aria-label="Actions du formulaire"
-            >
-              <div className="flex items-center justify-start gap-2 flex-1">
-                <button type="button" className="stepper__nav" onClick={onClose}>
-                  Annuler
-                </button>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 flex-1 whitespace-nowrap">
-                <button type="button" className="stepper__nav" onClick={submit} disabled={!canSubmit} aria-disabled={!canSubmit}>
-                  {submitLabel}
-                </button>
-              </div>
-            </div>
+            <ModalFooter
+              submitLabel={submitLabel}
+              canSubmit={canSubmit}
+              onClose={onClose}
+              onSubmit={submit}
+            />
           </div>
         </div>
       </div>

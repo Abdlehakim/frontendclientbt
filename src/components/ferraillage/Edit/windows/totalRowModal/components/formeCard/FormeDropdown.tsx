@@ -1,16 +1,25 @@
-import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { IoIosArrowDropdown, IoIosArrowDropup } from "react-icons/io";
-import { usePortalPos } from "../usePortalPos";
-import { CheckIcon } from "../icons";
+import { useEffect, useRef, useState } from "react";
+import type { FormeState } from "../../types";
+import { CheckIcon } from "../../icons";
+import { usePortalPos } from "../../hooks/usePortalPos";
 
-export default function DesignationDropdown({
+type CadreForme = Exclude<FormeState["forme"], "BARRE">;
+
+function labelCadreForme(v: CadreForme) {
+  if (v === "CARRE") return "Carré";
+  if (v === "CIRCULAIRE") return "Circulaire";
+  return "Rectangulaire";
+}
+
+export default function FormeDropdown({
   value,
   onChange,
   label,
 }: {
-  value: string;
-  onChange: (v: string) => void;
+  value: CadreForme;
+  onChange: (v: CadreForme) => void;
   label: string;
 }) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -20,29 +29,7 @@ export default function DesignationDropdown({
   const [open, setOpen] = useState(false);
   const pos = usePortalPos(open, btnRef);
 
-const DEFAULTS = useMemo(
-  () => [
-    "Poteaux",
-    "Longrines",
-    "Semelles",
-    "Raidisseurs",
-    "Linteaux",
-    "Chaînages",
-    "Poutres",
-    "Nervures",
-    "Dalle pleine",
-    "Chape",
-    "Radier",
-    "Voile",
-  ],
-  [],
-);
-
-  const OPTIONS = useMemo(() => {
-    const v = (value ?? "").trim();
-    if (v && !DEFAULTS.includes(v)) return [v, ...DEFAULTS];
-    return DEFAULTS;
-  }, [DEFAULTS, value]);
+  const OPTIONS: CadreForme[] = ["CARRE", "CIRCULAIRE", "RECTANGULAIRE"];
 
   useEffect(() => {
     if (!open) return;
@@ -69,8 +56,6 @@ const DEFAULTS = useMemo(
     };
   }, [open]);
 
-  const shown = (value ?? "").trim() ? (value ?? "").trim() : "Choisir...";
-
   return (
     <div className="flex flex-col" ref={wrapRef}>
       <label className="text-sm font-semibold text-gray-700 mb-1">{label}</label>
@@ -83,7 +68,7 @@ const DEFAULTS = useMemo(
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="truncate">{shown}</span>
+        <span className="truncate">{labelCadreForme(value)}</span>
         {open ? <IoIosArrowDropup className="shrink-0" size={18} /> : <IoIosArrowDropdown className="shrink-0" size={18} />}
       </button>
 
@@ -105,7 +90,7 @@ const DEFAULTS = useMemo(
               }}
             >
               {OPTIONS.map((opt) => {
-                const selected = (opt ?? "").trim() === (value ?? "").trim();
+                const selected = opt === value;
                 return (
                   <button
                     key={opt}
@@ -130,7 +115,7 @@ const DEFAULTS = useMemo(
                     >
                       <CheckIcon />
                     </span>
-                    <span className="truncate">{opt}</span>
+                    <span className="truncate">{labelCadreForme(opt)}</span>
                   </button>
                 );
               })}

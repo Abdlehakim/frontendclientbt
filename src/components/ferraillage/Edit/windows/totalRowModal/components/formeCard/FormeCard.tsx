@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { CiCircleRemove } from "react-icons/ci";
-import type { FormeState } from "../types";
-import { parseNonNegativeInt, parseNonNegativeNumber } from "../utils";
-import DiametreDropdown from "./DiametreDropdown";
+import type { FormeState } from "../../types";
+import { parseNonNegativeInt, parseNonNegativeNumber } from "../../utils";
+import DiametreDropdown from "../common/DiametreDropdown";
 import FormeDropdown from "./FormeDropdown";
 
 type CadreForme = Exclude<FormeState["forme"], "BARRE">;

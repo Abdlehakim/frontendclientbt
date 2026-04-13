@@ -1,4 +1,4 @@
-import AutoValueField from "../common/AutoValueField";
+import AutoValueField from "../../common/AutoValueField";
 
 export default function ResultDualSection({
   inputClass,

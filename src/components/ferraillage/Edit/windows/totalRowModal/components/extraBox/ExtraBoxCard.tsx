@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { CiCircleRemove } from "react-icons/ci";
-import type { ExtraBoxState } from "../types";
-import DiametreDropdown from "./DiametreDropdown";
+import type { ExtraBoxState } from "../../types";
+import DiametreDropdown from "../common/DiametreDropdown";
 
 type ExtraCalcMode = "ESPACEMENT" | "NB";
 

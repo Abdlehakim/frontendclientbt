@@ -1,4 +1,4 @@
-import DiametreDropdown from "../DiametreDropdown";
+import DiametreDropdown from "./DiametreDropdown";
 
 export default function DiametreField({
   label,

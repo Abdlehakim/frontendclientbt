@@ -1,4 +1,5 @@
 export type FormeKind = "BARRE" | "CARRE" | "CIRCULAIRE" | "RECTANGULAIRE";
+export type RowForme = FormeKind;
 
 export type ExtraBoxKind = "EPINGLE" | "ETRIERS";
 

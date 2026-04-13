@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { IoIosArrowDropdown, IoIosArrowDropup } from "react-icons/io";
-import { usePortalPos } from "../usePortalPos";
-import { CheckIcon } from "../icons";
+import { usePortalPos } from "../../hooks/usePortalPos";
+import { CheckIcon } from "../../icons";
 
 export default function DiametreDropdown({
   mms,
