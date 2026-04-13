@@ -19,6 +19,7 @@ import {
 
 import {
   fmt,
+  formatDiametreLabel,
   getNappeLabel,
   getSemelleRelationLabel,
   getSlabCalcMethodLabel,
@@ -38,6 +39,10 @@ type FormeStateWithSlabExtras = FormeState & {
   slabPerimetreStr?: string;
   slabAncrageLineaireStr?: string;
 };
+
+function parseNum(value: string | undefined | null): number {
+  return Number(String(value ?? "0").replace(",", ".")) || 0;
+}
 
 export default function FormeBarre({
   x,
@@ -226,6 +231,62 @@ export default function FormeBarre({
     semelleDiametreBValue: semelle.semelleDiametreBValue,
   });
 
+  const slabDualResultActive =
+    base.isSlab &&
+    (slab.showSlabCombinedLengthAnchorDualDiaRow ||
+      slab.showSlabSeparateLengthAnchorDualDiaRow ||
+      (slab.showSlabDualDiaAndCount && !slab.hideEarlySlabDualCountFieldsForDallePleine));
+
+  const slabDiamLabelA = formatDiametreLabel(slab.slabDiametreAValue);
+  const slabDiamLabelB = formatDiametreLabel(slab.slabDiametreBValue);
+
+  const slabQteLabelA = slabDiamLabelA
+    ? `Q. Fer ${slabDiamLabelA} (m)`
+    : "Q. Fer a (m)";
+  const slabQteLabelB = slabDiamLabelB
+    ? `Q. Fer ${slabDiamLabelB} (m)`
+    : "Q. Fer b (m)";
+  const slabNtLabelA = slabDiamLabelA
+    ? `N.T.Barre ${slabDiamLabelA}`
+    : "N.T.Barre a";
+  const slabNtLabelB = slabDiamLabelB
+    ? `N.T.Barre ${slabDiamLabelB}`
+    : "N.T.Barre b";
+
+  const equalDualSharedSpacingPerSide =
+    base.isSlab &&
+    slab.slabEqualDualActive &&
+    slab.slabSpacingRelationValue === "EA_EQ_EB";
+
+  const equalDualSeparateSpacingPerSide =
+    base.isSlab &&
+    slab.slabEqualDualActive &&
+    slab.slabSpacingRelationValue === "EA_NE_EB";
+
+  const sharedNtEach = equalDualSharedSpacingPerSide
+    ? parseNum(x.slabLongueurAStr) / parseNum(x.slabEspacementAStr)
+    : 0;
+
+  const sharedQteEach = equalDualSharedSpacingPerSide
+    ? sharedNtEach * (parseNum(x.slabLongueurAStr) + parseNum(x.ancrageStr))
+    : 0;
+
+  const separateNtA = equalDualSeparateSpacingPerSide
+    ? parseNum(x.slabLongueurAStr) / parseNum(x.slabEspacementAStr)
+    : 0;
+
+  const separateNtB = equalDualSeparateSpacingPerSide
+    ? parseNum(x.slabLongueurAStr) / parseNum(x.slabEspacementBStr)
+    : 0;
+
+  const separateQteA = equalDualSeparateSpacingPerSide
+    ? separateNtA * (parseNum(x.slabLongueurAStr) + parseNum(x.ancrageStr))
+    : 0;
+
+  const separateQteB = equalDualSeparateSpacingPerSide
+    ? separateNtB * (parseNum(x.slabLongueurAStr) + parseNum(x.ancrageStr))
+    : 0;
+
   const renderSlabLinearMetricInputs = () => {
     if (slab.slabSurfacePerM2Mode) {
       return (
@@ -239,6 +300,7 @@ export default function FormeBarre({
             inputClass={inputClass}
             placeholder="Ex: 0,4"
           />
+
           <FieldInput
             label="Ancrage / mètre linéaire"
             value={slabAutoValues.slabAncrageLineaireStr}
@@ -269,7 +331,7 @@ export default function FormeBarre({
     <div className={twoColGrid}>
       {base.isSemelle ? (
         <>
-          <div className="flex flex-col sm:col-span-2">
+          <div className="flex flex-col">
             <SelectDropdown
               label="Type de nappe"
               value={semelle.semelleNappeShown}
@@ -292,14 +354,16 @@ export default function FormeBarre({
           ) : null}
 
           {semelle.showSemelleRelationAndSharedLengthRow ? (
-            <div className="grid grid-cols-1 gap-2 sm:col-span-2 sm:grid-cols-2">
-              <SelectDropdown
-                label="Re. entre a et b"
-                value={semelle.semelleRelationValue}
-                onChange={(v) => onPatch({ semelleRelation: v })}
-                options={SEMELLE_RELATIONS}
-                getOptionLabel={getSemelleRelationLabel}
-              />
+            <>
+              <div className="flex flex-col">
+                <SelectDropdown
+                  label="Re. entre a et b"
+                  value={semelle.semelleRelationValue}
+                  onChange={(v) => onPatch({ semelleRelation: v })}
+                  options={SEMELLE_RELATIONS}
+                  getOptionLabel={getSemelleRelationLabel}
+                />
+              </div>
 
               <FieldInput
                 label="L. Barre a ou b (m)"
@@ -313,11 +377,11 @@ export default function FormeBarre({
                 inputClass={inputClass}
                 placeholder="Ex: 2,4"
               />
-            </div>
+            </>
           ) : null}
 
           {semelle.showSemelleCombinedLengthAnchorDiaRow ? (
-            <div className="grid grid-cols-1 gap-2 sm:col-span-2 sm:grid-cols-2">
+            <>
               <FieldInput
                 label="Ancrage (m)"
                 value={x.ancrageStr}
@@ -332,7 +396,7 @@ export default function FormeBarre({
                 value={base.diametreValue}
                 onChange={(v) => onPatch({ diametreMm: v })}
               />
-            </div>
+            </>
           ) : null}
 
           {semelle.showInlineLengthAndAncrageRow ? (
@@ -347,7 +411,7 @@ export default function FormeBarre({
           ) : null}
 
           {semelle.showInlineDiffLengthAndAncrageRow ? (
-            <div className="grid grid-cols-1 gap-2 sm:col-span-2 sm:grid-cols-3">
+            <>
               <FieldInput
                 label="L. Barre a (m)"
                 value={x.semelleLongueurAStr ?? "0"}
@@ -368,15 +432,16 @@ export default function FormeBarre({
                 onChange={(value) => onPatch({ ancrageStr: value })}
                 inputClass={inputClass}
                 placeholder="Ex: 0,4"
+                className="sm:col-span-2"
               />
-            </div>
+            </>
           ) : null}
         </>
       ) : null}
 
       {base.isSlab ? (
         <>
-          <div className="grid grid-cols-2 gap-2 sm:col-span-2">
+          <div className="flex flex-col">
             <SelectDropdown
               label="Type de nappe"
               value={slab.slabNappeShown}
@@ -384,7 +449,9 @@ export default function FormeBarre({
               options={SLAB_NAPPES}
               getOptionLabel={getNappeLabel}
             />
+          </div>
 
+          <div className="flex flex-col">
             <SelectDropdown
               label="Méthode de calcul"
               value={slab.slabCalcMethodValue}
@@ -394,40 +461,57 @@ export default function FormeBarre({
             />
           </div>
 
-          <div className="flex flex-col sm:col-span-2">
-            <SelectDropdown
-              label="Re. entre a et b"
-              value={slab.slabRelationValue}
-              onChange={(v) =>
-                onPatch({
-                  slabRelation: v,
-                  slabSpacingMode: "ESPACEMENT",
-                  slabSpacingRelation: "EA_EQ_EB",
-                })
-              }
-              options={SLAB_RELATIONS}
-              getOptionLabel={getSlabRelationLabel}
-            />
-          </div>
-
           {slab.showSlabCombinedLengthRow ? (
-            <FieldInput
-              label="L. Barre a ou b (m)"
-              value={x.slabLongueurAStr ?? "0"}
-              onChange={(value) =>
-                onPatch({
-                  slabLongueurAStr: value,
-                  slabLongueurBStr: value,
-                })
-              }
-              inputClass={inputClass}
-              placeholder="Ex: 2,4"
-              className="sm:col-span-2"
-            />
-          ) : null}
+            <>
+              <div className="flex flex-col">
+                <SelectDropdown
+                  label="Re. entre a et b"
+                  value={slab.slabRelationValue}
+                  onChange={(v) =>
+                    onPatch({
+                      slabRelation: v,
+                      slabSpacingMode: "ESPACEMENT",
+                      slabSpacingRelation: "EA_EQ_EB",
+                    })
+                  }
+                  options={SLAB_RELATIONS}
+                  getOptionLabel={getSlabRelationLabel}
+                />
+              </div>
+
+              <FieldInput
+                label="L. Barre a ou b (m)"
+                value={x.slabLongueurAStr ?? "0"}
+                onChange={(value) =>
+                  onPatch({
+                    slabLongueurAStr: value,
+                    slabLongueurBStr: value,
+                  })
+                }
+                inputClass={inputClass}
+                placeholder="Ex: 2,4"
+              />
+            </>
+          ) : (
+            <div className="flex flex-col sm:col-span-2">
+              <SelectDropdown
+                label="Re. entre a et b"
+                value={slab.slabRelationValue}
+                onChange={(v) =>
+                  onPatch({
+                    slabRelation: v,
+                    slabSpacingMode: "ESPACEMENT",
+                    slabSpacingRelation: "EA_EQ_EB",
+                  })
+                }
+                options={SLAB_RELATIONS}
+                getOptionLabel={getSlabRelationLabel}
+              />
+            </div>
+          )}
 
           {slab.showSlabSeparateLengthRow ? (
-            <div className="grid grid-cols-1 gap-2 sm:col-span-2 sm:grid-cols-2">
+            <>
               <FieldInput
                 label="L. Barre a (m)"
                 value={x.slabLongueurAStr ?? "0"}
@@ -442,15 +526,80 @@ export default function FormeBarre({
                 inputClass={inputClass}
                 placeholder="Ex: 2,4"
               />
+            </>
+          ) : null}
+
+          {slab.showSlabCombinedLengthAnchorDiaRow ? (
+            <>
+              {renderSlabLinearMetricInputs()}
+              <DiametreField
+                label="Di. a et b"
+                mms={safeMms}
+                value={base.diametreValue}
+                onChange={(v) => onPatch({ diametreMm: v })}
+              />
+            </>
+          ) : null}
+
+          {slab.showSlabCombinedLengthAnchorDualDiaRow ? (
+            <div className="sm:col-span-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+              {renderSlabLinearMetricInputs()}
+              <DiametreField
+                label="Di. Fer a"
+                mms={safeMms}
+                value={slab.slabDiametreAValue}
+                onChange={(v) => onPatch({ slabDiametreAMm: v })}
+              />
+              <DiametreField
+                label="Di. Fer b"
+                mms={safeMms}
+                value={slab.slabDiametreBValue}
+                onChange={(v) => onPatch({ slabDiametreBMm: v })}
+              />
             </div>
           ) : null}
 
-          <div className="grid grid-cols-1 gap-2 sm:col-span-2 sm:grid-cols-2">
-            {renderSlabLinearMetricInputs()}
-          </div>
+          {slab.showSlabSeparateLengthAnchorSharedDiaRow ? (
+            <>
+              {renderSlabLinearMetricInputs()}
+              <DiametreField
+                label="Di. a et b"
+                mms={safeMms}
+                value={base.diametreValue}
+                onChange={(v) => onPatch({ diametreMm: v })}
+              />
+            </>
+          ) : null}
 
-          {slab.showSlabSharedDiaAndCount ? (
-            <div className="grid grid-cols-1 gap-2 sm:col-span-2 sm:grid-cols-2">
+          {slab.showSlabSeparateLengthAnchorDualDiaRow ? (
+            <div className="sm:col-span-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+              {renderSlabLinearMetricInputs()}
+              <DiametreField
+                label="Di. Fer a"
+                mms={safeMms}
+                value={slab.slabDiametreAValue}
+                onChange={(v) => onPatch({ slabDiametreAMm: v })}
+              />
+              <DiametreField
+                label="Di. Fer b"
+                mms={safeMms}
+                value={slab.slabDiametreBValue}
+                onChange={(v) => onPatch({ slabDiametreBMm: v })}
+              />
+            </div>
+          ) : null}
+
+          {!slab.showSlabCombinedLengthAnchorDiaRow &&
+          !slab.showSlabCombinedLengthAnchorDualDiaRow &&
+          !slab.showSlabSeparateLengthAnchorSharedDiaRow &&
+          !slab.showSlabSeparateLengthAnchorDualDiaRow ? (
+            renderSlabLinearMetricInputs()
+          ) : null}
+
+          {slab.showSlabSharedDiaAndCount &&
+          !slab.showSlabCombinedLengthAnchorDiaRow &&
+          !slab.showSlabSeparateLengthAnchorSharedDiaRow ? (
+            <>
               <DiametreField
                 label="Di. a et b"
                 mms={safeMms}
@@ -467,11 +616,13 @@ export default function FormeBarre({
                   inputMode="numeric"
                 />
               ) : null}
-            </div>
+            </>
           ) : null}
 
-          {slab.showSlabDualDiaAndCount ? (
-            <div className="grid grid-cols-1 gap-2 sm:col-span-2 sm:grid-cols-2 lg:grid-cols-4">
+          {slab.showSlabDualDiaAndCount &&
+          !slab.showSlabCombinedLengthAnchorDualDiaRow &&
+          !slab.showSlabSeparateLengthAnchorDualDiaRow ? (
+            <>
               <DiametreField
                 label="Di. Fer a"
                 mms={safeMms}
@@ -504,46 +655,69 @@ export default function FormeBarre({
                   inputMode="numeric"
                 />
               ) : null}
-            </div>
-          ) : null}
-
-          {slab.showSlabSpacingMode ? (
-            <div className="grid grid-cols-1 gap-2 sm:col-span-2 sm:grid-cols-2">
-              <SelectDropdown
-                label="Mode de calcul"
-                value={slab.slabSpacingModeValue}
-                onChange={(v) => onPatch({ slabSpacingMode: v })}
-                options={SLAB_SPACING_MODES}
-                getOptionLabel={getSlabSpacingModeLabel}
-              />
-              <SelectDropdown
-                label="Re. Es."
-                value={slab.slabSpacingRelationValue}
-                onChange={(v) => onPatch({ slabSpacingRelation: v })}
-                options={SLAB_SPACING_RELATIONS}
-                getOptionLabel={getSlabSpacingRelationLabel}
-              />
-            </div>
+            </>
           ) : null}
 
           {slab.showSlabSharedSpacingInput ? (
-            <FieldInput
-              label="Es. a et b"
-              value={x.slabEspacementAStr ?? "0"}
-              onChange={(value) =>
-                onPatch({
-                  slabEspacementAStr: value,
-                  slabEspacementBStr: value,
-                })
-              }
-              inputClass={inputClass}
-              placeholder="Ex: 0,2"
-              className="sm:col-span-2"
-            />
-          ) : null}
+            <div className="sm:col-span-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <div className="flex flex-col">
+                <SelectDropdown
+                  label="Mode de calcul"
+                  value={slab.slabSpacingModeValue}
+                  onChange={(v) => onPatch({ slabSpacingMode: v })}
+                  options={SLAB_SPACING_MODES}
+                  getOptionLabel={getSlabSpacingModeLabel}
+                />
+              </div>
 
-          {slab.showSlabDualSpacingInputs ? (
-            <div className="grid grid-cols-1 gap-2 sm:col-span-2 sm:grid-cols-2">
+              <div className="flex flex-col">
+                <SelectDropdown
+                  label="Re. Es."
+                  value={slab.slabSpacingRelationValue}
+                  onChange={(v) => onPatch({ slabSpacingRelation: v })}
+                  options={SLAB_SPACING_RELATIONS}
+                  getOptionLabel={getSlabSpacingRelationLabel}
+                />
+              </div>
+
+              <FieldInput
+                label="Es. a et b"
+                value={x.slabEspacementAStr ?? "0"}
+                onChange={(value) =>
+                  onPatch({
+                    slabEspacementAStr: value,
+                    slabEspacementBStr: value,
+                  })
+                }
+                inputClass={inputClass}
+                placeholder="Ex: 0,2"
+              />
+            </div>
+          ) : slab.showSlabDualSpacingInputs ? (
+            <>
+              {slab.showSlabSpacingMode ? (
+                <>
+                  <div className="flex flex-col">
+                    <SelectDropdown
+                      label="Mode de calcul"
+                      value={slab.slabSpacingModeValue}
+                      onChange={(v) => onPatch({ slabSpacingMode: v })}
+                      options={SLAB_SPACING_MODES}
+                      getOptionLabel={getSlabSpacingModeLabel}
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <SelectDropdown
+                      label="Re. Es."
+                      value={slab.slabSpacingRelationValue}
+                      onChange={(v) => onPatch({ slabSpacingRelation: v })}
+                      options={SLAB_SPACING_RELATIONS}
+                      getOptionLabel={getSlabSpacingRelationLabel}
+                    />
+                  </div>
+                </>
+              ) : null}
+
               <FieldInput
                 label="Es. a"
                 value={x.slabEspacementAStr ?? "0"}
@@ -558,7 +732,28 @@ export default function FormeBarre({
                 inputClass={inputClass}
                 placeholder="Ex: 0,2"
               />
-            </div>
+            </>
+          ) : slab.showSlabSpacingMode ? (
+            <>
+              <div className="flex flex-col">
+                <SelectDropdown
+                  label="Mode de calcul"
+                  value={slab.slabSpacingModeValue}
+                  onChange={(v) => onPatch({ slabSpacingMode: v })}
+                  options={SLAB_SPACING_MODES}
+                  getOptionLabel={getSlabSpacingModeLabel}
+                />
+              </div>
+              <div className="flex flex-col">
+                <SelectDropdown
+                  label="Re. Es."
+                  value={slab.slabSpacingRelationValue}
+                  onChange={(v) => onPatch({ slabSpacingRelation: v })}
+                  options={SLAB_SPACING_RELATIONS}
+                  getOptionLabel={getSlabSpacingRelationLabel}
+                />
+              </div>
+            </>
           ) : null}
 
           {slab.showSlabSharedNbCadreInput || slab.showSlabModeAndSharedNbBarRow ? (
@@ -579,7 +774,7 @@ export default function FormeBarre({
           ) : null}
 
           {slab.showSlabDualNbCadreInputs || slab.showSlabModeAndDualNbBarRow ? (
-            <div className="grid grid-cols-1 gap-2 sm:col-span-2 sm:grid-cols-2">
+            <>
               <FieldInput
                 label="Nb. Barres a"
                 value={x.slabNbCadreAStr ?? "0"}
@@ -596,19 +791,21 @@ export default function FormeBarre({
                 placeholder="Ex: 10"
                 inputMode="numeric"
               />
-            </div>
+            </>
           ) : null}
         </>
       ) : null}
 
       {base.showBarreOptions && !base.isSemelle && !base.isSlab ? (
-        <BarreSteelSection
-          showLitField={base.showLitField}
-          barreCategorieValue={base.barreCategorieValue}
-          litValue={base.litValue}
-          inputClass={inputClass}
-          onChange={(value) => onPatch({ barreCategorie: value })}
-        />
+        <div className="sm:col-span-2">
+          <BarreSteelSection
+            showLitField={base.showLitField}
+            barreCategorieValue={base.barreCategorieValue}
+            litValue={base.litValue}
+            inputClass={inputClass}
+            onChange={(value) => onPatch({ barreCategorie: value })}
+          />
+        </div>
       ) : null}
 
       {!base.isSemelle && !base.isSlab ? (
@@ -660,23 +857,65 @@ export default function FormeBarre({
       ) : null}
 
       {semelle.semelleDualActive ? (
-        <ResultDualSection
-          inputClass={inputClass}
-          qteLabelA={semelleAuto.qteLabelA}
-          qteLabelB={semelleAuto.qteLabelB}
-          ntLabelA={semelleAuto.ntLabelA}
-          ntLabelB={semelleAuto.ntLabelB}
-          qteA={fmt(semelleAuto.dual.qteA)}
-          qteB={fmt(semelleAuto.dual.qteB)}
-          ntA={fmt(semelleAuto.dual.ntA)}
-          ntB={fmt(semelleAuto.dual.ntB)}
-        />
+        <div className="sm:col-span-2">
+          <ResultDualSection
+            inputClass={inputClass}
+            qteLabelA={semelleAuto.qteLabelA}
+            qteLabelB={semelleAuto.qteLabelB}
+            ntLabelA={semelleAuto.ntLabelA}
+            ntLabelB={semelleAuto.ntLabelB}
+            qteA={fmt(semelleAuto.dual.qteA)}
+            qteB={fmt(semelleAuto.dual.qteB)}
+            ntA={fmt(semelleAuto.dual.ntA)}
+            ntB={fmt(semelleAuto.dual.ntB)}
+          />
+        </div>
+      ) : slabDualResultActive ? (
+        <div className="sm:col-span-2">
+          <ResultDualSection
+            inputClass={inputClass}
+            qteLabelA={slabQteLabelA}
+            qteLabelB={slabQteLabelB}
+            ntLabelA={slabNtLabelA}
+            ntLabelB={slabNtLabelB}
+            qteA={fmt(
+              equalDualSharedSpacingPerSide
+                ? sharedQteEach
+                : equalDualSeparateSpacingPerSide
+                  ? separateQteA
+                  : barreAuto.qte
+            )}
+            qteB={fmt(
+              equalDualSharedSpacingPerSide
+                ? sharedQteEach
+                : equalDualSeparateSpacingPerSide
+                  ? separateQteB
+                  : barreAuto.qte
+            )}
+            ntA={fmt(
+              equalDualSharedSpacingPerSide
+                ? sharedNtEach
+                : equalDualSeparateSpacingPerSide
+                  ? separateNtA
+                  : barreAuto.nt
+            )}
+            ntB={fmt(
+              equalDualSharedSpacingPerSide
+                ? sharedNtEach
+                : equalDualSeparateSpacingPerSide
+                  ? separateNtB
+                  : barreAuto.nt
+            )}
+          />
+        </div>
       ) : (
-        <ResultSingleSection
-          inputClass={inputClass}
-          qteValue={fmt(barreAuto.qte)}
-          ntValue={fmt(barreAuto.nt)}
-        />
+        <div className="sm:col-span-2">
+          <ResultSingleSection
+            inputClass={inputClass}
+            qteValue={fmt(barreAuto.qte)}
+            ntValue={fmt(barreAuto.nt)}
+          />
+        </div>
       )}
     </div>
   );
