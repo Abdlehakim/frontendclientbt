@@ -42,8 +42,8 @@ export default function BarreCard({
             type="button"
             className="inline-flex items-center justify-center text-slate-600 hover:text-emerald-600 hover:cursor-pointer transition-colors"
             onClick={onShowAbbreviations}
-            title="Afficher les abrÃ©viations"
-            aria-label="Afficher les abrÃ©viations"
+            title="Afficher les abréviations"
+            aria-label="Afficher les abréviations"
           >
             <IoInformationCircleOutline size={28} />
           </button>
@@ -74,4 +74,3 @@ export default function BarreCard({
     </div>
   );
 }
-

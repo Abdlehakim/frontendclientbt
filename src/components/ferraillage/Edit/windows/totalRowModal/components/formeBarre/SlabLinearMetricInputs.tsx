@@ -19,7 +19,7 @@ export default function SlabLinearMetricInputs({
     return (
       <>
         <FieldInput
-          label="PÃ©rimÃ¨tre"
+          label="Périmètre"
           value={slabAutoValues.slabPerimetreStr}
           onChange={(value) => onPatch({ slabPerimetreStr: value })}
           inputClass={inputClass}
@@ -27,7 +27,7 @@ export default function SlabLinearMetricInputs({
         />
 
         <FieldInput
-          label="Ancrage / mÃ¨tre linÃ©aire"
+          label="Ancrage / mètre linéaire"
           value={slabAutoValues.slabAncrageLineaireStr}
           onChange={(value) => onPatch({ slabAncrageLineaireStr: value })}
           inputClass={inputClass}
@@ -47,4 +47,3 @@ export default function SlabLinearMetricInputs({
     />
   );
 }
-
