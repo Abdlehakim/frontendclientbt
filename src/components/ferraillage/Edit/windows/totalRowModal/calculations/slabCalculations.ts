@@ -50,6 +50,115 @@ export function computeSlabSharedSpacingQte(
   return nt * (longueur + ancrage);
 }
 
+function computeSlabDiffSharedSpacingNTPart(lengthStr: string, spacingStr: string) {
+  const L = parseNonNegativeNumber(lengthStr);
+  const ES = parseNonNegativeNumber(spacingStr);
+
+  if (L == null && ES == null) return 0;
+
+  const longueur = L ?? 0;
+  const espacement = ES ?? 0;
+
+  if (longueur <= 0 || espacement <= 0) return 0;
+  return longueur / espacement;
+}
+
+export function computeSlabDiffSharedSpacingNTA(longueurAStr: string, spacingStr: string) {
+  return computeSlabDiffSharedSpacingNTPart(longueurAStr, spacingStr);
+}
+
+export function computeSlabDiffSharedSpacingNTB(longueurBStr: string, spacingStr: string) {
+  return computeSlabDiffSharedSpacingNTPart(longueurBStr, spacingStr);
+}
+
+export function computeSlabDiffSharedSpacingNT(
+  longueurAStr: string,
+  longueurBStr: string,
+  spacingStr: string,
+) {
+  return (
+    computeSlabDiffSharedSpacingNTA(longueurAStr, spacingStr) +
+    computeSlabDiffSharedSpacingNTB(longueurBStr, spacingStr)
+  );
+}
+
+export function computeSlabDiffSharedSpacingQte(
+  longueurAStr: string,
+  longueurBStr: string,
+  spacingStr: string,
+  ancrageStr: string,
+) {
+  const ntA = computeSlabDiffSharedSpacingNTA(longueurAStr, spacingStr);
+  const ntB = computeSlabDiffSharedSpacingNTB(longueurBStr, spacingStr);
+  const longueurA = parseNonNegativeNumber(longueurAStr) ?? 0;
+  const longueurB = parseNonNegativeNumber(longueurBStr) ?? 0;
+  const ancrage = parseNonNegativeNumber(ancrageStr) ?? 0;
+
+  if (ntA <= 0 && ntB <= 0 && longueurA <= 0 && longueurB <= 0 && ancrage <= 0) return 0;
+  return ntA * (longueurB + ancrage) + ntB * (longueurA + ancrage);
+}
+
+export function computeSlabDiffSharedDualSpacingNT(
+  longueurAStr: string,
+  longueurBStr: string,
+  spacingAStr: string,
+  spacingBStr: string,
+) {
+  return (
+    computeSlabDiffSharedSpacingNTA(longueurAStr, spacingAStr) +
+    computeSlabDiffSharedSpacingNTB(longueurBStr, spacingBStr)
+  );
+}
+
+export function computeSlabDiffSharedDualSpacingQte(
+  longueurAStr: string,
+  longueurBStr: string,
+  spacingAStr: string,
+  spacingBStr: string,
+  ancrageStr: string,
+) {
+  const ntA = computeSlabDiffSharedSpacingNTA(longueurAStr, spacingAStr);
+  const ntB = computeSlabDiffSharedSpacingNTB(longueurBStr, spacingBStr);
+  const longueurA = parseNonNegativeNumber(longueurAStr) ?? 0;
+  const longueurB = parseNonNegativeNumber(longueurBStr) ?? 0;
+  const ancrage = parseNonNegativeNumber(ancrageStr) ?? 0;
+
+  if (ntA <= 0 && ntB <= 0 && longueurA <= 0 && longueurB <= 0 && ancrage <= 0) return 0;
+  return ntA * (longueurB + ancrage) + ntB * (longueurA + ancrage);
+}
+
+export function computeSlabCrossSpacingParts(
+  nbStr: string,
+  longueurAStr: string,
+  longueurBStr: string,
+  spacingAStr: string,
+  spacingBStr: string,
+  ancrageStr: string,
+) {
+  const NB = parseNonNegativeInt(nbStr);
+  const nb = NB ?? 0;
+  const ntA = computeSlabDiffSharedSpacingNTA(longueurAStr, spacingAStr) * nb;
+  const ntB = computeSlabDiffSharedSpacingNTB(longueurBStr, spacingBStr) * nb;
+  const longueurA = parseNonNegativeNumber(longueurAStr) ?? 0;
+  const longueurB = parseNonNegativeNumber(longueurBStr) ?? 0;
+  const ancrage = parseNonNegativeNumber(ancrageStr) ?? 0;
+  const cutLenA = longueurB + ancrage;
+  const cutLenB = longueurA + ancrage;
+  const qteA = ntA * cutLenA;
+  const qteB = ntB * cutLenB;
+
+  return {
+    ntA,
+    ntB,
+    qteA,
+    qteB,
+    qteTotal: qteA + qteB,
+    ntTotal: ntA + ntB,
+    cutLenA,
+    cutLenB,
+  };
+}
+
 export function computeSlabDualSpacingNT(
   nbStr: string,
   longueurAStr: string,

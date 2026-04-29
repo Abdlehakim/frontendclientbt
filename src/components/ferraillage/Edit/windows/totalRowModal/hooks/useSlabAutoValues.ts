@@ -12,6 +12,7 @@ export function useSlabAutoValues({
   nbStr,
   isSlab,
   slabDiffSharedActive,
+  slabDiffDualActive,
   showSlabSharedSpacingInput,
   showSlabDualSpacingInputs,
   showSlabModeAndSharedNbBarRow,
@@ -25,6 +26,7 @@ export function useSlabAutoValues({
   nbStr: string;
   isSlab: boolean;
   slabDiffSharedActive: boolean;
+  slabDiffDualActive: boolean;
   showSlabSharedSpacingInput: boolean;
   showSlabDualSpacingInputs: boolean;
   showSlabModeAndSharedNbBarRow: boolean;
@@ -53,6 +55,7 @@ export function useSlabAutoValues({
     showSlabModeAndSharedNbBarRow,
     showSlabModeAndDualNbBarRow,
     slabDiffSharedActive,
+    slabDiffDualActive,
     slabEffectiveSpacingModeValue,
     slabEffectiveLinearMetricStr,
   });

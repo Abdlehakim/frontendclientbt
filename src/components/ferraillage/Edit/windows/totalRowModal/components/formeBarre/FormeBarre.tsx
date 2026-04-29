@@ -68,6 +68,7 @@ export default function FormeBarre({
     nbStr,
     isSlab: base.isSlab,
     slabDiffSharedActive: slab.slabDiffSharedActive,
+    slabDiffDualActive: slab.slabDiffDualActive,
     showSlabSharedSpacingInput: slab.showSlabSharedSpacingInput,
     showSlabDualSpacingInputs: slab.showSlabDualSpacingInputs,
     showSlabModeAndSharedNbBarRow: slab.showSlabModeAndSharedNbBarRow,
@@ -120,6 +121,7 @@ export default function FormeBarre({
 
   const result = useFormeBarreResult({
     x,
+    nbStr,
     base,
     semelle,
     slab,

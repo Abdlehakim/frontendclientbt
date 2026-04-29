@@ -1,6 +1,11 @@
 import type { SlabCalcMethod, SlabRelation, SlabSpacingMode, SlabSpacingRelation } from "../types";
 import { parseNonNegativeInt, parseNonNegativeNumber } from "../utils";
 import { normalizeSlabSpacingRelationValue } from "../state/guards";
+import {
+  computeSlabCrossSpacingParts,
+  computeSlabDiffSharedSpacingNTA,
+  computeSlabDiffSharedSpacingNTB,
+} from "./slabCalculations";
 
 export function computeSlabQte(calcMethod: SlabCalcMethod, surfaceStr: string, qtePerM2Str: string) {
   const surface = parseNonNegativeNumber(surfaceStr);
@@ -138,3 +143,107 @@ export function computeSpecialSlabSpacingRecapMetrics(params: {
   return null;
 }
 
+export function computeDiffSharedSlabSpacingRecapMetrics(params: {
+  nbStr: string;
+  longueurAStr: string;
+  longueurBStr: string;
+  ancrageStr: string;
+  spacingMode: SlabSpacingMode;
+  spacingRelation: SlabSpacingRelation;
+  calcMethod: SlabCalcMethod;
+  relation: SlabRelation;
+  spacingAStr: string;
+  spacingBStr: string;
+}) {
+  const {
+    nbStr,
+    longueurAStr,
+    longueurBStr,
+    ancrageStr,
+    spacingMode,
+    spacingRelation,
+    calcMethod,
+    relation,
+    spacingAStr,
+    spacingBStr,
+  } = params;
+
+  const isSurfaceTotal = calcMethod === "SURFACE_TOTAL";
+  const isDiffShared = relation === "ab_diff_same_if";
+  const normalizedSpacingRelation = normalizeSlabSpacingRelationValue(spacingRelation);
+
+  if (
+    !isSurfaceTotal ||
+    !isDiffShared ||
+    spacingMode !== "ESPACEMENT"
+  ) {
+    return null;
+  }
+
+  const ntBSpacingStr = normalizedSpacingRelation === "EA_NE_EB" ? spacingBStr : spacingAStr;
+  const nb = parseNonNegativeInt(nbStr) ?? 0;
+  const ntA = computeSlabDiffSharedSpacingNTA(longueurAStr, spacingAStr) * nb;
+  const ntB = computeSlabDiffSharedSpacingNTB(longueurBStr, ntBSpacingStr) * nb;
+  const longueurA = parseNonNegativeNumber(longueurAStr) ?? 0;
+  const longueurB = parseNonNegativeNumber(longueurBStr) ?? 0;
+  const ancrage = parseNonNegativeNumber(ancrageStr) ?? 0;
+  const cutLenA = longueurB + ancrage;
+  const cutLenB = longueurA + ancrage;
+  const qtyA = ntA * cutLenA;
+  const qtyB = ntB * cutLenB;
+
+  return {
+    ntA,
+    ntB,
+    qtyA,
+    qtyB,
+    qtyM: qtyA + qtyB,
+    cutLenA,
+    cutLenB,
+  };
+}
+
+export function computeDiffDualSlabSpacingRecapMetrics(params: {
+  nbStr: string;
+  longueurAStr: string;
+  longueurBStr: string;
+  ancrageStr: string;
+  spacingMode: SlabSpacingMode;
+  spacingRelation: SlabSpacingRelation;
+  calcMethod: SlabCalcMethod;
+  relation: SlabRelation;
+  spacingAStr: string;
+  spacingBStr: string;
+}) {
+  const {
+    nbStr,
+    longueurAStr,
+    longueurBStr,
+    ancrageStr,
+    spacingMode,
+    spacingRelation,
+    calcMethod,
+    relation,
+    spacingAStr,
+    spacingBStr,
+  } = params;
+
+  const isSurfaceTotal = calcMethod === "SURFACE_TOTAL";
+  const isDiffDual = relation === "ab_diff_diff_if";
+  const normalizedSpacingRelation = normalizeSlabSpacingRelationValue(spacingRelation);
+
+  if (!isSurfaceTotal || !isDiffDual || spacingMode !== "ESPACEMENT") {
+    return null;
+  }
+
+  const effectiveSpacingBStr = normalizedSpacingRelation === "EA_NE_EB" ? spacingBStr : spacingAStr;
+
+  return computeSlabCrossSpacingParts(
+    nbStr,
+    longueurAStr,
+    longueurBStr,
+    spacingAStr,
+    effectiveSpacingBStr,
+    ancrageStr,
+  );
+}

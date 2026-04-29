@@ -5,6 +5,11 @@ import type { useFormeBarreBaseState } from "./useFormeBarreBaseState";
 import type { useSemelleAutoValues } from "./useSemelleAutoValues";
 import type { useSemelleState } from "./useSemelleState";
 import type { useSlabState } from "./useSlabState";
+import {
+  computeSlabCrossSpacingParts,
+  computeSlabDiffSharedSpacingNTA,
+  computeSlabDiffSharedSpacingNTB,
+} from "../calculations/slabCalculations";
 
 export type FormeBarreResult =
   | {
@@ -22,6 +27,12 @@ export type FormeBarreResult =
       kind: "single";
       qteValue: string;
       ntValue: string;
+    }
+  | {
+      kind: "single-qte-dual-nt";
+      qteValue: string;
+      ntA: string;
+      ntB: string;
     };
 
 function parseNum(value: string | undefined | null): number {
@@ -30,6 +41,7 @@ function parseNum(value: string | undefined | null): number {
 
 export function useFormeBarreResult({
   x,
+  nbStr,
   base,
   semelle,
   slab,
@@ -37,12 +49,15 @@ export function useFormeBarreResult({
   semelleAuto,
 }: {
   x: FormeState;
+  nbStr: string;
   base: ReturnType<typeof useFormeBarreBaseState>;
   semelle: ReturnType<typeof useSemelleState>;
   slab: ReturnType<typeof useSlabState>;
   barreAuto: ReturnType<typeof useBarreAutoValues>;
   semelleAuto: ReturnType<typeof useSemelleAutoValues>;
 }): FormeBarreResult {
+  const nbMultiplier = parseNum(nbStr);
+
   if (semelle.semelleDualActive) {
     return {
       kind: "dual",
@@ -64,6 +79,34 @@ export function useFormeBarreResult({
       (slab.showSlabDualDiaAndCount && !slab.hideEarlySlabDualCountFieldsForDallePleine));
 
   if (!slabDualResultActive) {
+    const slabDiffSharedSpacingResultActive =
+      base.isSlab &&
+      slab.slabDiffSharedActive &&
+      (slab.showSlabSharedSpacingInput || slab.showSlabDualSpacingInputs);
+
+    if (slabDiffSharedSpacingResultActive) {
+      const spacingBStr = slab.showSlabDualSpacingInputs
+        ? x.slabEspacementBStr
+        : x.slabEspacementAStr;
+
+      return {
+        kind: "single-qte-dual-nt",
+        qteValue: fmt(barreAuto.qte),
+        ntA: fmt(
+          computeSlabDiffSharedSpacingNTA(
+            x.slabLongueurAStr ?? "0",
+            x.slabEspacementAStr ?? "0",
+          ) * nbMultiplier,
+        ),
+        ntB: fmt(
+          computeSlabDiffSharedSpacingNTB(
+            x.slabLongueurBStr ?? "0",
+            spacingBStr ?? "0",
+          ) * nbMultiplier,
+        ),
+      };
+    }
+
     return {
       kind: "single",
       qteValue: fmt(barreAuto.qte),
@@ -84,21 +127,46 @@ export function useFormeBarreResult({
     slab.slabEqualDualActive &&
     slab.slabSpacingRelationValue === "EA_NE_EB";
 
-  const sharedNtEach = equalDualSharedSpacingPerSide
+  const diffDualSpacingPerSide =
+    base.isSlab &&
+    slab.slabDiffDualActive &&
+    (slab.showSlabSharedSpacingInput || slab.showSlabDualSpacingInputs);
+
+  const diffDualSpacingBStr = slab.showSlabDualSpacingInputs
+    ? x.slabEspacementBStr
+    : x.slabEspacementAStr;
+
+  const diffDualParts = diffDualSpacingPerSide
+    ? computeSlabCrossSpacingParts(
+        nbStr,
+        x.slabLongueurAStr ?? "0",
+        x.slabLongueurBStr ?? "0",
+        x.slabEspacementAStr ?? "0",
+        diffDualSpacingBStr ?? "0",
+        x.ancrageStr ?? "0",
+      )
+    : null;
+
+  const sharedNtEachBase = equalDualSharedSpacingPerSide
     ? parseNum(x.slabLongueurAStr) / parseNum(x.slabEspacementAStr)
     : 0;
+
+  const sharedNtEach = sharedNtEachBase * nbMultiplier;
 
   const sharedQteEach = equalDualSharedSpacingPerSide
     ? sharedNtEach * (parseNum(x.slabLongueurAStr) + parseNum(x.ancrageStr))
     : 0;
 
-  const separateNtA = equalDualSeparateSpacingPerSide
+  const separateNtABase = equalDualSeparateSpacingPerSide
     ? parseNum(x.slabLongueurAStr) / parseNum(x.slabEspacementAStr)
     : 0;
 
-  const separateNtB = equalDualSeparateSpacingPerSide
+  const separateNtBBase = equalDualSeparateSpacingPerSide
     ? parseNum(x.slabLongueurAStr) / parseNum(x.slabEspacementBStr)
     : 0;
+
+  const separateNtA = separateNtABase * nbMultiplier;
+  const separateNtB = separateNtBBase * nbMultiplier;
 
   const separateQteA = equalDualSeparateSpacingPerSide
     ? separateNtA * (parseNum(x.slabLongueurAStr) + parseNum(x.ancrageStr))
@@ -115,28 +183,36 @@ export function useFormeBarreResult({
     ntLabelA: slabDiamLabelA ? `N.T.Barre ${slabDiamLabelA}` : "N.T.Barre a",
     ntLabelB: slabDiamLabelB ? `N.T.Barre ${slabDiamLabelB}` : "N.T.Barre b",
     qteA: fmt(
-      equalDualSharedSpacingPerSide
+      diffDualParts
+        ? diffDualParts.qteA
+        : equalDualSharedSpacingPerSide
         ? sharedQteEach
         : equalDualSeparateSpacingPerSide
           ? separateQteA
           : barreAuto.qte,
     ),
     qteB: fmt(
-      equalDualSharedSpacingPerSide
+      diffDualParts
+        ? diffDualParts.qteB
+        : equalDualSharedSpacingPerSide
         ? sharedQteEach
         : equalDualSeparateSpacingPerSide
           ? separateQteB
           : barreAuto.qte,
     ),
     ntA: fmt(
-      equalDualSharedSpacingPerSide
+      diffDualParts
+        ? diffDualParts.ntA
+        : equalDualSharedSpacingPerSide
         ? sharedNtEach
         : equalDualSeparateSpacingPerSide
           ? separateNtA
           : barreAuto.nt,
     ),
     ntB: fmt(
-      equalDualSharedSpacingPerSide
+      diffDualParts
+        ? diffDualParts.ntB
+        : equalDualSharedSpacingPerSide
         ? sharedNtEach
         : equalDualSeparateSpacingPerSide
           ? separateNtB

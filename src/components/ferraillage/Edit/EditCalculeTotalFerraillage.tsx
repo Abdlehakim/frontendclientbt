@@ -8,6 +8,7 @@ import TotalRowModalWindow, {
   type TotalRowModalPayload,
   type RowForme,
   type ExtraBoxKind,
+  type ExtraFormePayload,
 } from "./windows/TotalRowModalWindow";
 
 type TotalRow = {
@@ -133,6 +134,59 @@ function computeCadrePerimetreNum(forme: Exclude<RowForme, "BARRE">, longueur: n
   return 0;
 }
 
+function isSlabDesignationName(value: string) {
+  const normalized = value.trim().toLowerCase();
+  return normalized === "dalle pleine" || normalized === "chape" || normalized === "radier";
+}
+
+function computeSlabSpacingQtyEntriesFromPayload(
+  payload: TotalRowModalPayload | ExtraFormePayload,
+  parentNb: number,
+  fallbackDia: number,
+) {
+  if (
+    payload.slabCalcMethod !== "SURFACE_TOTAL" ||
+    payload.slabSpacingMode !== "ESPACEMENT" ||
+    (payload.slabSpacingRelation !== "EA_EQ_EB" && payload.slabSpacingRelation !== "EA_NE_EB")
+  ) {
+    return null;
+  }
+
+  const longueurA = payload.slabLongueurA ?? 0;
+  const longueurB = payload.slabLongueurB ?? 0;
+  const espacementA = payload.slabEspacementA ?? 0;
+  const espacementB =
+    payload.slabSpacingRelation === "EA_NE_EB" ? payload.slabEspacementB ?? 0 : espacementA;
+  const ancrage = payload.ancrage ?? 0;
+
+  const ntA = espacementA > 0 ? longueurA / espacementA : 0;
+  const ntB = espacementB > 0 ? longueurB / espacementB : 0;
+  const qtyA = parentNb * ntA * (longueurB + ancrage);
+  const qtyB = parentNb * ntB * (longueurA + ancrage);
+
+  if (payload.slabRelation === "ab_diff_same_if") {
+    return [{ dia: fallbackDia, qtyM: qtyA + qtyB }];
+  }
+
+  if (payload.slabRelation === "ab_diff_diff_if") {
+    const diaA =
+      typeof payload.slabDiametreAMm === "number" && Number.isFinite(payload.slabDiametreAMm)
+        ? payload.slabDiametreAMm
+        : fallbackDia;
+    const diaB =
+      typeof payload.slabDiametreBMm === "number" && Number.isFinite(payload.slabDiametreBMm)
+        ? payload.slabDiametreBMm
+        : fallbackDia;
+
+    return [
+      { dia: diaA, qtyM: qtyA },
+      { dia: diaB, qtyM: qtyB },
+    ];
+  }
+
+  return null;
+}
+
 function normalizePayloadDiameters(payload: TotalRowModalPayload, mms: number[]) {
   const fallbackDia = mms[0] ?? 6;
   const pick = (d: number | null | undefined) =>
@@ -167,6 +221,7 @@ function computeQtyPoidsByMmFromPayload(payloadIn: TotalRowModalPayload, mms: nu
 
   const nb = payload.nb ?? 0;
   const h = payload.hauteur ?? 0;
+  const isSlabPayload = isSlabDesignationName(payload.designation);
 
   const addQty = (dia: number, qtyM: number) => {
     if (!Number.isFinite(qtyM) || qtyM <= 0) return;
@@ -189,7 +244,9 @@ function computeQtyPoidsByMmFromPayload(payloadIn: TotalRowModalPayload, mms: nu
   const mainDia = payload.diametreMm;
 
   if (payload.forme === "BARRE") {
-    handleBarre(mainDia, payload.nBarre ?? 0, payload.ancrage ?? 0, payload.attenteBarre ?? 0);
+    const slabQtyEntries = isSlabPayload ? computeSlabSpacingQtyEntriesFromPayload(payload, nb, mainDia) : null;
+    if (slabQtyEntries) slabQtyEntries.forEach((entry) => addQty(entry.dia, entry.qtyM));
+    else handleBarre(mainDia, payload.nBarre ?? 0, payload.ancrage ?? 0, payload.attenteBarre ?? 0);
   } else {
     handleCadre(
       payload.forme,
@@ -205,7 +262,10 @@ function computeQtyPoidsByMmFromPayload(payloadIn: TotalRowModalPayload, mms: nu
   for (const x of payload.extraFormes ?? []) {
     const dia = x.diametreMm;
     if (x.forme === "BARRE") {
-      handleBarre(dia, x.nBarre ?? 0, x.ancrage ?? 0, x.attenteBarre ?? 0);
+      const fallbackDia = typeof dia === "number" && Number.isFinite(dia) ? dia : mainDia;
+      const slabQtyEntries = isSlabPayload ? computeSlabSpacingQtyEntriesFromPayload(x, nb, fallbackDia) : null;
+      if (slabQtyEntries) slabQtyEntries.forEach((entry) => addQty(entry.dia, entry.qtyM));
+      else handleBarre(dia, x.nBarre ?? 0, x.ancrage ?? 0, x.attenteBarre ?? 0);
     } else {
       handleCadre(
         x.forme as Exclude<RowForme, "BARRE">,

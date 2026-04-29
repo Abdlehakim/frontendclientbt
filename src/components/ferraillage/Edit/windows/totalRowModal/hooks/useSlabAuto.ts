@@ -1,5 +1,10 @@
 import { useMemo } from "react";
 import {
+  computeSlabDiffSharedDualSpacingNT,
+  computeSlabDiffSharedDualSpacingQte,
+  computeSlabDiffSharedSpacingNT,
+  computeSlabDiffSharedSpacingQte,
+  computeSlabCrossSpacingParts,
   computeSlabSharedSpacingNT,
   computeSlabSharedSpacingQte,
   computeSlabDualSpacingNT,
@@ -26,6 +31,7 @@ export function useSlabAuto({
   showSlabModeAndDualNbBarRow,
 
   slabDiffSharedActive,
+  slabDiffDualActive,
   slabEffectiveSpacingModeValue,
   slabEffectiveLinearMetricStr,
 }: {
@@ -43,6 +49,7 @@ export function useSlabAuto({
   showSlabModeAndDualNbBarRow: boolean;
 
   slabDiffSharedActive: boolean;
+  slabDiffDualActive: boolean;
 
   slabEffectiveSpacingModeValue: "ESPACEMENT" | "NB_CADRE";
   slabEffectiveLinearMetricStr: string;
@@ -56,6 +63,25 @@ export function useSlabAuto({
     // ===== ESPACEMENT =====
     if (slabEffectiveSpacingModeValue === "ESPACEMENT") {
       if (showSlabSharedSpacingInput) {
+        if (slabDiffDualActive) {
+          return computeSlabCrossSpacingParts(
+            nbStr,
+            x.slabLongueurAStr ?? "0",
+            x.slabLongueurBStr ?? "0",
+            x.slabEspacementAStr ?? "0",
+            x.slabEspacementAStr ?? "0",
+            "0",
+          ).ntTotal;
+        }
+
+        if (slabDiffSharedActive) {
+          return computeSlabDiffSharedSpacingNT(
+            x.slabLongueurAStr ?? "0",
+            x.slabLongueurBStr ?? "0",
+            x.slabEspacementAStr ?? "0",
+          ) * (Number(nbStr) || 0);
+        }
+
         return computeSlabSharedSpacingNT(
           nbStr,
           x.slabLongueurAStr ?? "0",
@@ -64,6 +90,26 @@ export function useSlabAuto({
       }
 
       if (showSlabDualSpacingInputs) {
+        if (slabDiffDualActive) {
+          return computeSlabCrossSpacingParts(
+            nbStr,
+            x.slabLongueurAStr ?? "0",
+            x.slabLongueurBStr ?? "0",
+            x.slabEspacementAStr ?? "0",
+            x.slabEspacementBStr ?? "0",
+            "0",
+          ).ntTotal;
+        }
+
+        if (slabDiffSharedActive) {
+          return computeSlabDiffSharedDualSpacingNT(
+            x.slabLongueurAStr ?? "0",
+            x.slabLongueurBStr ?? "0",
+            x.slabEspacementAStr ?? "0",
+            x.slabEspacementBStr ?? "0",
+          ) * (Number(nbStr) || 0);
+        }
+
         return computeSlabDualSpacingNT(
           nbStr,
           x.slabLongueurAStr ?? "0",
@@ -99,6 +145,8 @@ export function useSlabAuto({
     showSlabDualNbCadreInputs,
     showSlabModeAndSharedNbBarRow,
     showSlabModeAndDualNbBarRow,
+    slabDiffSharedActive,
+    slabDiffDualActive,
     x,
   ]);
 
@@ -111,6 +159,26 @@ export function useSlabAuto({
     // ===== ESPACEMENT =====
     if (slabEffectiveSpacingModeValue === "ESPACEMENT") {
       if (showSlabSharedSpacingInput) {
+        if (slabDiffDualActive) {
+          return computeSlabCrossSpacingParts(
+            nbStr,
+            x.slabLongueurAStr ?? "0",
+            x.slabLongueurBStr ?? "0",
+            x.slabEspacementAStr ?? "0",
+            x.slabEspacementAStr ?? "0",
+            slabEffectiveLinearMetricStr,
+          ).qteTotal;
+        }
+
+        if (slabDiffSharedActive) {
+          return computeSlabDiffSharedSpacingQte(
+            x.slabLongueurAStr ?? "0",
+            x.slabLongueurBStr ?? "0",
+            x.slabEspacementAStr ?? "0",
+            slabEffectiveLinearMetricStr,
+          ) * (Number(nbStr) || 0);
+        }
+
         return computeSlabSharedSpacingQte(
           nbStr,
           x.slabLongueurAStr ?? "0",
@@ -120,6 +188,27 @@ export function useSlabAuto({
       }
 
       if (showSlabDualSpacingInputs) {
+        if (slabDiffDualActive) {
+          return computeSlabCrossSpacingParts(
+            nbStr,
+            x.slabLongueurAStr ?? "0",
+            x.slabLongueurBStr ?? "0",
+            x.slabEspacementAStr ?? "0",
+            x.slabEspacementBStr ?? "0",
+            slabEffectiveLinearMetricStr,
+          ).qteTotal;
+        }
+
+        if (slabDiffSharedActive) {
+          return computeSlabDiffSharedDualSpacingQte(
+            x.slabLongueurAStr ?? "0",
+            x.slabLongueurBStr ?? "0",
+            x.slabEspacementAStr ?? "0",
+            x.slabEspacementBStr ?? "0",
+            slabEffectiveLinearMetricStr,
+          ) * (Number(nbStr) || 0);
+        }
+
         return computeSlabDualSpacingQte(
           nbStr,
           x.slabLongueurAStr ?? "0",
@@ -181,6 +270,7 @@ export function useSlabAuto({
     showSlabModeAndSharedNbBarRow,
     showSlabModeAndDualNbBarRow,
     slabDiffSharedActive,
+    slabDiffDualActive,
     slabEffectiveLinearMetricStr,
     x,
   ]);

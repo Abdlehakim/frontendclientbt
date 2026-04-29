@@ -22,6 +22,8 @@ import {
   FormeCard,
 } from "./components";
 import {
+  computeDiffDualSlabSpacingRecapMetrics,
+  computeDiffSharedSlabSpacingRecapMetrics,
   computeSlabQte,
   computeSpecialSlabSpacingRecapMetrics,
 } from "./calculations/recapCalculations";
@@ -450,14 +452,113 @@ export default function TotalRowModalWindowInner({
           const relation = asSlabRelation(f.slabRelation);
           const spacingMode = asSlabSpacingMode(f.slabSpacingMode);
           const spacingRelation = asSlabSpacingRelation(f.slabSpacingRelation);
+          const normalizedSpacingRelation = normalizeSlabSpacingRelationValue(spacingRelation);
           const steelType = asTrimmedString(f.barreCategorie, "") || undefined;
+
+          const diffDualSpacingMetrics = computeDiffDualSlabSpacingRecapMetrics({
+            nbStr,
+            longueurAStr: asString(f.slabLongueurAStr),
+            longueurBStr: asString(f.slabLongueurBStr),
+            ancrageStr: asString(f.ancrageStr),
+            spacingMode,
+            spacingRelation: normalizedSpacingRelation,
+            calcMethod,
+            relation,
+            spacingAStr: asString(f.slabEspacementAStr),
+            spacingBStr: asString(f.slabEspacementBStr),
+          });
+
+          if (diffDualSpacingMetrics) {
+            const diaA =
+              typeof f.slabDiametreAMm === "number" && Number.isFinite(f.slabDiametreAMm)
+                ? f.slabDiametreAMm
+                : dia;
+            const diaB =
+              typeof f.slabDiametreBMm === "number" && Number.isFinite(f.slabDiametreBMm)
+                ? f.slabDiametreBMm
+                : dia;
+            const diaLabelA = String(diaA).replace(".", ",");
+            const diaLabelB = String(diaB).replace(".", ",");
+            const safeQtyA = diffDualSpacingMetrics.qteA > 0 ? diffDualSpacingMetrics.qteA : 0;
+            const safeQtyB = diffDualSpacingMetrics.qteB > 0 ? diffDualSpacingMetrics.qteB : 0;
+
+            linesBarres.push({
+              key: `${f.id}:a`,
+              label: `N.T.Barre ${diaLabelA}`,
+              dia: diaA,
+              qtyM: safeQtyA,
+              nt: diffDualSpacingMetrics.ntA > 0 ? diffDualSpacingMetrics.ntA : 0,
+              cutLenM: diffDualSpacingMetrics.cutLenA > 0 ? diffDualSpacingMetrics.cutLenA : 0,
+              steelType,
+              litLabel: "Surface totale",
+            });
+
+            linesBarres.push({
+              key: `${f.id}:b`,
+              label: `N.T.Barre ${diaLabelB}`,
+              dia: diaB,
+              qtyM: safeQtyB,
+              nt: diffDualSpacingMetrics.ntB > 0 ? diffDualSpacingMetrics.ntB : 0,
+              cutLenM: diffDualSpacingMetrics.cutLenB > 0 ? diffDualSpacingMetrics.cutLenB : 0,
+              steelType,
+              litLabel: "Surface totale",
+            });
+
+            addQty(diaA, safeQtyA);
+            addQty(diaB, safeQtyB);
+            continue;
+          }
+
+          const diffSharedSpacingMetrics = computeDiffSharedSlabSpacingRecapMetrics({
+            nbStr,
+            longueurAStr: asString(f.slabLongueurAStr),
+            longueurBStr: asString(f.slabLongueurBStr),
+            ancrageStr: asString(f.ancrageStr),
+            spacingMode,
+            spacingRelation: normalizedSpacingRelation,
+            calcMethod,
+            relation,
+            spacingAStr: asString(f.slabEspacementAStr),
+            spacingBStr: asString(f.slabEspacementBStr),
+          });
+
+          if (diffSharedSpacingMetrics) {
+            const safeQtyA = diffSharedSpacingMetrics.qtyA > 0 ? diffSharedSpacingMetrics.qtyA : 0;
+            const safeQtyB = diffSharedSpacingMetrics.qtyB > 0 ? diffSharedSpacingMetrics.qtyB : 0;
+
+            linesBarres.push({
+              key: `${f.id}:a`,
+              label: "N.T.Barre / a",
+              dia,
+              qtyM: safeQtyA,
+              nt: diffSharedSpacingMetrics.ntA > 0 ? diffSharedSpacingMetrics.ntA : 0,
+              cutLenM: diffSharedSpacingMetrics.cutLenA > 0 ? diffSharedSpacingMetrics.cutLenA : 0,
+              steelType,
+              litLabel: "Surface totale",
+            });
+
+            linesBarres.push({
+              key: `${f.id}:b`,
+              label: "N.T.Barre / b",
+              dia,
+              qtyM: safeQtyB,
+              nt: diffSharedSpacingMetrics.ntB > 0 ? diffSharedSpacingMetrics.ntB : 0,
+              cutLenM: diffSharedSpacingMetrics.cutLenB > 0 ? diffSharedSpacingMetrics.cutLenB : 0,
+              steelType,
+              litLabel: "Surface totale",
+            });
+
+            addQty(dia, safeQtyA);
+            addQty(dia, safeQtyB);
+            continue;
+          }
 
           const specialSpacingMetrics = computeSpecialSlabSpacingRecapMetrics({
             nbStr,
             longueurBarreStr: asString(f.slabLongueurAStr),
             ancrageStr: asString(f.ancrageStr),
             spacingMode,
-            spacingRelation: normalizeSlabSpacingRelationValue(spacingRelation),
+            spacingRelation: normalizedSpacingRelation,
             calcMethod,
             relation,
             spacingAStr: asString(f.slabEspacementAStr),

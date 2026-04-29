@@ -16,6 +16,9 @@ import {
 } from "../utils";
 import {
   asSlabCalcMethod,
+  asSlabRelation,
+  asSlabSpacingMode,
+  asSlabSpacingRelation,
   asString,
   asTrimmedString,
   isFormeKind,
@@ -89,7 +92,8 @@ export function buildTotalRowModalPayload({
   const mainLargeur = mainForme === "RECTANGULAIRE" ? parsePositiveNumber(asString(main.largeurStr)) : null;
   const mainRayon = mainForme === "CIRCULAIRE" ? parsePositiveNumber(asString(main.rayonStr)) : null;
 
-  const mainAncrage = isSlabMode ? null : parseNonNegativeNumber(asString(main.ancrageStr)) ?? null;
+  const mainAncrage =
+    mainForme === "BARRE" || !isSlabMode ? parseNonNegativeNumber(asString(main.ancrageStr)) ?? null : null;
   const mainAttenteBarre =
     mainForme === "BARRE" && !isSlabMode ? (parseNonNegativeNumber(asString(main.attenteStr)) ?? null) : null;
 
@@ -106,6 +110,7 @@ export function buildTotalRowModalPayload({
 
   const extras: ExtraFormePayload[] = formes.slice(1).map((x) => {
     const forme: FormeKind = isFormeKind(x.forme) ? x.forme : "CARRE";
+    const isSlabBarre = forme === "BARRE" && isSlabMode;
     const per = computeCadrePerimetre(
       forme,
       asString(x.longueurStr),
@@ -129,16 +134,38 @@ export function buildTotalRowModalPayload({
             : null,
       largeur: forme === "RECTANGULAIRE" ? parsePositiveNumber(asString(x.largeurStr)) : null,
       rayon: forme === "CIRCULAIRE" ? parsePositiveNumber(asString(x.rayonStr)) : null,
-      ancrage: isSlabMode ? null : parseNonNegativeNumber(asString(x.ancrageStr)) ?? null,
+      ancrage:
+        forme === "BARRE" || !isSlabMode ? parseNonNegativeNumber(asString(x.ancrageStr)) ?? null : null,
       attenteBarre: forme === "BARRE" && !isSlabMode ? (parseNonNegativeNumber(asString(x.attenteStr)) ?? null) : null,
       perimetre: xShow ? (per != null && per > 0 ? per : null) : null,
       espacement: xShow ? (parsePositiveNumber(asString(x.espacementStr)) ?? null) : null,
-      slabCalcMethod: forme === "BARRE" && isSlabMode ? asSlabCalcMethod(x.slabCalcMethod) : undefined,
-      slabSurface: forme === "BARRE" && isSlabMode ? parseNonNegativeNumber(asString(x.slabSurfaceStr)) ?? null : null,
+      slabCalcMethod: isSlabBarre ? asSlabCalcMethod(x.slabCalcMethod) : undefined,
+      slabSurface: isSlabBarre ? parseNonNegativeNumber(asString(x.slabSurfaceStr)) ?? null : null,
       slabQtePerM2:
-        forme === "BARRE" && isSlabMode ? parseNonNegativeNumber(asString(x.slabQtePerM2Str)) ?? null : null,
+        isSlabBarre ? parseNonNegativeNumber(asString(x.slabQtePerM2Str)) ?? null : null,
+      slabRelation: isSlabBarre ? asSlabRelation(x.slabRelation) : undefined,
+      slabSpacingMode: isSlabBarre ? asSlabSpacingMode(x.slabSpacingMode) : undefined,
+      slabSpacingRelation: isSlabBarre ? asSlabSpacingRelation(x.slabSpacingRelation) : undefined,
+      slabLongueurA: isSlabBarre ? parseNonNegativeNumber(asString(x.slabLongueurAStr)) ?? null : null,
+      slabLongueurB: isSlabBarre ? parseNonNegativeNumber(asString(x.slabLongueurBStr)) ?? null : null,
+      slabDiametreAMm:
+        isSlabBarre && typeof x.slabDiametreAMm === "number" && Number.isFinite(x.slabDiametreAMm)
+          ? x.slabDiametreAMm
+          : null,
+      slabDiametreBMm:
+        isSlabBarre && typeof x.slabDiametreBMm === "number" && Number.isFinite(x.slabDiametreBMm)
+          ? x.slabDiametreBMm
+          : null,
+      slabNBarreA: isSlabBarre ? parseNonNegativeInt(asString(x.slabNBarreAStr)) ?? null : null,
+      slabNBarreB: isSlabBarre ? parseNonNegativeInt(asString(x.slabNBarreBStr)) ?? null : null,
+      slabEspacementA: isSlabBarre ? parseNonNegativeNumber(asString(x.slabEspacementAStr)) ?? null : null,
+      slabEspacementB: isSlabBarre ? parseNonNegativeNumber(asString(x.slabEspacementBStr)) ?? null : null,
+      slabNbCadreA: isSlabBarre ? parseNonNegativeInt(asString(x.slabNbCadreAStr)) ?? null : null,
+      slabNbCadreB: isSlabBarre ? parseNonNegativeInt(asString(x.slabNbCadreBStr)) ?? null : null,
     };
   });
+
+  const isMainSlabBarre = mainForme === "BARRE" && isSlabMode;
 
   return {
     designation: (designation ?? "").trim(),
@@ -161,11 +188,29 @@ export function buildTotalRowModalPayload({
     etriers,
     extraFormes: extras.length ? extras : undefined,
     extraBoxes: extraBoxesPayload.length ? extraBoxesPayload : undefined,
-    slabCalcMethod: mainForme === "BARRE" && isSlabMode ? asSlabCalcMethod(main.slabCalcMethod) : undefined,
+    slabCalcMethod: isMainSlabBarre ? asSlabCalcMethod(main.slabCalcMethod) : undefined,
     slabSurface:
-      mainForme === "BARRE" && isSlabMode ? parseNonNegativeNumber(asString(main.slabSurfaceStr)) ?? null : null,
+      isMainSlabBarre ? parseNonNegativeNumber(asString(main.slabSurfaceStr)) ?? null : null,
     slabQtePerM2:
-      mainForme === "BARRE" && isSlabMode ? parseNonNegativeNumber(asString(main.slabQtePerM2Str)) ?? null : null,
+      isMainSlabBarre ? parseNonNegativeNumber(asString(main.slabQtePerM2Str)) ?? null : null,
+    slabRelation: isMainSlabBarre ? asSlabRelation(main.slabRelation) : undefined,
+    slabSpacingMode: isMainSlabBarre ? asSlabSpacingMode(main.slabSpacingMode) : undefined,
+    slabSpacingRelation: isMainSlabBarre ? asSlabSpacingRelation(main.slabSpacingRelation) : undefined,
+    slabLongueurA: isMainSlabBarre ? parseNonNegativeNumber(asString(main.slabLongueurAStr)) ?? null : null,
+    slabLongueurB: isMainSlabBarre ? parseNonNegativeNumber(asString(main.slabLongueurBStr)) ?? null : null,
+    slabDiametreAMm:
+      isMainSlabBarre && typeof main.slabDiametreAMm === "number" && Number.isFinite(main.slabDiametreAMm)
+        ? main.slabDiametreAMm
+        : null,
+    slabDiametreBMm:
+      isMainSlabBarre && typeof main.slabDiametreBMm === "number" && Number.isFinite(main.slabDiametreBMm)
+        ? main.slabDiametreBMm
+        : null,
+    slabNBarreA: isMainSlabBarre ? parseNonNegativeInt(asString(main.slabNBarreAStr)) ?? null : null,
+    slabNBarreB: isMainSlabBarre ? parseNonNegativeInt(asString(main.slabNBarreBStr)) ?? null : null,
+    slabEspacementA: isMainSlabBarre ? parseNonNegativeNumber(asString(main.slabEspacementAStr)) ?? null : null,
+    slabEspacementB: isMainSlabBarre ? parseNonNegativeNumber(asString(main.slabEspacementBStr)) ?? null : null,
+    slabNbCadreA: isMainSlabBarre ? parseNonNegativeInt(asString(main.slabNbCadreAStr)) ?? null : null,
+    slabNbCadreB: isMainSlabBarre ? parseNonNegativeInt(asString(main.slabNbCadreBStr)) ?? null : null,
   };
 }
-

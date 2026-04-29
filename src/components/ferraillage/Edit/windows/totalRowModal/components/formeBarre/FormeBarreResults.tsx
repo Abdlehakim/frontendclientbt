@@ -1,5 +1,6 @@
 import type { FormeBarreResult } from "../../hooks/useFormeBarreResult";
 import ResultDualSection from "./sections/ResultDualSection";
+import ResultSingleQteDualNtSection from "./sections/ResultSingleQteDualNtSection";
 import ResultSingleSection from "./sections/ResultSingleSection";
 
 export default function FormeBarreResults({
@@ -27,6 +28,19 @@ export default function FormeBarreResults({
     );
   }
 
+  if (result.kind === "single-qte-dual-nt") {
+    return (
+      <div className="sm:col-span-2">
+        <ResultSingleQteDualNtSection
+          inputClass={inputClass}
+          qteValue={result.qteValue}
+          ntA={result.ntA}
+          ntB={result.ntB}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="sm:col-span-2">
       <ResultSingleSection
@@ -37,4 +51,3 @@ export default function FormeBarreResults({
     </div>
   );
 }
-
