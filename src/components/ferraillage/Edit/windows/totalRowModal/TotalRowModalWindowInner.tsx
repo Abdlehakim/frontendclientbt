@@ -28,9 +28,19 @@ import {
   computeSpecialSlabSpacingRecapMetrics,
 } from "./calculations/recapCalculations";
 import {
+  SLAB_COMMERCIAL_BAR_LENGTH_M,
+  computeCommercialBarCount,
+  computeSlabSurfacePerM2SpacingMetrics,
+  computeSlabSurfacePerM2SplitMetrics,
+} from "./calculations/slabCalculations";
+import {
   computeCadrePerimetre,
   computeExtraPerimetre,
 } from "./calculations/shapeCalculations";
+import {
+  formatDiametreLabel,
+  getDualDiameterResultLabels,
+} from "./config/formeBarreLabels";
 import RecapPanel, { type RecapData } from "./components/recap/RecapPanel";
 import FormeBarreAbbreviationsModal from "./components/formeBarre/FormeBarreAbbreviationsModal";
 import BarreCard from "./components/modal/BarreCard";
@@ -60,6 +70,8 @@ import {
   hasAnyValue,
   isFormeKind,
   isSlabDesignationValue,
+  isSlabSurfacePerM2SpacingDesignationValue,
+  normalizeSlabSurfacePerM2Relation,
   normalizeDesignation,
   normalizeSlabSpacingRelationValue,
 } from "./state/guards";
@@ -129,7 +141,9 @@ export default function TotalRowModalWindowInner({
       initial?.perimetre != null ||
       initial?.espacement != null ||
       initial?.slabSurface != null ||
-      initial?.slabQtePerM2 != null;
+      initial?.slabQtePerM2 != null ||
+      initial?.slabPerimetre != null ||
+      initial?.slabAncrageLineaire != null;
 
     const anyAdvancedFormState = hasAnyValue(initialRaw, [
       "semelleRelation",
@@ -410,7 +424,10 @@ export default function TotalRowModalWindowInner({
       }
 
       if (forme === "BARRE" && isSlabDesignation) {
-        return isSlabBarreValid(x);
+        return isSlabBarreValid(x, {
+          isSlabSurfacePerM2SpacingDesignation:
+            isSlabSurfacePerM2SpacingDesignationValue(designation),
+        });
       }
 
       return formeValid(
@@ -429,6 +446,8 @@ export default function TotalRowModalWindowInner({
     const h = showHauteurField ? parsePositiveNumber(hauteurStr) ?? 0 : 0;
     const isSemellesDesignationInner = normalizeDesignation(designation) === "semelles";
     const isSlabDesignationInner = isSlabDesignationValue(designation);
+    const isSlabSurfacePerM2SpacingDesignationInner =
+      isSlabSurfacePerM2SpacingDesignationValue(designation);
 
     const linesCadres: RecapData["linesCadres"] = [];
     const linesBarres: RecapData["linesBarres"] = [];
@@ -455,6 +474,86 @@ export default function TotalRowModalWindowInner({
           const normalizedSpacingRelation = normalizeSlabSpacingRelationValue(spacingRelation);
           const steelType = asTrimmedString(f.barreCategorie, "") || undefined;
 
+          if (
+            isSlabSurfacePerM2SpacingDesignationInner &&
+            calcMethod === "SURFACE_TOTAL_PER_M2"
+          ) {
+            const dallePleinePerM2Metrics = computeSlabSurfacePerM2SpacingMetrics({
+              surfaceStr: asString(f.slabSurfaceStr),
+              perimetreStr: asString(f.slabPerimetreStr),
+              ancrageLineaireStr: asString(f.slabAncrageLineaireStr),
+              spacingRelation,
+              spacingAStr: asString(f.slabEspacementAStr),
+              spacingBStr: asString(f.slabEspacementBStr),
+            });
+            const dallePleineRelation = normalizeSlabSurfacePerM2Relation(f.slabRelation);
+            const totalQtyM = dallePleinePerM2Metrics.qtyM * nb;
+            const safeTotalQtyM = totalQtyM > 0 ? totalQtyM : 0;
+            const totalNt = computeCommercialBarCount(totalQtyM, SLAB_COMMERCIAL_BAR_LENGTH_M);
+
+            if (dallePleineRelation === "ab_equal_diff_if") {
+              const diaA =
+                typeof f.slabDiametreAMm === "number" && Number.isFinite(f.slabDiametreAMm)
+                  ? f.slabDiametreAMm
+                  : dia;
+              const diaB =
+                typeof f.slabDiametreBMm === "number" && Number.isFinite(f.slabDiametreBMm)
+                  ? f.slabDiametreBMm
+                  : dia;
+              const dualNtLabels = getDualDiameterResultLabels(
+                formatDiametreLabel(diaA),
+                formatDiametreLabel(diaB),
+              );
+              const splitMetrics = computeSlabSurfacePerM2SplitMetrics({
+                qA: dallePleinePerM2Metrics.qA,
+                qB: dallePleinePerM2Metrics.qB,
+                ancrageM: dallePleinePerM2Metrics.ancrageM,
+                multiplier: nb,
+                commercialBarLengthM: dallePleinePerM2Metrics.cutLenM,
+              });
+
+              linesBarres.push({
+                key: `${f.id}:a`,
+                label: dualNtLabels.ntLabelA,
+                dia: diaA,
+                qtyM: splitMetrics.qtyA > 0 ? splitMetrics.qtyA : 0,
+                nt: splitMetrics.ntA > 0 ? splitMetrics.ntA : 0,
+                cutLenM: splitMetrics.cutLenM,
+                steelType,
+              litLabel: "Surface totale / m²",
+              });
+
+              linesBarres.push({
+                key: `${f.id}:b`,
+                label: dualNtLabels.ntLabelB,
+                dia: diaB,
+                qtyM: splitMetrics.qtyB > 0 ? splitMetrics.qtyB : 0,
+                nt: splitMetrics.ntB > 0 ? splitMetrics.ntB : 0,
+                cutLenM: splitMetrics.cutLenM,
+                steelType,
+                litLabel: "Surface totale / m²",
+              });
+
+              addQty(diaA, splitMetrics.qtyA > 0 ? splitMetrics.qtyA : 0);
+              addQty(diaB, splitMetrics.qtyB > 0 ? splitMetrics.qtyB : 0);
+              continue;
+            }
+
+            linesBarres.push({
+              key: f.id,
+              label: "N.T.Barre",
+              dia,
+              qtyM: safeTotalQtyM,
+              nt: totalNt,
+              cutLenM: dallePleinePerM2Metrics.cutLenM > 0 ? dallePleinePerM2Metrics.cutLenM : 0,
+              steelType,
+                litLabel: "Surface totale / m²",
+            });
+
+            addQty(dia, safeTotalQtyM);
+            continue;
+          }
+
           const diffDualSpacingMetrics = computeDiffDualSlabSpacingRecapMetrics({
             nbStr,
             longueurAStr: asString(f.slabLongueurAStr),
@@ -477,14 +576,16 @@ export default function TotalRowModalWindowInner({
               typeof f.slabDiametreBMm === "number" && Number.isFinite(f.slabDiametreBMm)
                 ? f.slabDiametreBMm
                 : dia;
-            const diaLabelA = String(diaA).replace(".", ",");
-            const diaLabelB = String(diaB).replace(".", ",");
+            const dualNtLabels = getDualDiameterResultLabels(
+              formatDiametreLabel(diaA),
+              formatDiametreLabel(diaB),
+            );
             const safeQtyA = diffDualSpacingMetrics.qteA > 0 ? diffDualSpacingMetrics.qteA : 0;
             const safeQtyB = diffDualSpacingMetrics.qteB > 0 ? diffDualSpacingMetrics.qteB : 0;
 
             linesBarres.push({
               key: `${f.id}:a`,
-              label: `N.T.Barre ${diaLabelA}`,
+              label: dualNtLabels.ntLabelA,
               dia: diaA,
               qtyM: safeQtyA,
               nt: diffDualSpacingMetrics.ntA > 0 ? diffDualSpacingMetrics.ntA : 0,
@@ -495,7 +596,7 @@ export default function TotalRowModalWindowInner({
 
             linesBarres.push({
               key: `${f.id}:b`,
-              label: `N.T.Barre ${diaLabelB}`,
+              label: dualNtLabels.ntLabelB,
               dia: diaB,
               qtyM: safeQtyB,
               nt: diffDualSpacingMetrics.ntB > 0 ? diffDualSpacingMetrics.ntB : 0,

@@ -5,9 +5,10 @@ import type {
   SlabSpacingRelation,
 } from "../types";
 import type { SemelleNappe, SlabNappe, SemelleRelation } from "./formeBarreOptions";
+import { safeNumber } from "../utils";
 
 export function fmt(n: number) {
-  const r = Math.round(n * 1000) / 1000;
+  const r = Math.round(safeNumber(n) * 1000) / 1000;
   return String(r).replace(".", ",");
 }
 
@@ -92,4 +93,24 @@ export function getSlabSpacingRelationLabel(v: SlabSpacingRelation) {
 export function formatDiametreLabel(mm: number | null | undefined) {
   if (typeof mm !== "number" || !Number.isFinite(mm) || mm <= 0) return "";
   return String(mm).replace(".", ",");
+}
+
+export function getDualDiameterResultLabels(diaLabelA: string, diaLabelB: string) {
+  const sameDiameter = !!diaLabelA && !!diaLabelB && diaLabelA === diaLabelB;
+
+  if (sameDiameter) {
+    return {
+      qteLabelA: `Q. Fer a - Fer ${diaLabelA} (m)`,
+      qteLabelB: `Q. Fer b - Fer ${diaLabelB} (m)`,
+      ntLabelA: `N.T.Barre a - Fer ${diaLabelA}`,
+      ntLabelB: `N.T.Barre b - Fer ${diaLabelB}`,
+    };
+  }
+
+  return {
+    qteLabelA: diaLabelA ? `Q. Fer ${diaLabelA} (m)` : "Q. Fer a (m)",
+    qteLabelB: diaLabelB ? `Q. Fer ${diaLabelB} (m)` : "Q. Fer b (m)",
+    ntLabelA: diaLabelA ? `N.T.Barre ${diaLabelA}` : "N.T.Barre a",
+    ntLabelB: diaLabelB ? `N.T.Barre ${diaLabelB}` : "N.T.Barre b",
+  };
 }

@@ -4,6 +4,17 @@ export function clamp(n: number, a: number, b: number) {
   return Math.min(b, Math.max(a, n));
 }
 
+export function safeNumber(value: unknown) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
+export function safeDivide(a: unknown, b: unknown) {
+  const denominator = Number(b);
+  if (!b || !Number.isFinite(denominator) || denominator === 0) return 0;
+  return safeNumber(a) / denominator;
+}
+
 export function parsePositiveNumber(raw: string) {
   const s = (raw ?? "").trim();
   if (!s) return null;

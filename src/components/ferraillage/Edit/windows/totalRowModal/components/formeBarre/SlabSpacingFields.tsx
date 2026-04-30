@@ -22,6 +22,10 @@ export default function SlabSpacingFields({
   inputClass: string;
   onPatch: FormeBarrePatch;
 }) {
+  const spacingModeOptions = slab.isSlabSurfacePerM2SpacingMode
+    ? (["ESPACEMENT"] as const)
+    : SLAB_SPACING_MODES;
+
   if (slab.showSlabSharedSpacingInput) {
     return (
       <div className="sm:col-span-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -30,7 +34,7 @@ export default function SlabSpacingFields({
             label="Mode de calcul"
             value={slab.slabSpacingModeValue}
             onChange={(v) => onPatch({ slabSpacingMode: v })}
-            options={SLAB_SPACING_MODES}
+            options={spacingModeOptions}
             getOptionLabel={getSlabSpacingModeLabel}
           />
         </div>
@@ -71,7 +75,7 @@ export default function SlabSpacingFields({
                 label="Mode de calcul"
                 value={slab.slabSpacingModeValue}
                 onChange={(v) => onPatch({ slabSpacingMode: v })}
-                options={SLAB_SPACING_MODES}
+                options={spacingModeOptions}
                 getOptionLabel={getSlabSpacingModeLabel}
               />
             </div>
@@ -113,7 +117,7 @@ export default function SlabSpacingFields({
             label="Mode de calcul"
             value={slab.slabSpacingModeValue}
             onChange={(v) => onPatch({ slabSpacingMode: v })}
-            options={SLAB_SPACING_MODES}
+            options={spacingModeOptions}
             getOptionLabel={getSlabSpacingModeLabel}
           />
         </div>
@@ -132,4 +136,3 @@ export default function SlabSpacingFields({
 
   return null;
 }
-

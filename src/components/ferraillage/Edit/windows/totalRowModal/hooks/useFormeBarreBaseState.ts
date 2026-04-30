@@ -4,6 +4,7 @@ import {
   LIT_CATEGORIES,
   SEMELLE_DESIGNATION,
   SLAB_DESIGNATIONS,
+  SLAB_SURFACE_PER_M2_SPACING_DESIGNATIONS,
   type BarreCategorie,
   isBarreCategorie,
 } from "../config/formeBarreOptions";
@@ -30,6 +31,9 @@ export function useFormeBarreBaseState({
     normalizedDesignation as (typeof SLAB_DESIGNATIONS)[number],
   );
   const isDallePleine = normalizedDesignation === "dalle pleine";
+  const isSlabSurfacePerM2SpacingDesignation = SLAB_SURFACE_PER_M2_SPACING_DESIGNATIONS.includes(
+    normalizedDesignation as (typeof SLAB_SURFACE_PER_M2_SPACING_DESIGNATIONS)[number],
+  );
 
   const fallbackDiametreValue = safeMms[0] ?? 6;
 
@@ -67,6 +71,7 @@ export function useFormeBarreBaseState({
     isSemelle,
     isSlab,
     isDallePleine,
+    isSlabSurfacePerM2SpacingDesignation,
     fallbackDiametreValue,
     barreCategorieValue,
     showLitField,

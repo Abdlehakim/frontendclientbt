@@ -32,7 +32,8 @@ export const BARRE_DESIGNATIONS = [
 ] as const;
 
 export const SEMELLE_DESIGNATION = "semelles";
-export const SLAB_DESIGNATIONS = ["dalle pleine", "chape", "radier"] as const;
+export const SLAB_DESIGNATIONS = ["dalle pleine", "chape", "radier", "voile"] as const;
+export const SLAB_SURFACE_PER_M2_SPACING_DESIGNATIONS = SLAB_DESIGNATIONS;
 
 export const BARRE_CATEGORIES: readonly BarreCategorie[] = [
   "Acier inférieur",

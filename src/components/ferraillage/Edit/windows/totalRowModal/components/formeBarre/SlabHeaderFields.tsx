@@ -28,6 +28,9 @@ export default function SlabHeaderFields({
     slabSpacingMode: "ESPACEMENT",
     slabSpacingRelation: "EA_EQ_EB",
   } as const;
+  const slabRelationOptions = slab.isSlabSurfacePerM2SpacingMode
+    ? (["ab_equal_same_if", "ab_equal_diff_if"] as const)
+    : SLAB_RELATIONS;
 
   return (
     <>
@@ -51,7 +54,7 @@ export default function SlabHeaderFields({
         />
       </div>
 
-      {slab.showSlabCombinedLengthRow ? (
+      {slab.showSlabRelationField && slab.showSlabCombinedLengthRow ? (
         <>
           <div className="flex flex-col">
             <SelectDropdown
@@ -63,7 +66,7 @@ export default function SlabHeaderFields({
                   ...resetSpacingPatch,
                 })
               }
-              options={SLAB_RELATIONS}
+              options={slabRelationOptions}
               getOptionLabel={getSlabRelationLabel}
             />
           </div>
@@ -81,7 +84,7 @@ export default function SlabHeaderFields({
             placeholder="Ex: 2,4"
           />
         </>
-      ) : (
+      ) : slab.showSlabRelationField ? (
         <div className="flex flex-col sm:col-span-2">
           <SelectDropdown
             label="Re. entre a et b"
@@ -92,11 +95,11 @@ export default function SlabHeaderFields({
                 ...resetSpacingPatch,
               })
             }
-            options={SLAB_RELATIONS}
+            options={slabRelationOptions}
             getOptionLabel={getSlabRelationLabel}
           />
         </div>
-      )}
+      ) : null}
 
       {slab.showSlabSeparateLengthRow ? (
         <>
@@ -119,4 +122,3 @@ export default function SlabHeaderFields({
     </>
   );
 }
-

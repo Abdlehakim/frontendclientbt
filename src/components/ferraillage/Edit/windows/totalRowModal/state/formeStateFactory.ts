@@ -29,6 +29,8 @@ function getResettableFormeFields(source: Partial<FormeState>) {
     perimetreStr: asString(source.perimetreStr),
     slabSurfaceStr: asString(source.slabSurfaceStr),
     slabQtePerM2Str: asString(source.slabQtePerM2Str),
+    slabPerimetreStr: asString(source.slabPerimetreStr),
+    slabAncrageLineaireStr: asString(source.slabAncrageLineaireStr),
   };
 }
 
@@ -46,6 +48,8 @@ function getSafeResetPatch(forme: FormeKind, source: Partial<FormeState>): Parti
     perimetreStr: asString(raw?.perimetreStr, base.perimetreStr),
     slabSurfaceStr: asString(raw?.slabSurfaceStr, base.slabSurfaceStr),
     slabQtePerM2Str: asString(raw?.slabQtePerM2Str, base.slabQtePerM2Str),
+    slabPerimetreStr: asString(raw?.slabPerimetreStr, base.slabPerimetreStr),
+    slabAncrageLineaireStr: asString(raw?.slabAncrageLineaireStr, base.slabAncrageLineaireStr),
   };
 }
 
@@ -81,6 +85,8 @@ export function createFormeState(
     slabCalcMethod: asSlabCalcMethod(source?.slabCalcMethod),
     slabSurfaceStr: asString(source?.slabSurfaceStr),
     slabQtePerM2Str: asString(source?.slabQtePerM2Str),
+    slabPerimetreStr: asString(source?.slabPerimetreStr),
+    slabAncrageLineaireStr: asString(source?.slabAncrageLineaireStr),
     slabRelation: asSlabRelation(source?.slabRelation),
     slabSpacingMode: asSlabSpacingMode(source?.slabSpacingMode),
     slabSpacingRelation: asSlabSpacingRelation(source?.slabSpacingRelation),
@@ -156,6 +162,9 @@ export function buildInitialFormes(
     slabCalcMethod: initial?.slabCalcMethod,
     slabSurfaceStr: initial?.slabSurface == null ? "0" : String(initial.slabSurface),
     slabQtePerM2Str: initial?.slabQtePerM2 == null ? "0" : String(initial.slabQtePerM2),
+    slabPerimetreStr: initial?.slabPerimetre == null ? "0" : String(initial.slabPerimetre),
+    slabAncrageLineaireStr:
+      initial?.slabAncrageLineaire == null ? "0" : String(initial.slabAncrageLineaire),
     slabRelation: pickFirst(initialRaw, ["slabRelation"]) as FormeState["slabRelation"],
     slabSpacingMode: pickFirst(initialRaw, ["slabSpacingMode"]) as FormeState["slabSpacingMode"],
     slabSpacingRelation: pickFirst(initialRaw, ["slabSpacingRelation"]) as FormeState["slabSpacingRelation"],
@@ -200,6 +209,9 @@ export function buildInitialFormes(
       slabCalcMethod: x.slabCalcMethod,
       slabSurfaceStr: x.slabSurface == null ? "0" : String(x.slabSurface),
       slabQtePerM2Str: x.slabQtePerM2 == null ? "0" : String(x.slabQtePerM2),
+      slabPerimetreStr: x.slabPerimetre == null ? "0" : String(x.slabPerimetre),
+      slabAncrageLineaireStr:
+        x.slabAncrageLineaire == null ? "0" : String(x.slabAncrageLineaire),
       slabRelation: pickFirst(raw, ["slabRelation"]) as FormeState["slabRelation"],
       slabSpacingMode: pickFirst(raw, ["slabSpacingMode"]) as FormeState["slabSpacingMode"],
       slabSpacingRelation: pickFirst(raw, ["slabSpacingRelation"]) as FormeState["slabSpacingRelation"],
@@ -218,4 +230,3 @@ export function buildInitialFormes(
 
   return [main, ...extras];
 }
-

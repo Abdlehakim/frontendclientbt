@@ -1,10 +1,12 @@
 import { useEffect, useRef } from "react";
 import type { FormeState } from "../types";
+import { normalizeSlabSurfacePerM2Relation } from "../state/guards";
 
 export function useFormeBarreDefaults({
   x,
   isSemelle,
   isSlab,
+  isSlabSurfacePerM2SpacingDesignation,
   fallbackDiametreValue,
   normalizedDesignation,
   onPatch,
@@ -12,6 +14,7 @@ export function useFormeBarreDefaults({
   x: FormeState;
   isSemelle: boolean;
   isSlab: boolean;
+  isSlabSurfacePerM2SpacingDesignation: boolean;
   fallbackDiametreValue: number;
   normalizedDesignation: string;
   onPatch: (patch: Partial<FormeState>) => void;
@@ -81,9 +84,17 @@ export function useFormeBarreDefaults({
     if (!isSlab) return;
 
     const patch: Partial<FormeState> = {};
+    const isSlabSurfacePerM2SpacingMode =
+      isSlabSurfacePerM2SpacingDesignation &&
+      (x.slabCalcMethod ?? "SURFACE_TOTAL") === "SURFACE_TOTAL_PER_M2";
 
     if (!(x.slabCalcMethod ?? "").trim()) patch.slabCalcMethod = "SURFACE_TOTAL";
-    if (!(x.slabRelation ?? "").trim()) patch.slabRelation = "ab_equal_same_if";
+    if (isSlabSurfacePerM2SpacingMode) {
+      const nextRelation = normalizeSlabSurfacePerM2Relation(x.slabRelation);
+      if (x.slabRelation !== nextRelation) patch.slabRelation = nextRelation;
+    } else if (!(x.slabRelation ?? "").trim()) {
+      patch.slabRelation = "ab_equal_same_if";
+    }
     if (!(x.slabSpacingMode ?? "").trim()) patch.slabSpacingMode = "ESPACEMENT";
     if (
       !(
@@ -101,7 +112,7 @@ export function useFormeBarreDefaults({
     x.slabRelation,
     x.slabSpacingMode,
     x.slabSpacingRelation,
+    isSlabSurfacePerM2SpacingDesignation,
     onPatch,
   ]);
 }
-

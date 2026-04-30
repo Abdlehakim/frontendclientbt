@@ -10,6 +10,12 @@ import TotalRowModalWindow, {
   type ExtraBoxKind,
   type ExtraFormePayload,
 } from "./windows/TotalRowModalWindow";
+import {
+  computeSlabSurfacePerM2SpacingMetrics,
+  computeSlabSurfacePerM2SplitMetrics,
+} from "./windows/totalRowModal/calculations/slabCalculations";
+import { normalizeSlabSurfacePerM2Relation } from "./windows/totalRowModal/state/guards";
+import { safeDivide, safeNumber } from "./windows/totalRowModal/utils";
 
 type TotalRow = {
   id: string;
@@ -53,7 +59,7 @@ const EMPTY_TOTAL_FERRAILLAGE: TotalFerraillageData = {
 };
 
 function fmtNumTrim3(n: number) {
-  const v = Number.isFinite(n) ? n : 0;
+  const v = safeNumber(n);
   const fixed = v.toFixed(3).replace(".", ",");
   const [rawInt, rawDec = ""] = fixed.split(",");
   const intPart = rawInt === "-0" ? "0" : rawInt;
@@ -75,8 +81,8 @@ function computeTotals(rows: TotalRow[], mms: number[]): Totals {
   }
   for (const r of rows) {
     for (const mm of mms) {
-      qty[mm] += r.qtyByMm[mm] ?? 0;
-      poids[mm] += r.poidsByMm[mm] ?? 0;
+      qty[mm] = safeNumber(qty[mm] + safeNumber(r.qtyByMm[mm]));
+      poids[mm] = safeNumber(poids[mm] + safeNumber(r.poidsByMm[mm]));
     }
   }
   return { qty, poids };
@@ -119,7 +125,7 @@ function buildZerosByMm(mms: number[]) {
 }
 
 function kgPerMeter(mm: number) {
-  return (mm * mm) / 162;
+  return safeDivide(safeNumber(mm) * safeNumber(mm), 162);
 }
 
 function computeExtraPerimetreNum(kind: ExtraBoxKind, longueur: number, ancrage: number) {
@@ -136,14 +142,78 @@ function computeCadrePerimetreNum(forme: Exclude<RowForme, "BARRE">, longueur: n
 
 function isSlabDesignationName(value: string) {
   const normalized = value.trim().toLowerCase();
-  return normalized === "dalle pleine" || normalized === "chape" || normalized === "radier";
+  return (
+    normalized === "dalle pleine" ||
+    normalized === "chape" ||
+    normalized === "radier" ||
+    normalized === "voile"
+  );
+}
+
+function isSlabSurfacePerM2SpacingDesignationName(value: string) {
+  const normalized = value.trim().toLowerCase();
+  return (
+    normalized === "dalle pleine" ||
+    normalized === "chape" ||
+    normalized === "radier" ||
+    normalized === "voile"
+  );
 }
 
 function computeSlabSpacingQtyEntriesFromPayload(
   payload: TotalRowModalPayload | ExtraFormePayload,
   parentNb: number,
   fallbackDia: number,
+  isSlabSurfacePerM2SpacingDesignation: boolean,
 ) {
+  if (
+    isSlabSurfacePerM2SpacingDesignation &&
+    payload.slabCalcMethod === "SURFACE_TOTAL_PER_M2" &&
+    payload.slabSpacingMode === "ESPACEMENT" &&
+    (payload.slabSpacingRelation === "EA_EQ_EB" || payload.slabSpacingRelation === "EA_NE_EB")
+  ) {
+    const dallePleinePerM2Metrics = computeSlabSurfacePerM2SpacingMetrics({
+      surfaceStr: String(payload.slabSurface ?? 0),
+      perimetreStr: String(payload.slabPerimetre ?? 0),
+      ancrageLineaireStr: String(payload.slabAncrageLineaire ?? 0),
+      spacingRelation: payload.slabSpacingRelation,
+      spacingAStr: String(payload.slabEspacementA ?? 0),
+      spacingBStr: String(payload.slabEspacementB ?? 0),
+    });
+    const dallePleineRelation = normalizeSlabSurfacePerM2Relation(payload.slabRelation);
+
+    if (dallePleineRelation === "ab_equal_diff_if") {
+      const diaA =
+        typeof payload.slabDiametreAMm === "number" && Number.isFinite(payload.slabDiametreAMm)
+          ? payload.slabDiametreAMm
+          : fallbackDia;
+      const diaB =
+        typeof payload.slabDiametreBMm === "number" && Number.isFinite(payload.slabDiametreBMm)
+          ? payload.slabDiametreBMm
+          : fallbackDia;
+      const splitMetrics = computeSlabSurfacePerM2SplitMetrics({
+        qA: dallePleinePerM2Metrics.qA,
+        qB: dallePleinePerM2Metrics.qB,
+        ancrageM: dallePleinePerM2Metrics.ancrageM,
+        multiplier: parentNb,
+        commercialBarLengthM: dallePleinePerM2Metrics.cutLenM,
+      });
+
+      return [
+        {
+          dia: diaA,
+          qtyM: splitMetrics.qtyA,
+        },
+        {
+          dia: diaB,
+          qtyM: splitMetrics.qtyB,
+        },
+      ];
+    }
+
+    return [{ dia: fallbackDia, qtyM: parentNb > 0 ? parentNb * dallePleinePerM2Metrics.qtyM : 0 }];
+  }
+
   if (
     payload.slabCalcMethod !== "SURFACE_TOTAL" ||
     payload.slabSpacingMode !== "ESPACEMENT" ||
@@ -159,13 +229,13 @@ function computeSlabSpacingQtyEntriesFromPayload(
     payload.slabSpacingRelation === "EA_NE_EB" ? payload.slabEspacementB ?? 0 : espacementA;
   const ancrage = payload.ancrage ?? 0;
 
-  const ntA = espacementA > 0 ? longueurA / espacementA : 0;
-  const ntB = espacementB > 0 ? longueurB / espacementB : 0;
-  const qtyA = parentNb * ntA * (longueurB + ancrage);
-  const qtyB = parentNb * ntB * (longueurA + ancrage);
+  const ntA = espacementA > 0 ? safeDivide(longueurA, espacementA) : 0;
+  const ntB = espacementB > 0 ? safeDivide(longueurB, espacementB) : 0;
+  const qtyA = safeNumber(parentNb * ntA * (longueurB + ancrage));
+  const qtyB = safeNumber(parentNb * ntB * (longueurA + ancrage));
 
   if (payload.slabRelation === "ab_diff_same_if") {
-    return [{ dia: fallbackDia, qtyM: qtyA + qtyB }];
+    return [{ dia: fallbackDia, qtyM: safeNumber(qtyA + qtyB) }];
   }
 
   if (payload.slabRelation === "ab_diff_diff_if") {
@@ -222,6 +292,8 @@ function computeQtyPoidsByMmFromPayload(payloadIn: TotalRowModalPayload, mms: nu
   const nb = payload.nb ?? 0;
   const h = payload.hauteur ?? 0;
   const isSlabPayload = isSlabDesignationName(payload.designation);
+  const isSlabSurfacePerM2SpacingPayload =
+    isSlabSurfacePerM2SpacingDesignationName(payload.designation);
 
   const addQty = (dia: number, qtyM: number) => {
     if (!Number.isFinite(qtyM) || qtyM <= 0) return;
@@ -244,7 +316,14 @@ function computeQtyPoidsByMmFromPayload(payloadIn: TotalRowModalPayload, mms: nu
   const mainDia = payload.diametreMm;
 
   if (payload.forme === "BARRE") {
-    const slabQtyEntries = isSlabPayload ? computeSlabSpacingQtyEntriesFromPayload(payload, nb, mainDia) : null;
+    const slabQtyEntries = isSlabPayload
+      ? computeSlabSpacingQtyEntriesFromPayload(
+          payload,
+          nb,
+          mainDia,
+          isSlabSurfacePerM2SpacingPayload,
+        )
+      : null;
     if (slabQtyEntries) slabQtyEntries.forEach((entry) => addQty(entry.dia, entry.qtyM));
     else handleBarre(mainDia, payload.nBarre ?? 0, payload.ancrage ?? 0, payload.attenteBarre ?? 0);
   } else {
@@ -263,7 +342,14 @@ function computeQtyPoidsByMmFromPayload(payloadIn: TotalRowModalPayload, mms: nu
     const dia = x.diametreMm;
     if (x.forme === "BARRE") {
       const fallbackDia = typeof dia === "number" && Number.isFinite(dia) ? dia : mainDia;
-      const slabQtyEntries = isSlabPayload ? computeSlabSpacingQtyEntriesFromPayload(x, nb, fallbackDia) : null;
+      const slabQtyEntries = isSlabPayload
+        ? computeSlabSpacingQtyEntriesFromPayload(
+            x,
+            nb,
+            fallbackDia,
+            isSlabSurfacePerM2SpacingPayload,
+          )
+        : null;
       if (slabQtyEntries) slabQtyEntries.forEach((entry) => addQty(entry.dia, entry.qtyM));
       else handleBarre(dia, x.nBarre ?? 0, x.ancrage ?? 0, x.attenteBarre ?? 0);
     } else {
@@ -290,7 +376,7 @@ function computeQtyPoidsByMmFromPayload(payloadIn: TotalRowModalPayload, mms: nu
 
   for (const mm of mms) {
     const q = qtyByMm[mm] ?? 0;
-    const t = (q * kgPerMeter(mm)) / 1000;
+    const t = safeDivide(q * kgPerMeter(mm), 1000);
     poidsByMm[mm] = Number.isFinite(t) && t > 0 ? t : 0;
   }
 

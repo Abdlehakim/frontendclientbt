@@ -14,6 +14,7 @@ import {
   SLAB_RELATIONS,
   SLAB_SPACING_MODES,
   SLAB_SPACING_RELATIONS,
+  SLAB_SURFACE_PER_M2_SPACING_DESIGNATIONS,
 } from "../config/formeBarreOptions";
 
 export function isFormeKind(value: unknown): value is FormeKind {
@@ -76,6 +77,14 @@ export function asSlabRelation(value: unknown): SlabRelation {
   return isSlabRelation(value) ? value : "ab_equal_same_if";
 }
 
+export function normalizeSlabSurfacePerM2Relation(
+  value: unknown,
+): Extract<SlabRelation, "ab_equal_same_if" | "ab_equal_diff_if"> {
+  return value === "ab_equal_diff_if" ? "ab_equal_diff_if" : "ab_equal_same_if";
+}
+
+export const normalizeDallePleineSurfacePerM2Relation = normalizeSlabSurfacePerM2Relation;
+
 export function asSlabSpacingMode(value: unknown): SlabSpacingMode {
   return isSlabSpacingMode(value) ? value : "ESPACEMENT";
 }
@@ -107,6 +116,13 @@ export function isSlabDesignationValue(value: unknown) {
   return SLAB_DESIGNATIONS.includes(normalized as (typeof SLAB_DESIGNATIONS)[number]);
 }
 
+export function isSlabSurfacePerM2SpacingDesignationValue(value: unknown) {
+  const normalized = normalizeDesignation(value);
+  return SLAB_SURFACE_PER_M2_SPACING_DESIGNATIONS.includes(
+    normalized as (typeof SLAB_SURFACE_PER_M2_SPACING_DESIGNATIONS)[number],
+  );
+}
+
 export function asObjectRecord(value: unknown): Record<string, unknown> {
   return value != null && typeof value === "object" ? (value as Record<string, unknown>) : {};
 }
@@ -135,4 +151,3 @@ export function hasAnyValue(source: Record<string, unknown>, keys: string[]) {
     return value !== undefined && value !== null && value !== "";
   });
 }
-

@@ -1,6 +1,11 @@
 import type { FormeState } from "../types";
-import { parsePositiveInt, parsePositiveNumber } from "../utils";
-import { asSemelleRelation, asString, asTrimmedString } from "./guards";
+import { parseNonNegativeNumber, parsePositiveInt, parsePositiveNumber } from "../utils";
+import {
+  asSemelleRelation,
+  asString,
+  asTrimmedString,
+  normalizeSlabSpacingRelationValue,
+} from "./guards";
 
 export function isSemelleBarreValid(source: Partial<FormeState>) {
   const nappe = asTrimmedString(source.barreCategorie, "") || "Nappe inférieure";
@@ -45,15 +50,32 @@ export function isSemelleBarreValid(source: Partial<FormeState>) {
   );
 }
 
-export function isSlabBarreValid(source: Partial<FormeState>) {
-  const surface = parsePositiveNumber(asString(source.slabSurfaceStr));
-  if (surface == null) return false;
-
+export function isSlabBarreValid(
+  source: Partial<FormeState>,
+  options?: { isSlabSurfacePerM2SpacingDesignation?: boolean },
+) {
   const calcMethod = source.slabCalcMethod === "SURFACE_TOTAL_PER_M2" ? "SURFACE_TOTAL_PER_M2" : "SURFACE_TOTAL";
+
   if (calcMethod === "SURFACE_TOTAL_PER_M2") {
-    return parsePositiveNumber(asString(source.slabQtePerM2Str)) != null;
+    if (options?.isSlabSurfacePerM2SpacingDesignation) {
+      if (parsePositiveNumber(asString(source.slabSurfaceStr)) == null) return false;
+      if (parsePositiveNumber(asString(source.slabEspacementAStr)) == null) return false;
+      if (parseNonNegativeNumber(asString(source.slabPerimetreStr)) == null) return false;
+      if (parseNonNegativeNumber(asString(source.slabAncrageLineaireStr)) == null) return false;
+
+      const spacingRelation = normalizeSlabSpacingRelationValue(source.slabSpacingRelation);
+      if (spacingRelation === "EA_NE_EB") {
+        return parsePositiveNumber(asString(source.slabEspacementBStr)) != null;
+      }
+
+      return true;
+    }
+
+    return (
+      parsePositiveNumber(asString(source.slabSurfaceStr)) != null &&
+      parsePositiveNumber(asString(source.slabQtePerM2Str)) != null
+    );
   }
 
-  return true;
+  return parsePositiveNumber(asString(source.slabSurfaceStr)) != null;
 }
-

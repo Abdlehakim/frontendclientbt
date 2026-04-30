@@ -15,6 +15,34 @@ export default function SlabLinearMetricInputs({
   inputClass: string;
   onPatch: FormeBarrePatch;
 }) {
+  if (slab.isSlabSurfacePerM2SpacingMode) {
+    return (
+      <>
+        <FieldInput
+          label="Surface totale (m²)"
+          value={x.slabSurfaceStr ?? "0"}
+          onChange={(value) => onPatch({ slabSurfaceStr: value })}
+          inputClass={inputClass}
+          placeholder="Ex: 24,5"
+        />
+        <FieldInput
+          label="Périmètre"
+          value={slabAutoValues.slabPerimetreStr}
+          onChange={(value) => onPatch({ slabPerimetreStr: value })}
+          inputClass={inputClass}
+          placeholder="Ex: 18"
+        />
+        <FieldInput
+          label="Ancrage / mètre linéaire"
+          value={slabAutoValues.slabAncrageLineaireStr}
+          onChange={(value) => onPatch({ slabAncrageLineaireStr: value })}
+          inputClass={inputClass}
+          placeholder="Ex: 0,4"
+        />
+      </>
+    );
+  }
+
   if (slab.slabSurfacePerM2Mode) {
     return (
       <>

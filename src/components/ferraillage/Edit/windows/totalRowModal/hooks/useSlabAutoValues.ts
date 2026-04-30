@@ -20,6 +20,7 @@ export function useSlabAutoValues({
   showSlabModeAndDualNbBarRow,
   showSlabDualNbCadreInputs,
   slabSurfacePerM2Mode,
+  isSlabSurfacePerM2SpacingMode,
   slabEffectiveSpacingModeValue,
 }: {
   x: FormeState;
@@ -34,6 +35,7 @@ export function useSlabAutoValues({
   showSlabModeAndDualNbBarRow: boolean;
   showSlabDualNbCadreInputs: boolean;
   slabSurfacePerM2Mode: boolean;
+  isSlabSurfacePerM2SpacingMode: boolean;
   slabEffectiveSpacingModeValue: "ESPACEMENT" | "NB_CADRE";
 }) {
   const slabPerimetreStr = (x as FormeStateWithSlabExtras).slabPerimetreStr ?? "0";
@@ -56,6 +58,7 @@ export function useSlabAutoValues({
     showSlabModeAndDualNbBarRow,
     slabDiffSharedActive,
     slabDiffDualActive,
+    isSlabSurfacePerM2SpacingMode,
     slabEffectiveSpacingModeValue,
     slabEffectiveLinearMetricStr,
   });

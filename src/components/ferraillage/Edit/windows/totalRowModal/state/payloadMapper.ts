@@ -19,6 +19,8 @@ import {
   asSlabRelation,
   asSlabSpacingMode,
   asSlabSpacingRelation,
+  isSlabSurfacePerM2SpacingDesignationValue,
+  normalizeSlabSurfacePerM2Relation,
   asString,
   asTrimmedString,
   isFormeKind,
@@ -47,6 +49,8 @@ export function buildTotalRowModalPayload({
   const nb = parsePositiveInt(nbStr) ?? null;
   const hauteur = showHauteurField ? parsePositiveNumber(hauteurStr) ?? null : null;
   const isSlabMode = isSlabDesignationValue(designation);
+  const isSlabSurfacePerM2SpacingDesignation =
+    isSlabSurfacePerM2SpacingDesignationValue(designation);
 
   const extraBoxesPayload: ExtraBoxPayload[] = extraBoxes.map((b) => ({
     kind: b.kind,
@@ -111,6 +115,15 @@ export function buildTotalRowModalPayload({
   const extras: ExtraFormePayload[] = formes.slice(1).map((x) => {
     const forme: FormeKind = isFormeKind(x.forme) ? x.forme : "CARRE";
     const isSlabBarre = forme === "BARRE" && isSlabMode;
+    const calcMethod = isSlabBarre ? asSlabCalcMethod(x.slabCalcMethod) : undefined;
+    const isSlabSurfacePerM2SpacingMode =
+      isSlabSurfacePerM2SpacingDesignation && calcMethod === "SURFACE_TOTAL_PER_M2";
+    const slabRelation =
+      isSlabBarre
+        ? (isSlabSurfacePerM2SpacingMode
+            ? normalizeSlabSurfacePerM2Relation(x.slabRelation)
+            : asSlabRelation(x.slabRelation))
+        : undefined;
     const per = computeCadrePerimetre(
       forme,
       asString(x.longueurStr),
@@ -139,12 +152,19 @@ export function buildTotalRowModalPayload({
       attenteBarre: forme === "BARRE" && !isSlabMode ? (parseNonNegativeNumber(asString(x.attenteStr)) ?? null) : null,
       perimetre: xShow ? (per != null && per > 0 ? per : null) : null,
       espacement: xShow ? (parsePositiveNumber(asString(x.espacementStr)) ?? null) : null,
-      slabCalcMethod: isSlabBarre ? asSlabCalcMethod(x.slabCalcMethod) : undefined,
+      slabCalcMethod: calcMethod,
       slabSurface: isSlabBarre ? parseNonNegativeNumber(asString(x.slabSurfaceStr)) ?? null : null,
       slabQtePerM2:
         isSlabBarre ? parseNonNegativeNumber(asString(x.slabQtePerM2Str)) ?? null : null,
-      slabRelation: isSlabBarre ? asSlabRelation(x.slabRelation) : undefined,
-      slabSpacingMode: isSlabBarre ? asSlabSpacingMode(x.slabSpacingMode) : undefined,
+      slabPerimetre:
+        isSlabBarre ? parseNonNegativeNumber(asString(x.slabPerimetreStr)) ?? null : null,
+      slabAncrageLineaire:
+        isSlabBarre ? parseNonNegativeNumber(asString(x.slabAncrageLineaireStr)) ?? null : null,
+      slabRelation,
+      slabSpacingMode:
+        isSlabBarre
+          ? (isSlabSurfacePerM2SpacingMode ? "ESPACEMENT" : asSlabSpacingMode(x.slabSpacingMode))
+          : undefined,
       slabSpacingRelation: isSlabBarre ? asSlabSpacingRelation(x.slabSpacingRelation) : undefined,
       slabLongueurA: isSlabBarre ? parseNonNegativeNumber(asString(x.slabLongueurAStr)) ?? null : null,
       slabLongueurB: isSlabBarre ? parseNonNegativeNumber(asString(x.slabLongueurBStr)) ?? null : null,
@@ -166,6 +186,17 @@ export function buildTotalRowModalPayload({
   });
 
   const isMainSlabBarre = mainForme === "BARRE" && isSlabMode;
+  const mainSlabCalcMethod = isMainSlabBarre ? asSlabCalcMethod(main.slabCalcMethod) : undefined;
+  const isMainSlabSurfacePerM2SpacingMode =
+    isMainSlabBarre &&
+    isSlabSurfacePerM2SpacingDesignation &&
+    mainSlabCalcMethod === "SURFACE_TOTAL_PER_M2";
+  const mainSlabRelation =
+    isMainSlabBarre
+      ? (isMainSlabSurfacePerM2SpacingMode
+          ? normalizeSlabSurfacePerM2Relation(main.slabRelation)
+          : asSlabRelation(main.slabRelation))
+      : undefined;
 
   return {
     designation: (designation ?? "").trim(),
@@ -188,13 +219,20 @@ export function buildTotalRowModalPayload({
     etriers,
     extraFormes: extras.length ? extras : undefined,
     extraBoxes: extraBoxesPayload.length ? extraBoxesPayload : undefined,
-    slabCalcMethod: isMainSlabBarre ? asSlabCalcMethod(main.slabCalcMethod) : undefined,
+    slabCalcMethod: mainSlabCalcMethod,
     slabSurface:
       isMainSlabBarre ? parseNonNegativeNumber(asString(main.slabSurfaceStr)) ?? null : null,
     slabQtePerM2:
       isMainSlabBarre ? parseNonNegativeNumber(asString(main.slabQtePerM2Str)) ?? null : null,
-    slabRelation: isMainSlabBarre ? asSlabRelation(main.slabRelation) : undefined,
-    slabSpacingMode: isMainSlabBarre ? asSlabSpacingMode(main.slabSpacingMode) : undefined,
+    slabPerimetre:
+      isMainSlabBarre ? parseNonNegativeNumber(asString(main.slabPerimetreStr)) ?? null : null,
+    slabAncrageLineaire:
+      isMainSlabBarre ? parseNonNegativeNumber(asString(main.slabAncrageLineaireStr)) ?? null : null,
+    slabRelation: mainSlabRelation,
+    slabSpacingMode:
+      isMainSlabBarre
+        ? (isMainSlabSurfacePerM2SpacingMode ? "ESPACEMENT" : asSlabSpacingMode(main.slabSpacingMode))
+        : undefined,
     slabSpacingRelation: isMainSlabBarre ? asSlabSpacingRelation(main.slabSpacingRelation) : undefined,
     slabLongueurA: isMainSlabBarre ? parseNonNegativeNumber(asString(main.slabLongueurAStr)) ?? null : null,
     slabLongueurB: isMainSlabBarre ? parseNonNegativeNumber(asString(main.slabLongueurBStr)) ?? null : null,

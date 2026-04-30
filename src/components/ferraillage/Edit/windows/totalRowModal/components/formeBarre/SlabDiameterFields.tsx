@@ -115,7 +115,7 @@ export default function SlabDiameterFields({
             value={base.diametreValue}
             onChange={(v) => onPatch({ diametreMm: v })}
           />
-          {!base.isDallePleine ? (
+          {!slab.hideEarlySlabCountFieldsForSurfacePerM2 ? (
             <FieldInput
               label="Nb. Barres a et b"
               value={x.nBarreStr}
@@ -138,7 +138,7 @@ export default function SlabDiameterFields({
             value={slab.slabDiametreAValue}
             onChange={(v) => onPatch({ slabDiametreAMm: v })}
           />
-          {!slab.hideEarlySlabDualCountFieldsForDallePleine ? (
+          {!slab.hideEarlySlabCountFieldsForSurfacePerM2 ? (
             <FieldInput
               label="Nb. Barres a"
               value={x.slabNBarreAStr ?? "0"}
@@ -154,7 +154,7 @@ export default function SlabDiameterFields({
             value={slab.slabDiametreBValue}
             onChange={(v) => onPatch({ slabDiametreBMm: v })}
           />
-          {!slab.hideEarlySlabDualCountFieldsForDallePleine ? (
+          {!slab.hideEarlySlabCountFieldsForSurfacePerM2 ? (
             <FieldInput
               label="Nb. Barres b"
               value={x.slabNBarreBStr ?? "0"}
@@ -169,4 +169,3 @@ export default function SlabDiameterFields({
     </>
   );
 }
-

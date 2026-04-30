@@ -49,7 +49,7 @@ export default function FormeBarre({
 
   const slab = useSlabState({
     isSlab: base.isSlab,
-    isDallePleine: base.isDallePleine,
+    isSlabSurfacePerM2SpacingDesignation: base.isSlabSurfacePerM2SpacingDesignation,
     x,
     fallbackDiametreValue: base.fallbackDiametreValue,
   });
@@ -58,6 +58,7 @@ export default function FormeBarre({
     x,
     isSemelle: base.isSemelle,
     isSlab: base.isSlab,
+    isSlabSurfacePerM2SpacingDesignation: base.isSlabSurfacePerM2SpacingDesignation,
     fallbackDiametreValue: base.fallbackDiametreValue,
     normalizedDesignation: base.normalizedDesignation,
     onPatch,
@@ -76,6 +77,7 @@ export default function FormeBarre({
     showSlabModeAndDualNbBarRow: slab.showSlabModeAndDualNbBarRow,
     showSlabDualNbCadreInputs: slab.showSlabDualNbCadreInputs,
     slabSurfacePerM2Mode: slab.slabSurfacePerM2Mode,
+    isSlabSurfacePerM2SpacingMode: slab.isSlabSurfacePerM2SpacingMode,
     slabEffectiveSpacingModeValue: slab.slabEffectiveSpacingModeValue,
   });
 

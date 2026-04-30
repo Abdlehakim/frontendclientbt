@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { parsePositiveInt, parsePositiveNumber } from "../../utils";
+import { parsePositiveInt, parsePositiveNumber, safeNumber } from "../../utils";
 
 export type RecapLine = {
   key: string;
@@ -24,9 +24,10 @@ type GroupedBarreEntry =
   | { type: "pair"; left: RecapLine; right: RecapLine };
 
 function fmtNum(n: number | null | undefined, digits = 2) {
+  if (n == null || !Number.isFinite(n)) return "0";
   if (n == null) return "—";
   if (!Number.isFinite(n)) return "—";
-  return n.toLocaleString(undefined, { maximumFractionDigits: digits });
+  return safeNumber(n).toLocaleString(undefined, { maximumFractionDigits: digits });
 }
 
 function ferLabel(mm: number) {

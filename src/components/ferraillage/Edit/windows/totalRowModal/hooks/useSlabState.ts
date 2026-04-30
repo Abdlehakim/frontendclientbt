@@ -1,5 +1,6 @@
 import type { FormeState } from "../types";
 import { SLAB_NAPPES, type SlabNappe } from "../config/formeBarreOptions";
+import { normalizeSlabSurfacePerM2Relation } from "../state/guards";
 
 function isSlabNappe(value: string): value is SlabNappe {
   return (SLAB_NAPPES as readonly string[]).includes(value);
@@ -7,12 +8,12 @@ function isSlabNappe(value: string): value is SlabNappe {
 
 export function useSlabState({
   isSlab,
-  isDallePleine,
+  isSlabSurfacePerM2SpacingDesignation,
   x,
   fallbackDiametreValue,
 }: {
   isSlab: boolean;
-  isDallePleine: boolean;
+  isSlabSurfacePerM2SpacingDesignation: boolean;
   x: FormeState;
   fallbackDiametreValue: number;
 }) {
@@ -27,13 +28,22 @@ export function useSlabState({
     | "SURFACE_TOTAL"
     | "SURFACE_TOTAL_PER_M2";
 
-  const slabRelationValue = (x.slabRelation ?? "ab_equal_same_if") as
+  const isSlabSurfacePerM2SpacingMode =
+    isSlabSurfacePerM2SpacingDesignation && slabCalcMethodValue === "SURFACE_TOTAL_PER_M2";
+
+  const slabRelationValue = (
+    isSlabSurfacePerM2SpacingMode
+      ? normalizeSlabSurfacePerM2Relation(x.slabRelation)
+      : (x.slabRelation ?? "ab_equal_same_if")
+  ) as
     | "ab_equal_same_if"
     | "ab_equal_diff_if"
     | "ab_diff_same_if"
     | "ab_diff_diff_if";
 
-  const slabSpacingModeValue = (x.slabSpacingMode ?? "ESPACEMENT") as
+  const slabSpacingModeValue = (
+    isSlabSurfacePerM2SpacingMode ? "ESPACEMENT" : x.slabSpacingMode ?? "ESPACEMENT"
+  ) as
     | "ESPACEMENT"
     | "NB_CADRE";
 
@@ -43,8 +53,10 @@ export function useSlabState({
 
   const slabEqualSharedActive = isSlab && slabRelationValue === "ab_equal_same_if";
   const slabEqualDualActive = isSlab && slabRelationValue === "ab_equal_diff_if";
-  const slabDiffSharedActive = isSlab && slabRelationValue === "ab_diff_same_if";
-  const slabDiffDualActive = isSlab && slabRelationValue === "ab_diff_diff_if";
+  const slabDiffSharedActive =
+    isSlab && !isSlabSurfacePerM2SpacingMode && slabRelationValue === "ab_diff_same_if";
+  const slabDiffDualActive =
+    isSlab && !isSlabSurfacePerM2SpacingMode && slabRelationValue === "ab_diff_diff_if";
 
   const slabDualActive = slabEqualDualActive || slabDiffDualActive;
   const slabSharedActive = slabEqualSharedActive || slabDiffSharedActive;
@@ -54,17 +66,28 @@ export function useSlabState({
     (slabCalcMethodValue === "SURFACE_TOTAL" || slabCalcMethodValue === "SURFACE_TOTAL_PER_M2");
 
   const slabSurfacePerM2Mode = isSlab && slabCalcMethodValue === "SURFACE_TOTAL_PER_M2";
-  const slabEffectiveSpacingModeValue = slabSurfacePerM2Mode ? "NB_CADRE" : slabSpacingModeValue;
+  const slabEffectiveSpacingModeValue = isSlabSurfacePerM2SpacingMode
+    ? "ESPACEMENT"
+    : slabSurfacePerM2Mode
+      ? "NB_CADRE"
+      : slabSpacingModeValue;
 
   const showSlabCombinedLengthRow =
-    slabSurfaceTotalMode && (slabEqualSharedActive || slabEqualDualActive);
+    !isSlabSurfacePerM2SpacingMode &&
+    slabSurfaceTotalMode &&
+    (slabEqualSharedActive || slabEqualDualActive);
   const showSlabSeparateLengthRow =
-    slabSurfaceTotalMode && (slabDiffSharedActive || slabDiffDualActive);
+    !isSlabSurfacePerM2SpacingMode &&
+    slabSurfaceTotalMode &&
+    (slabDiffSharedActive || slabDiffDualActive);
 
   const showSlabSharedDiaAndCount = isSlab && (slabEqualSharedActive || slabDiffSharedActive);
   const showSlabDualDiaAndCount = isSlab && (slabEqualDualActive || slabDiffDualActive);
 
-  const showSlabSpacingMode = slabSurfaceTotalMode && !slabSurfacePerM2Mode;
+  const showSlabSpacingMode =
+    slabSurfaceTotalMode && (!slabSurfacePerM2Mode || isSlabSurfacePerM2SpacingMode);
+  const showSlabRelationField =
+    slabSurfaceTotalMode && (!slabSurfacePerM2Mode || isSlabSurfacePerM2SpacingMode);
 
   const showSlabSpacingRelationToggle =
     showSlabSpacingMode &&
@@ -84,21 +107,25 @@ export function useSlabState({
     slabSpacingRelationValue === "EA_NE_EB";
 
   const showSlabSharedNbCadreInput =
+    !isSlabSurfacePerM2SpacingMode &&
     slabSurfaceTotalMode &&
     slabEffectiveSpacingModeValue === "NB_CADRE" &&
     slabSharedActive;
 
   const showSlabDualNbCadreInputs =
+    !isSlabSurfacePerM2SpacingMode &&
     slabSurfaceTotalMode &&
     slabEffectiveSpacingModeValue === "NB_CADRE" &&
     slabDualActive;
 
   const showSlabModeAndSharedNbBarRow =
+    !isSlabSurfacePerM2SpacingMode &&
     showSlabSpacingMode &&
     slabEffectiveSpacingModeValue === "NB_CADRE" &&
     slabSharedActive;
 
   const showSlabModeAndDualNbBarRow =
+    !isSlabSurfacePerM2SpacingMode &&
     showSlabSpacingMode &&
     slabEffectiveSpacingModeValue === "NB_CADRE" &&
     slabDualActive;
@@ -113,8 +140,7 @@ export function useSlabState({
     showSlabSpacingRelationToggle &&
     showSlabDualSpacingInputs;
 
-  const hideEarlySlabDualCountFieldsForDallePleine =
-    isDallePleine && slabDualActive;
+  const hideEarlySlabCountFieldsForSurfacePerM2 = isSlabSurfacePerM2SpacingMode;
 
   const showSlabCombinedLengthAnchorDiaRow =
     showSlabCombinedLengthRow && showSlabSharedDiaAndCount;
@@ -137,6 +163,7 @@ export function useSlabState({
   return {
     slabNappeShown,
     slabCalcMethodValue,
+    isSlabSurfacePerM2SpacingMode,
     slabRelationValue,
     slabSpacingModeValue,
     slabSpacingRelationValue,
@@ -154,6 +181,7 @@ export function useSlabState({
     showSlabSharedDiaAndCount,
     showSlabDualDiaAndCount,
     showSlabSpacingMode,
+    showSlabRelationField,
     showSlabSpacingRelationToggle,
     showSlabSharedSpacingInput,
     showSlabDualSpacingInputs,
@@ -163,7 +191,7 @@ export function useSlabState({
     showSlabModeAndDualNbBarRow,
     showSlabModeRelationAndSharedSpacingRow,
     showSlabModeRelationAndDualSpacingRow,
-    hideEarlySlabDualCountFieldsForDallePleine,
+    hideEarlySlabCountFieldsForSurfacePerM2,
     showSlabCombinedLengthAnchorDiaRow,
     showSlabCombinedLengthAnchorDualDiaRow,
     showSlabSeparateLengthAnchorSharedDiaRow,

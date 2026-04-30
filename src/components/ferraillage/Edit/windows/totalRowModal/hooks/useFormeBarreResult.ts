@@ -1,15 +1,22 @@
 import type { FormeState } from "../types";
-import { fmt, formatDiametreLabel } from "../config/formeBarreLabels";
+import {
+  fmt,
+  formatDiametreLabel,
+  getDualDiameterResultLabels,
+} from "../config/formeBarreLabels";
 import type { useBarreAutoValues } from "./useBarreAutoValues";
 import type { useFormeBarreBaseState } from "./useFormeBarreBaseState";
 import type { useSemelleAutoValues } from "./useSemelleAutoValues";
 import type { useSemelleState } from "./useSemelleState";
 import type { useSlabState } from "./useSlabState";
 import {
+  computeSlabSurfacePerM2SpacingMetrics,
+  computeSlabSurfacePerM2SplitMetrics,
   computeSlabCrossSpacingParts,
   computeSlabDiffSharedSpacingNTA,
   computeSlabDiffSharedSpacingNTB,
 } from "../calculations/slabCalculations";
+import { safeDivide, safeNumber } from "../utils";
 
 export type FormeBarreResult =
   | {
@@ -36,7 +43,7 @@ export type FormeBarreResult =
     };
 
 function parseNum(value: string | undefined | null): number {
-  return Number(String(value ?? "0").replace(",", ".")) || 0;
+  return safeNumber(String(value ?? "0").replace(",", "."));
 }
 
 export function useFormeBarreResult({
@@ -76,7 +83,47 @@ export function useFormeBarreResult({
     base.isSlab &&
     (slab.showSlabCombinedLengthAnchorDualDiaRow ||
       slab.showSlabSeparateLengthAnchorDualDiaRow ||
-      (slab.showSlabDualDiaAndCount && !slab.hideEarlySlabDualCountFieldsForDallePleine));
+      (slab.showSlabDualDiaAndCount && !slab.hideEarlySlabCountFieldsForSurfacePerM2));
+
+  const slabSurfacePerM2DualMetrics =
+    base.isSlab && slab.isSlabSurfacePerM2SpacingMode && slab.slabEqualDualActive
+      ? (() => {
+          const metrics = computeSlabSurfacePerM2SpacingMetrics({
+            surfaceStr: x.slabSurfaceStr ?? "0",
+            perimetreStr: x.slabPerimetreStr ?? "0",
+            ancrageLineaireStr: x.slabAncrageLineaireStr ?? "0",
+            spacingRelation: slab.slabSpacingRelationValue,
+            spacingAStr: x.slabEspacementAStr ?? "0",
+            spacingBStr: x.slabEspacementBStr ?? "0",
+          });
+
+          return computeSlabSurfacePerM2SplitMetrics({
+            qA: metrics.qA,
+            qB: metrics.qB,
+            ancrageM: metrics.ancrageM,
+            multiplier: nbMultiplier,
+            commercialBarLengthM: metrics.cutLenM,
+          });
+        })()
+      : null;
+
+  const slabDiamLabelA = formatDiametreLabel(slab.slabDiametreAValue);
+  const slabDiamLabelB = formatDiametreLabel(slab.slabDiametreBValue);
+  const slabDualLabels = getDualDiameterResultLabels(slabDiamLabelA, slabDiamLabelB);
+
+  if (slabSurfacePerM2DualMetrics) {
+    return {
+      kind: "dual",
+      qteLabelA: slabDualLabels.qteLabelA,
+      qteLabelB: slabDualLabels.qteLabelB,
+      ntLabelA: slabDualLabels.ntLabelA,
+      ntLabelB: slabDualLabels.ntLabelB,
+      qteA: fmt(slabSurfacePerM2DualMetrics.qtyA),
+      qteB: fmt(slabSurfacePerM2DualMetrics.qtyB),
+      ntA: fmt(slabSurfacePerM2DualMetrics.ntA),
+      ntB: fmt(slabSurfacePerM2DualMetrics.ntB),
+    };
+  }
 
   if (!slabDualResultActive) {
     const slabDiffSharedSpacingResultActive =
@@ -114,9 +161,6 @@ export function useFormeBarreResult({
     };
   }
 
-  const slabDiamLabelA = formatDiametreLabel(slab.slabDiametreAValue);
-  const slabDiamLabelB = formatDiametreLabel(slab.slabDiametreBValue);
-
   const equalDualSharedSpacingPerSide =
     base.isSlab &&
     slab.slabEqualDualActive &&
@@ -148,40 +192,40 @@ export function useFormeBarreResult({
     : null;
 
   const sharedNtEachBase = equalDualSharedSpacingPerSide
-    ? parseNum(x.slabLongueurAStr) / parseNum(x.slabEspacementAStr)
+    ? safeDivide(parseNum(x.slabLongueurAStr), parseNum(x.slabEspacementAStr))
     : 0;
 
-  const sharedNtEach = sharedNtEachBase * nbMultiplier;
+  const sharedNtEach = safeNumber(sharedNtEachBase * nbMultiplier);
 
   const sharedQteEach = equalDualSharedSpacingPerSide
-    ? sharedNtEach * (parseNum(x.slabLongueurAStr) + parseNum(x.ancrageStr))
+    ? safeNumber(sharedNtEach * (parseNum(x.slabLongueurAStr) + parseNum(x.ancrageStr)))
     : 0;
 
   const separateNtABase = equalDualSeparateSpacingPerSide
-    ? parseNum(x.slabLongueurAStr) / parseNum(x.slabEspacementAStr)
+    ? safeDivide(parseNum(x.slabLongueurAStr), parseNum(x.slabEspacementAStr))
     : 0;
 
   const separateNtBBase = equalDualSeparateSpacingPerSide
-    ? parseNum(x.slabLongueurAStr) / parseNum(x.slabEspacementBStr)
+    ? safeDivide(parseNum(x.slabLongueurAStr), parseNum(x.slabEspacementBStr))
     : 0;
 
-  const separateNtA = separateNtABase * nbMultiplier;
-  const separateNtB = separateNtBBase * nbMultiplier;
+  const separateNtA = safeNumber(separateNtABase * nbMultiplier);
+  const separateNtB = safeNumber(separateNtBBase * nbMultiplier);
 
   const separateQteA = equalDualSeparateSpacingPerSide
-    ? separateNtA * (parseNum(x.slabLongueurAStr) + parseNum(x.ancrageStr))
+    ? safeNumber(separateNtA * (parseNum(x.slabLongueurAStr) + parseNum(x.ancrageStr)))
     : 0;
 
   const separateQteB = equalDualSeparateSpacingPerSide
-    ? separateNtB * (parseNum(x.slabLongueurAStr) + parseNum(x.ancrageStr))
+    ? safeNumber(separateNtB * (parseNum(x.slabLongueurAStr) + parseNum(x.ancrageStr)))
     : 0;
 
   return {
     kind: "dual",
-    qteLabelA: slabDiamLabelA ? `Q. Fer ${slabDiamLabelA} (m)` : "Q. Fer a (m)",
-    qteLabelB: slabDiamLabelB ? `Q. Fer ${slabDiamLabelB} (m)` : "Q. Fer b (m)",
-    ntLabelA: slabDiamLabelA ? `N.T.Barre ${slabDiamLabelA}` : "N.T.Barre a",
-    ntLabelB: slabDiamLabelB ? `N.T.Barre ${slabDiamLabelB}` : "N.T.Barre b",
+    qteLabelA: slabDualLabels.qteLabelA,
+    qteLabelB: slabDualLabels.qteLabelB,
+    ntLabelA: slabDualLabels.ntLabelA,
+    ntLabelB: slabDualLabels.ntLabelB,
     qteA: fmt(
       diffDualParts
         ? diffDualParts.qteA
