@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaRegEdit, FaRegEye, FaTrashAlt } from "react-icons/fa";
 import { FaSpinner } from "react-icons/fa6";
+import DeleteConfirmModal from "@/components/common/DeleteConfirmModal";
 import TablePagination from "@/components/tablePagination";
 import { ferraillageApi, type FerRapportDTO, isApiError as isFerApiError } from "@/lib/ferraillageApi";
 import { APP_HREFS } from "@/routes/paths";
@@ -11,6 +12,11 @@ import CreateProjetWizard from "@/components/ferraillage/CreateProjetWizard";
 import EditRapportWizard from "@/components/ferraillage/EditProjectData";
 
 const PAGE_SIZE = 12;
+
+type DeleteTarget = {
+  id: string;
+  chantierName: string;
+};
 
 function fmtDate(iso: string | null | undefined) {
   if (!iso) return "—";
@@ -35,6 +41,8 @@ export default function FerraillagePage() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [editItem, setEditItem] = useState<FerRapportDTO | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   async function loadRapports() {
     setLoading(true);
@@ -112,19 +120,28 @@ export default function FerraillagePage() {
     }
   }
 
-  async function onDelete(id: string) {
-    const ok = window.confirm("Supprimer ce rapport ?");
-    if (!ok) return;
+  function onDeleteClick(item: FerRapportDTO) {
+    setDeleteTarget({ id: item.id, chantierName: item.chantierName });
+  }
+
+  function closeDeleteModal() {
+    if (deleteLoading) return;
+    setDeleteTarget(null);
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
 
     setErr("");
-    setLoading(true);
+    setDeleteLoading(true);
     try {
-      await ferraillageApi.deleteRapport(id);
-      setItems((prev) => prev.filter((x) => x.id !== id));
+      await ferraillageApi.deleteRapport(deleteTarget.id);
+      setItems((prev) => prev.filter((x) => x.id !== deleteTarget.id));
+      setDeleteTarget(null);
     } catch (e: unknown) {
       setErr(isFerApiError(e) ? e.message : "Delete failed");
     } finally {
-      setLoading(false);
+      setDeleteLoading(false);
     }
   }
 
@@ -197,7 +214,7 @@ export default function FerraillagePage() {
                         <button onClick={() => onView(r.id)} className="ButtonSquare" title="Voir" type="button">
                           <FaRegEye size={14} />
                         </button>
-                        <button onClick={() => void onDelete(r.id)} className="ButtonSquareDelete" title="Supprimer" type="button">
+                        <button onClick={() => onDeleteClick(r)} className="ButtonSquareDelete" title="Supprimer" type="button">
                           <FaTrashAlt size={14} />
                         </button>
                       </div>
@@ -222,6 +239,13 @@ export default function FerraillagePage() {
 
       <CreateRapportWizard open={wizardOpen} onClose={() => setWizardOpen(false)} />
       <CreateProjetWizard open={projectWizardOpen} onClose={() => setProjectWizardOpen(false)} onCreated={onProjectCreated} />
+      <DeleteConfirmModal
+        open={Boolean(deleteTarget)}
+        itemName={deleteTarget?.chantierName ?? ""}
+        loading={deleteLoading}
+        onConfirm={() => void confirmDelete()}
+        onCancel={closeDeleteModal}
+      />
 
       <EditRapportWizard
         open={editOpen}

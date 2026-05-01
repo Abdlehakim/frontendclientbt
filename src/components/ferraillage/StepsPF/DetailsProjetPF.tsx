@@ -137,7 +137,7 @@ export default function DetailsProjetPF({ data, setData }: Props) {
             className={inputClass}
             value={data.responsable}
             onChange={(e) => setData((p) => ({ ...p, responsable: e.target.value }))}
-            placeholder="Ex: Ste. AM SIOUD CONSTRUCTION"
+            placeholder="Ex: SIOUD "
           />
         </div>
 

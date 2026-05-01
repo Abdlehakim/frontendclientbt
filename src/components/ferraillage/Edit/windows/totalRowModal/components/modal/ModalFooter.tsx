@@ -3,11 +3,13 @@ export default function ModalFooter({
   canSubmit,
   onClose,
   onSubmit,
+  submitting = false,
 }: {
   submitLabel: string;
   canSubmit: boolean;
   onClose: () => void;
   onSubmit: () => void;
+  submitting?: boolean;
 }) {
   return (
     <div
@@ -20,17 +22,22 @@ export default function ModalFooter({
       aria-label="Actions du formulaire"
     >
       <div className="flex items-center justify-start gap-2 flex-1">
-        <button type="button" className="stepper__nav" onClick={onClose}>
+        <button type="button" className="stepper__nav" onClick={onClose} disabled={submitting}>
           Annuler
         </button>
       </div>
 
       <div className="flex items-center justify-end gap-2 flex-1 whitespace-nowrap">
-        <button type="button" className="stepper__nav" onClick={onSubmit} disabled={!canSubmit} aria-disabled={!canSubmit}>
-          {submitLabel}
+        <button
+          type="button"
+          className="stepper__nav"
+          onClick={onSubmit}
+          disabled={!canSubmit || submitting}
+          aria-disabled={!canSubmit || submitting}
+        >
+          {submitting ? "Enregistrement..." : submitLabel}
         </button>
       </div>
     </div>
   );
 }
-

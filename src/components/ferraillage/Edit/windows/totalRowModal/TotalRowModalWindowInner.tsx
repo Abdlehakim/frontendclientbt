@@ -94,6 +94,8 @@ export default function TotalRowModalWindowInner({
   initial,
   onClose,
   onSubmit,
+  submitting = false,
+  errorMessage,
 }: {
   open: boolean;
   title: string;
@@ -102,7 +104,9 @@ export default function TotalRowModalWindowInner({
   mms: number[];
   initial?: Partial<TotalRowModalPayload>;
   onClose: () => void;
-  onSubmit: (payload: TotalRowModalPayload) => void;
+  onSubmit: (payload: TotalRowModalPayload) => void | Promise<void>;
+  submitting?: boolean;
+  errorMessage?: string;
 }) {
   const panelRef = useRef<HTMLDivElement | null>(null);
 
@@ -402,14 +406,15 @@ export default function TotalRowModalWindowInner({
     if (!open) return;
 
     const onKeyDown = (ev: KeyboardEvent) => {
-      if (ev.key === "Escape") onClose();
+      if (ev.key === "Escape" && !submitting) onClose();
     };
 
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
+  }, [open, onClose, submitting]);
 
   const closeOnBackdrop = (ev: ReactMouseEvent<HTMLDivElement>) => {
+    if (submitting) return;
     if (panelRef.current && !panelRef.current.contains(ev.target as Node)) onClose();
   };
 
@@ -936,7 +941,7 @@ export default function TotalRowModalWindowInner({
       initDia,
     });
 
-    if (payload) onSubmit(payload);
+    if (payload) void onSubmit(payload);
   };
   return createPortal(
     <div className="fixed inset-0 z-220">
@@ -957,7 +962,7 @@ export default function TotalRowModalWindowInner({
           />
 
           <div className="flex-1 min-h-0 max-h-full rounded-xl bg-white shadow-xl border border-gray-200 flex flex-col overflow-hidden">
-            <ModalHeader title={title} onClose={onClose} />
+            <ModalHeader title={title} onClose={onClose} disabled={submitting} />
 
             <div className="p-5 flex flex-1 min-h-0 flex-col overflow-hidden">
               <ModalTopFields
@@ -1069,6 +1074,8 @@ export default function TotalRowModalWindowInner({
                   })}
                 </div>
               </div>
+
+              {errorMessage ? <div className="mt-3 text-sm text-red-600">{errorMessage}</div> : null}
             </div>
 
             <ModalFooter
@@ -1076,6 +1083,7 @@ export default function TotalRowModalWindowInner({
               canSubmit={canSubmit}
               onClose={onClose}
               onSubmit={submit}
+              submitting={submitting}
             />
           </div>
         </div>

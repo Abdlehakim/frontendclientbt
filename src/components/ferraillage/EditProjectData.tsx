@@ -1,52 +1,35 @@
-// src/components/ferraillage/EditProjectData.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CiCircleRemove } from "react-icons/ci";
+import { FaSpinner } from "react-icons/fa6";
 import { IoIosArrowDropdown, IoIosArrowDropup } from "react-icons/io";
 import CalculeTotalFerraillage from "@/components/ferraillage/Edit/EditCalculeTotalFerraillage";
+import {
+  ferraillageApi,
+  isApiError as isFerApiError,
+  type FerProjectDetailDTO,
+  type FerProjectLineDTO,
+  type FerRapportDTO,
+} from "@/lib/ferraillageApi";
 
 type TabKey = "TOTAL_FERRAILLAGE" | "ATTACHEMENT" | "QUANTITE" | "AVANCES" | "FINALE";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "TOTAL_FERRAILLAGE", label: "Calcule Totale De Ferraillage" },
   { key: "ATTACHEMENT", label: "Rapport d'attachement" },
-  { key: "QUANTITE", label: "Calcule de Quantité" },
+  { key: "QUANTITE", label: "Calcule de Quantite" },
   { key: "AVANCES", label: "Avances de paiment" },
   { key: "FINALE", label: "Verification et calcule Finale" },
 ];
 
-type RapportLite = {
-  id: string;
-  chantierName: string;
-  responsable?: string | null;
-  createdAt?: string | null;
-  updatedAt?: string | null;
-  typeAcier?: string | null;
-  note?: string | null;
-};
-
 type Props = {
   open: boolean;
   onClose: () => void;
-  rapport: RapportLite | null;
+  rapport: FerRapportDTO | null;
 };
-
-type DiametreRow = {
-  mm: number;
-  isActive: boolean;
-};
-
-const LOCAL_DIAMETRES: DiametreRow[] = [
-  { mm: 6, isActive: true },
-  { mm: 8, isActive: true },
-  { mm: 10, isActive: true },
-  { mm: 12, isActive: true },
-  { mm: 14, isActive: true },
-  { mm: 16, isActive: true },
-  { mm: 20, isActive: true },
-];
 
 const ACIER_OPTIONS = ["F400", "F500"] as const;
+const DEFAULT_MM_COLS = [6, 8, 10, 12, 14, 16, 20];
 
 function CheckIcon() {
   return (
@@ -76,18 +59,21 @@ function TypeAcierDropdown({
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(false);
 
-  const shownValue = value?.trim() ? value : "Choisir...";
+  const shownValue = value.trim() ? value : "Choisir...";
 
   useEffect(() => {
     function onDown(e: MouseEvent) {
       if (!wrapRef.current) return;
       if (!wrapRef.current.contains(e.target as Node)) setOpen(false);
     }
+
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") setOpen(false);
     }
+
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);
+
     return () => {
       document.removeEventListener("mousedown", onDown);
       document.removeEventListener("keydown", onKey);
@@ -105,7 +91,7 @@ function TypeAcierDropdown({
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className={value?.trim() ? "truncate" : "truncate text-emerald-800/60"}>{shownValue}</span>
+        <span className={value.trim() ? "truncate" : "truncate text-emerald-800/60"}>{shownValue}</span>
         {open ? <IoIosArrowDropup className="shrink-0" size={18} /> : <IoIosArrowDropdown className="shrink-0" size={18} />}
       </button>
 
@@ -117,6 +103,7 @@ function TypeAcierDropdown({
           >
             {ACIER_OPTIONS.map((opt) => {
               const selected = opt === value;
+
               return (
                 <button
                   key={opt}
@@ -147,7 +134,6 @@ function TypeAcierDropdown({
             })}
 
             <div className="border-t border-slate-100" />
-
           </div>
         </div>
       ) : null}
@@ -162,7 +148,7 @@ function EmptyAttachementTab({ mmCols }: { mmCols: number[] }) {
         <div className="flex items-center justify-between">
           <div className="text-sm font-semibold uppercase tracking-wide text-gray-800">ETAT DE FER LIVRE AU CHANTIER</div>
           <div className="text-sm text-gray-700">
-            <strong>Etat Date:</strong> —
+            <strong>Etat Date:</strong> -
           </div>
         </div>
 
@@ -172,7 +158,7 @@ function EmptyAttachementTab({ mmCols }: { mmCols: number[] }) {
               <tr className="bg-(--primary) text-white">
                 <th className="border-r-2 py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-40">Date</th>
                 <th className="border-r-2 py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-80">
-                  N° Bon de livraison
+                  Ndeg Bon de livraison
                 </th>
                 {mmCols.map((mm) => (
                   <th
@@ -209,9 +195,9 @@ function EmptyAttachementTab({ mmCols }: { mmCols: number[] }) {
 
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <div className="text-sm font-semibold uppercase tracking-wide text-gray-800">Quantité restante non confectionné</div>
+          <div className="text-sm font-semibold uppercase tracking-wide text-gray-800">Quantite restante non confectionne</div>
           <div className="text-sm text-gray-700">
-            <strong>Rapport Date:</strong> —
+            <strong>Rapport Date:</strong> -
           </div>
         </div>
 
@@ -255,28 +241,137 @@ function EmptyAttachementTab({ mmCols }: { mmCols: number[] }) {
   );
 }
 
-function EditProjectDataPanel({ onClose, rapport }: { onClose: () => void; rapport: RapportLite | null }) {
+function buildTotalFerraillageData(project: FerProjectDetailDTO | null) {
+  if (!project) return null;
+
+  return {
+    rapportId: project.id,
+    chantierName: project.chantierName,
+    niveaux: (project.niveaux ?? []).map((niveau) => ({
+      id: niveau.id,
+      niveauName: niveau.name,
+      note: niveau.note ?? "",
+      diametres: [...(niveau.selectedMms ?? [])].sort((a, b) => a - b),
+      sousTraitants: [...(niveau.sousTraitants ?? [])],
+      rows: (niveau.lignes ?? []).map((ligne) => ({
+        id: ligne.id,
+        designation: ligne.designation,
+        typeName: ligne.nomenclature ?? "",
+        forme: (typeof ligne.forme === "string" && ligne.forme ? ligne.forme : "BARRE") as "BARRE" | "CARRE" | "CIRCULAIRE" | "RECTANGULAIRE",
+        nb: ligne.nb ?? null,
+        diametre: ligne.diametreMm ?? 0,
+        qtyByMm: Object.fromEntries(Object.entries(ligne.qtyByMm ?? {}).map(([key, value]) => [Number(key), value])),
+        poidsByMm: Object.fromEntries(Object.entries(ligne.poidsByMm ?? {}).map(([key, value]) => [Number(key), value])),
+        payload: ligne.payload as never,
+      })),
+    })),
+  };
+}
+
+function EditProjectDataPanel({ onClose, rapport }: { onClose: () => void; rapport: FerRapportDTO | null }) {
   const panelRef = useRef<HTMLDivElement | null>(null);
   const [tab, setTab] = useState<TabKey>("TOTAL_FERRAILLAGE");
 
-  const [chantierName, setChantierName] = useState(() => rapport?.chantierName ?? "");
-  const [typeAcier, setTypeAcier] = useState(() => rapport?.typeAcier ?? "");
-  const [note, setNote] = useState(() => rapport?.note ?? "");
+  const [project, setProject] = useState<FerProjectDetailDTO | null>(null);
+  const [loading, setLoading] = useState(Boolean(rapport?.id));
+  const [err, setErr] = useState("");
+
+  const [chantierName, setChantierName] = useState("");
+  const [responsable, setResponsable] = useState("");
+  const [acierType, setAcierType] = useState("");
+  const [note, setNote] = useState("");
 
   useEffect(() => {
     const onKeyDown = (ev: KeyboardEvent) => {
       if (ev.key === "Escape") onClose();
     };
+
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
 
+  useEffect(() => {
+    if (!rapport?.id) {
+      setProject(null);
+      setLoading(false);
+      setErr("");
+      setChantierName("");
+      setResponsable("");
+      setAcierType("");
+      setNote("");
+      return;
+    }
+
+    let cancelled = false;
+
+    setLoading(true);
+    setErr("");
+    setProject(null);
+
+    ferraillageApi
+      .getProject(rapport.id)
+      .then((response) => {
+        if (cancelled) return;
+        setProject(response.item);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        setErr(isFerApiError(error) ? error.message : "Failed to load project");
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [rapport?.id]);
+
+  useEffect(() => {
+    if (!project) return;
+    setChantierName(project.chantierName ?? "");
+    setResponsable(project.responsable ?? "");
+    setAcierType(project.acierType ?? "");
+    setNote(project.note ?? "");
+  }, [project]);
+
   const mmCols = useMemo(() => {
-    const active = LOCAL_DIAMETRES.filter((d) => d.isActive).sort((a, b) => a.mm - b.mm);
-    return active.map((d) => d.mm);
-  }, []);
+    const values = Array.from(new Set((project?.niveaux ?? []).flatMap((niveau) => niveau.selectedMms ?? []))).sort((a, b) => a - b);
+    return values.length ? values : DEFAULT_MM_COLS;
+  }, [project]);
 
   const tabLabel = useMemo(() => TABS.find((t) => t.key === tab)?.label ?? "", [tab]);
+  const totalFerraillageData = useMemo(() => buildTotalFerraillageData(project), [project]);
+
+  const handleNiveauCreated = (niveau: FerProjectDetailDTO["niveaux"][number]) => {
+    setProject((current) => {
+      if (!current) return current;
+
+      return {
+        ...current,
+        niveaux: [...current.niveaux.filter((item) => item.id !== niveau.id), niveau].sort((a, b) => a.sortOrder - b.sortOrder),
+      };
+    });
+  };
+
+  const handleLineCreated = (niveauId: string, ligne: FerProjectLineDTO) => {
+    setProject((current) => {
+      if (!current) return current;
+
+      return {
+        ...current,
+        niveaux: current.niveaux.map((niveau) =>
+          niveau.id !== niveauId
+            ? niveau
+            : {
+                ...niveau,
+                lignes: [...niveau.lignes.filter((item) => item.id !== ligne.id), ligne],
+              },
+        ),
+      };
+    });
+  };
 
   const closeOnBackdrop = (ev: React.MouseEvent<HTMLDivElement>) => {
     if (panelRef.current && !panelRef.current.contains(ev.target as Node)) onClose();
@@ -302,8 +397,14 @@ function EditProjectDataPanel({ onClose, rapport }: { onClose: () => void; rappo
         <div ref={panelRef} className="w-full max-w-[98%] h-[98%] rounded-xl bg-white shadow-xl border border-gray-200 flex flex-col">
           <div className="px-5 py-2 bg-gray-50 rounded-t-xl border-b border-gray-200 flex items-center justify-between">
             <div className="flex flex-col">
-              <div className="text-sm font-semibold text-gray-900">Modifier — Données du projet</div>
-              <div className="text-xs text-gray-600">{chantierName ? <span className="font-semibold">{chantierName}</span> : "—"}</div>
+              <div className="text-sm font-semibold text-gray-900">Modifier - Donnees du projet</div>
+              <div className="text-xs text-gray-600">
+                {project?.chantierName || rapport?.chantierName ? (
+                  <span className="font-semibold">{project?.chantierName ?? rapport?.chantierName}</span>
+                ) : (
+                  "-"
+                )}
+              </div>
             </div>
 
             <button
@@ -318,59 +419,84 @@ function EditProjectDataPanel({ onClose, rapport }: { onClose: () => void; rappo
           </div>
 
           <div className="p-4 flex-1 overflow-auto bg-green-50">
-            <div className="bg-white shadow rounded p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex flex-col">
-                <label className="text-sm font-semibold text-gray-700 mb-1">Chantier</label>
-                <input
-                  value={chantierName}
-                  onChange={(e) => setChantierName(e.target.value)}
-                  className={inputClass}
-                  placeholder="Ex: Pharmaghreb - El Agba"
-                />
+            {loading ? (
+              <div className="flex min-h-80 items-center justify-center">
+                <FaSpinner className="animate-spin text-4xl text-(--primary)" />
               </div>
-
-              <TypeAcierDropdown value={typeAcier} onChange={setTypeAcier} />
-
-              <div className="flex flex-col md:col-span-3">
-                <label className="text-sm font-semibold text-gray-700 mb-1">Note</label>
-                <textarea value={note} onChange={(e) => setNote(e.target.value)} className={textareaClass} placeholder="Optionnel" />
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <div className="flex flex-wrap justify-center gap-2 border-b-transparent p-3">
-                {TABS.map((t) => {
-                  const active = t.key === tab;
-                  return (
-                    <button
-                      key={t.key}
-                      onClick={() => setTab(t.key)}
-                      className={
-                        active
-                          ? "px-4 py-2 rounded bg-(--primary) text-white font-semibold"
-                          : "px-4 py-2 rounded bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
-                      }
-                      type="button"
-                    >
-                      {t.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="min-h-65">
-                {tab === "TOTAL_FERRAILLAGE" ? (
-                  <CalculeTotalFerraillage />
-                ) : tab === "ATTACHEMENT" ? (
-                  <EmptyAttachementTab mmCols={mmCols} />
-                ) : (
-                  <div className="text-gray-500">
-                    <strong>{tabLabel}</strong>
-                    <div className="mt-2 italic">Contenu à définir…</div>
+            ) : err ? (
+              <div className="rounded-lg bg-white p-6 text-red-600 shadow-sm">{err}</div>
+            ) : (
+              <>
+                <div className="bg-white shadow rounded p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="flex flex-col">
+                    <label className="text-sm font-semibold text-gray-700 mb-1">Chantier</label>
+                    <input
+                      value={chantierName}
+                      onChange={(e) => setChantierName(e.target.value)}
+                      className={inputClass}
+                      placeholder="Ex: Pharmaghreb - El Agba"
+                    />
                   </div>
-                )}
-              </div>
-            </div>
+
+                  <div className="flex flex-col">
+                    <label className="text-sm font-semibold text-gray-700 mb-1">Responsable</label>
+                    <input
+                      value={responsable}
+                      onChange={(e) => setResponsable(e.target.value)}
+                      className={inputClass}
+                      placeholder="Ex: Ste. AM SIOUD CONSTRUCTION"
+                    />
+                  </div>
+
+                  <TypeAcierDropdown value={acierType} onChange={setAcierType} />
+
+                  <div className="flex flex-col md:col-span-3">
+                    <label className="text-sm font-semibold text-gray-700 mb-1">Note</label>
+                    <textarea value={note} onChange={(e) => setNote(e.target.value)} className={textareaClass} placeholder="Optionnel" />
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <div className="flex flex-wrap justify-center gap-2 border-b-transparent p-3">
+                    {TABS.map((t) => {
+                      const active = t.key === tab;
+
+                      return (
+                        <button
+                          key={t.key}
+                          onClick={() => setTab(t.key)}
+                          className={
+                            active
+                              ? "px-4 py-2 rounded bg-(--primary) text-white font-semibold"
+                              : "px-4 py-2 rounded bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+                          }
+                          type="button"
+                        >
+                          {t.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="min-h-65">
+                    {tab === "TOTAL_FERRAILLAGE" ? (
+                      <CalculeTotalFerraillage
+                        initialData={totalFerraillageData}
+                        onNiveauCreated={handleNiveauCreated}
+                        onLineCreated={handleLineCreated}
+                      />
+                    ) : tab === "ATTACHEMENT" ? (
+                      <EmptyAttachementTab mmCols={mmCols} />
+                    ) : (
+                      <div className="text-gray-500">
+                        <strong>{tabLabel}</strong>
+                        <div className="mt-2 italic">Contenu a definir...</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           <div

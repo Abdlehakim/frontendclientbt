@@ -30,10 +30,41 @@ export type FerRapportDTO = {
   _count?: { etats: number; restants: number; niveaux?: number };
 };
 
+export type FerProjectLineDTO = {
+  id: string;
+  rapportId: string;
+  niveauId: string | null;
+  designation: string;
+  nomenclature?: string | null;
+  nb?: number | null;
+  hauteur?: number | null;
+  forme?: string | null;
+  diametreMm?: number | null;
+  payload: Record<string, unknown>;
+  qtyByMm: Record<string, number>;
+  poidsByMm: Record<string, number>;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type FerProjectNiveauDTO = {
+  id: string;
+  name: string;
+  note?: string | null;
+  sortOrder: number;
+  sousTraitants: string[];
+  selectedMms: number[];
+  lignes: FerProjectLineDTO[];
+};
+
 export type FerRapportDetailDTO = FerRapportDTO & {
   etats: FerEtatChantierDTO[];
   restants: FerRestantNonConfectionneDTO[];
+  lignes: FerProjectLineDTO[];
+  niveaux: FerProjectNiveauDTO[];
 };
+
+export type FerProjectDetailDTO = FerRapportDetailDTO;
 
 export type FerProjectCreatePayload = {
   chantierName: string;
@@ -46,6 +77,26 @@ export type FerProjectCreatePayload = {
     selectedMms: number[];
     sousTraitants: string[];
   }>;
+};
+
+export type FerProjectNiveauCreatePayload = {
+  nomNiveau: string;
+  note?: string | null;
+  entreprisesMainsOeuvres: string[];
+  diametresActifs: number[];
+};
+
+export type FerProjectLineCreatePayload = {
+  niveauId?: string;
+  designation: string;
+  nomenclature?: string | null;
+  nb?: number | null;
+  hauteur?: number | null;
+  forme?: string | null;
+  diametreMm?: number | null;
+  payload: Record<string, unknown>;
+  qtyByMm: Record<string, number>;
+  poidsByMm: Record<string, number>;
 };
 
 class ApiError extends Error {
@@ -103,6 +154,27 @@ export const ferraillageApi = {
 
   getRapport: (rapportId: string) =>
     request<{ item: FerRapportDetailDTO }>(`${BASE}/rapports/${encodeURIComponent(rapportId)}`),
+
+  getProject: (projectId: string) =>
+    request<{ item: FerProjectDetailDTO }>(`${BASE}/projects/${encodeURIComponent(projectId)}`),
+
+  createProjectNiveau: (projectId: string, payload: FerProjectNiveauCreatePayload) =>
+    request<{ item: FerProjectNiveauDTO }>(`${BASE}/projects/${encodeURIComponent(projectId)}/niveaux`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  createProjectLine: (projectId: string, payload: FerProjectLineCreatePayload) =>
+    request<{ item: FerProjectLineDTO }>(`${BASE}/projects/${encodeURIComponent(projectId)}/lignes`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  createProjectNiveauLine: (projectId: string, niveauId: string, payload: Omit<FerProjectLineCreatePayload, "niveauId">) =>
+    request<{ item: FerProjectLineDTO }>(`${BASE}/projects/${encodeURIComponent(projectId)}/niveaux/${encodeURIComponent(niveauId)}/lignes`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
 
   deleteRapport: (rapportId: string) =>
     request<{ ok: true }>(`${BASE}/rapports/${encodeURIComponent(rapportId)}`, { method: "DELETE" }),

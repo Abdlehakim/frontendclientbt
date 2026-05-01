@@ -3,6 +3,12 @@ import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEven
 import { FaRegEdit, FaTrashAlt } from "react-icons/fa";
 import { LuPlus } from "react-icons/lu";
 import { IoIosArrowDropdown, IoIosArrowDropup } from "react-icons/io";
+import {
+  ferraillageApi,
+  isApiError as isFerApiError,
+  type FerProjectLineDTO,
+  type FerProjectNiveauDTO,
+} from "@/lib/ferraillageApi";
 import NiveauModalWindow from "./windows/NiveauModalWindow";
 import TotalRowModalWindow, {
   type TotalRowModalPayload,
@@ -44,6 +50,12 @@ type TotalFerraillageData = {
   niveaux: NiveauTotal[];
 };
 
+type EditCalculeTotalFerraillageProps = {
+  initialData?: TotalFerraillageData | null;
+  onNiveauCreated?: (niveau: FerProjectNiveauDTO) => void;
+  onLineCreated?: (niveauId: string, ligne: FerProjectLineDTO) => void;
+};
+
 type Totals = {
   qty: Record<number, number>;
   poids: Record<number, number>;
@@ -57,6 +69,31 @@ const EMPTY_TOTAL_FERRAILLAGE: TotalFerraillageData = {
   chantierName: "",
   niveaux: [],
 };
+
+function mapProjectNiveauToLocal(niveau: FerProjectNiveauDTO): NiveauTotal {
+  return {
+    id: niveau.id,
+    niveauName: niveau.name,
+    note: niveau.note ?? "",
+    diametres: [...(niveau.selectedMms ?? [])].sort((a, b) => a - b),
+    sousTraitants: [...(niveau.sousTraitants ?? [])],
+    rows: [],
+  };
+}
+
+function mapProjectLineToLocal(line: FerProjectLineDTO): TotalRow {
+  return {
+    id: line.id,
+    designation: line.designation,
+    typeName: line.nomenclature ?? "",
+    forme: (typeof line.forme === "string" && line.forme ? line.forme : "BARRE") as RowForme,
+    nb: line.nb ?? null,
+    diametre: line.diametreMm ?? 0,
+    qtyByMm: Object.fromEntries(Object.entries(line.qtyByMm ?? {}).map(([key, value]) => [Number(key), value])),
+    poidsByMm: Object.fromEntries(Object.entries(line.poidsByMm ?? {}).map(([key, value]) => [Number(key), value])),
+    payload: line.payload as TotalRowModalPayload,
+  };
+}
 
 function fmtNumTrim3(n: number) {
   const v = safeNumber(n);
@@ -86,11 +123,6 @@ function computeTotals(rows: TotalRow[], mms: number[]): Totals {
     }
   }
   return { qty, poids };
-}
-
-function makeId() {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 function AddRowInsideTable({
@@ -490,12 +522,16 @@ function NiveauModal({
   onSubmit,
   inputClass,
   initial,
+  submitting = false,
+  errorMessage,
 }: {
   open: boolean;
   onClose: () => void;
-  onSubmit: (payload: { niveauName: string; note: string; sousTraitants: string[]; diametres: number[] }) => void;
+  onSubmit: (payload: { niveauName: string; note: string; sousTraitants: string[]; diametres: number[] }) => void | Promise<void>;
   inputClass: string;
   initial: { id: string; niveauName: string; note: string; sousTraitants: string[]; diametres: number[] };
+  submitting?: boolean;
+  errorMessage?: string;
 }) {
   const panelRef = useRef<HTMLDivElement | null>(null);
   const isEdit = initial.id !== "add";
@@ -518,13 +554,14 @@ function NiveauModal({
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (ev: KeyboardEvent) => {
-      if (ev.key === "Escape") onClose();
+      if (ev.key === "Escape" && !submitting) onClose();
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
+  }, [open, onClose, submitting]);
 
   const closeOnBackdrop = (ev: ReactMouseEvent<HTMLDivElement>) => {
+    if (submitting) return;
     if (panelRef.current && !panelRef.current.contains(ev.target as Node)) onClose();
   };
 
@@ -560,13 +597,12 @@ function NiveauModal({
 
   const submit = () => {
     if (!canSubmit) return;
-    onSubmit({
+    void onSubmit({
       niveauName: (local.name ?? "").trim(),
       note: (local.note ?? "").trim(),
       sousTraitants: local.sousTraitants ?? [],
       diametres: (local.selectedMms ?? []).sort((a, b) => a - b),
     });
-    onClose();
   };
 
   return (
@@ -600,17 +636,34 @@ function NiveauModal({
       canSubmit={canSubmit}
       nameInvalid={!nameOk}
       mmsInvalid={!mmsOk}
+      submitting={submitting}
+      errorMessage={errorMessage}
     />
   );
 }
 
-export default function EditCalculeTotalFerraillage() {
-  const [data, setData] = useState<TotalFerraillageData>(() => EMPTY_TOTAL_FERRAILLAGE);
+export default function EditCalculeTotalFerraillage({ initialData, onNiveauCreated, onLineCreated }: EditCalculeTotalFerraillageProps) {
+  const [data, setData] = useState<TotalFerraillageData>(() => initialData ?? EMPTY_TOTAL_FERRAILLAGE);
 
   const [openAdd, setOpenAdd] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
 
   const [rowModal, setRowModal] = useState<{ mode: "add" | "edit"; niveauId: string; rowId?: string } | null>(null);
+  const [addSubmitting, setAddSubmitting] = useState(false);
+  const [addErr, setAddErr] = useState("");
+  const [rowSubmitting, setRowSubmitting] = useState(false);
+  const [rowErr, setRowErr] = useState("");
+
+  useEffect(() => {
+    setData(initialData ?? EMPTY_TOTAL_FERRAILLAGE);
+    setOpenAdd(false);
+    setEditId(null);
+    setRowModal(null);
+    setAddSubmitting(false);
+    setAddErr("");
+    setRowSubmitting(false);
+    setRowErr("");
+  }, [initialData]);
 
   const inputClass =
     "w-full rounded-md border px-3 py-2 text-sm font-medium truncate " +
@@ -645,15 +698,41 @@ export default function EditCalculeTotalFerraillage() {
     setData((p) => ({ ...p, niveaux: (p.niveaux ?? []).filter((x) => x.id !== id) }));
   };
 
-  const addFromModal = (payload: { niveauName: string; note: string; sousTraitants: string[]; diametres: number[] }) => {
-    const diametres = (payload.diametres?.length ? payload.diametres : [...DEFAULT_MMS]).sort((a, b) => a - b);
-    setData((p) => ({
-      ...p,
-      niveaux: [
-        ...(p.niveaux ?? []),
-        { id: makeId(), niveauName: payload.niveauName, note: payload.note, diametres, sousTraitants: payload.sousTraitants ?? [], rows: [] },
-      ],
-    }));
+  const addFromModal = async (payload: { niveauName: string; note: string; sousTraitants: string[]; diametres: number[] }) => {
+    const projectId = String(data.rapportId ?? "").trim();
+    if (!projectId) {
+      setAddErr("Projet introuvable.");
+      return;
+    }
+
+    setAddSubmitting(true);
+    setAddErr("");
+
+    try {
+      const response = await ferraillageApi.createProjectNiveau(projectId, {
+        nomNiveau: payload.niveauName,
+        note: payload.note || null,
+        entreprisesMainsOeuvres: payload.sousTraitants ?? [],
+        diametresActifs: (payload.diametres?.length ? payload.diametres : [...DEFAULT_MMS]).sort((a, b) => a - b),
+      });
+
+      if (onNiveauCreated) {
+        onNiveauCreated(response.item);
+      } else {
+        const created = mapProjectNiveauToLocal(response.item);
+        setData((p) => ({
+          ...p,
+          niveaux: [...(p.niveaux ?? []), created],
+        }));
+      }
+
+      setOpenAdd(false);
+      setAddErr("");
+    } catch (error: unknown) {
+      setAddErr(isFerApiError(error) ? error.message : "Echec de l'enregistrement du niveau");
+    } finally {
+      setAddSubmitting(false);
+    }
   };
 
   const updateFromModal = (id: string, payload: { niveauName: string; note: string; sousTraitants: string[]; diametres: number[] }) => {
@@ -674,29 +753,50 @@ export default function EditCalculeTotalFerraillage() {
     return out.length ? out : [...DEFAULT_MMS];
   }, [data.niveaux]);
 
-  const addRowToNiveau = (niveauId: string, payload: TotalRowModalPayload) => {
-    setData((p) => ({
-      ...p,
-      niveaux: (p.niveaux ?? []).map((n) => {
-        if (n.id !== niveauId) return n;
-        const mms = [...(n.diametres?.length ? n.diametres : DEFAULT_MMS)].sort((a, b) => a - b);
+  const addRowToNiveau = async (niveauId: string, payload: TotalRowModalPayload) => {
+    const projectId = String(data.rapportId ?? "").trim();
+    if (!projectId) {
+      setRowErr("Projet introuvable.");
+      return;
+    }
 
-        const { qtyByMm, poidsByMm, payload: normalizedPayload } = computeQtyPoidsByMmFromPayload(payload, mms);
+    const targetNiveau = (data.niveaux ?? []).find((niveau) => niveau.id === niveauId);
+    const mms = [...(targetNiveau?.diametres?.length ? targetNiveau.diametres : DEFAULT_MMS)].sort((a, b) => a - b);
+    const { qtyByMm, poidsByMm, payload: normalizedPayload } = computeQtyPoidsByMmFromPayload(payload, mms);
 
-        const row: TotalRow = {
-          id: makeId(),
-          designation: normalizedPayload.designation,
-          typeName: normalizedPayload.typeName,
-          forme: normalizedPayload.forme,
-          nb: normalizedPayload.nb,
-          diametre: normalizedPayload.diametreMm,
-          qtyByMm,
-          poidsByMm,
-          payload: normalizedPayload,
-        };
-        return { ...n, rows: [...(n.rows ?? []), row] };
-      }),
-    }));
+    setRowSubmitting(true);
+    setRowErr("");
+
+    try {
+      const response = await ferraillageApi.createProjectNiveauLine(projectId, niveauId, {
+        designation: normalizedPayload.designation,
+        nomenclature: normalizedPayload.typeName ?? null,
+        nb: normalizedPayload.nb ?? null,
+        hauteur: normalizedPayload.hauteur ?? null,
+        forme: normalizedPayload.forme ?? null,
+        diametreMm: normalizedPayload.diametreMm ?? null,
+        payload: normalizedPayload as unknown as Record<string, unknown>,
+        qtyByMm,
+        poidsByMm,
+      });
+
+      if (onLineCreated) {
+        onLineCreated(niveauId, response.item);
+      } else {
+        const row = mapProjectLineToLocal(response.item);
+        setData((p) => ({
+          ...p,
+          niveaux: (p.niveaux ?? []).map((n) => (n.id !== niveauId ? n : { ...n, rows: [...(n.rows ?? []), row] })),
+        }));
+      }
+
+      setRowModal(null);
+      setRowErr("");
+    } catch (error: unknown) {
+      setRowErr(isFerApiError(error) ? error.message : "Echec de l'enregistrement de la ligne");
+    } finally {
+      setRowSubmitting(false);
+    }
   };
 
   const updateRowInNiveau = (niveauId: string, rowId: string, payload: TotalRowModalPayload) => {
@@ -733,7 +833,15 @@ export default function EditCalculeTotalFerraillage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-end">
-        <button type="button" className="btn-fit-white-outline" onClick={() => setOpenAdd(true)}>
+        <button
+          type="button"
+          className="btn-fit-white-outline"
+          onClick={() => {
+            setAddErr("");
+            setOpenAdd(true);
+          }}
+          disabled={!data.rapportId}
+        >
           Ajouter Niveau
         </button>
       </div>
@@ -741,10 +849,16 @@ export default function EditCalculeTotalFerraillage() {
       {openAdd ? (
         <NiveauModal
           open={openAdd}
-          onClose={() => setOpenAdd(false)}
+          onClose={() => {
+            if (addSubmitting) return;
+            setAddErr("");
+            setOpenAdd(false);
+          }}
           onSubmit={addFromModal}
           inputClass={inputClass}
           initial={{ id: "add", niveauName: "", note: "", sousTraitants: [], diametres: [] }}
+          submitting={addSubmitting}
+          errorMessage={addErr}
         />
       ) : null}
 
@@ -753,7 +867,10 @@ export default function EditCalculeTotalFerraillage() {
           key={editingNiveau.id}
           open={openEdit}
           onClose={() => setEditId(null)}
-          onSubmit={(payload: { niveauName: string; note: string; sousTraitants: string[]; diametres: number[] }) => updateFromModal(editingNiveau.id, payload)}
+          onSubmit={(payload: { niveauName: string; note: string; sousTraitants: string[]; diametres: number[] }) => {
+            updateFromModal(editingNiveau.id, payload);
+            setEditId(null);
+          }}
           inputClass={inputClass}
           initial={{
             id: editingNiveau.id,
@@ -796,15 +913,20 @@ export default function EditCalculeTotalFerraillage() {
                     diametreMm: rowModalMms[0] ?? 0,
                   }
           }
-          onClose={() => setRowModal(null)}
-          onSubmit={(payload: TotalRowModalPayload) => {
+          onClose={() => {
+            if (rowSubmitting) return;
+            setRowErr("");
+            setRowModal(null);
+          }}
+          submitting={rowSubmitting}
+          errorMessage={rowErr}
+          onSubmit={async (payload: TotalRowModalPayload) => {
             if (rowModal.mode === "edit" && rowModal.rowId) {
               updateRowInNiveau(rowModal.niveauId, rowModal.rowId, payload);
               setRowModal(null);
               return;
             }
-            addRowToNiveau(rowModal.niveauId, payload);
-            setRowModal(null);
+            await addRowToNiveau(rowModal.niveauId, payload);
           }}
         />
       ) : null}
@@ -815,8 +937,14 @@ export default function EditCalculeTotalFerraillage() {
           niveau={niv}
           onEdit={() => setEditId(niv.id)}
           onDelete={() => removeNiveau(niv.id)}
-          onAddRow={() => setRowModal({ mode: "add", niveauId: niv.id })}
-          onEditRow={(rowId: string) => setRowModal({ mode: "edit", niveauId: niv.id, rowId })}
+          onAddRow={() => {
+            setRowErr("");
+            setRowModal({ mode: "add", niveauId: niv.id });
+          }}
+          onEditRow={(rowId: string) => {
+            setRowErr("");
+            setRowModal({ mode: "edit", niveauId: niv.id, rowId });
+          }}
         />
       ))}
 
