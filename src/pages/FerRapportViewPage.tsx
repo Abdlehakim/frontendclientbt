@@ -122,7 +122,7 @@ export default function FerRapportViewPage() {
           <strong>Chantier:</strong> {rapport.chantierName ?? "—"}
         </div>
         <div>
-          <strong>Sous-traitant:</strong> {rapport.sousTraitant ?? "—"}
+          <strong>Responsable:</strong> {rapport.responsable ?? "—"}
         </div>
 
         <div>

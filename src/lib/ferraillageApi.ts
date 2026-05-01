@@ -1,6 +1,8 @@
 const API_BASE = "/api";
 const BASE = "/ferraillage";
 
+export type FerAcierType = "F400" | "F500";
+
 export type FerEtatChantierDTO = {
   id: string;
   rapportId: string;
@@ -20,15 +22,30 @@ export type FerRestantNonConfectionneDTO = {
 export type FerRapportDTO = {
   id: string;
   chantierName: string;
-  sousTraitant: string | null;
+  responsable: string | null;
+  acierType?: FerAcierType | null;
+  note?: string | null;
   createdAt: string;
   updatedAt: string;
-  _count?: { etats: number; restants: number };
+  _count?: { etats: number; restants: number; niveaux?: number };
 };
 
 export type FerRapportDetailDTO = FerRapportDTO & {
   etats: FerEtatChantierDTO[];
   restants: FerRestantNonConfectionneDTO[];
+};
+
+export type FerProjectCreatePayload = {
+  chantierName: string;
+  responsable?: string | null;
+  acierType: FerAcierType;
+  note?: string | null;
+  niveaux?: Array<{
+    name: string;
+    note?: string | null;
+    selectedMms: number[];
+    sousTraitants: string[];
+  }>;
 };
 
 class ApiError extends Error {
@@ -72,7 +89,13 @@ export const ferraillageApi = {
   listRapports: (q?: string) =>
     request<{ items: FerRapportDTO[] }>(`${BASE}/rapports${q ? `?q=${encodeURIComponent(q)}` : ""}`),
 
-  createRapport: (payload: { chantierName: string; sousTraitant?: string | null }) =>
+  createProject: (payload: FerProjectCreatePayload) =>
+    request<{ item: FerRapportDTO }>(`${BASE}/projects`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  createRapport: (payload: { chantierName: string; responsable?: string | null }) =>
     request<{ item: FerRapportDTO }>(`${BASE}/rapports`, {
       method: "POST",
       body: JSON.stringify(payload),

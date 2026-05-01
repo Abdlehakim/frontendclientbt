@@ -18,7 +18,7 @@ const TABS: { key: TabKey; label: string }[] = [
 type RapportLite = {
   id: string;
   chantierName: string;
-  sousTraitant?: string | null;
+  responsable?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
   typeAcier?: string | null;

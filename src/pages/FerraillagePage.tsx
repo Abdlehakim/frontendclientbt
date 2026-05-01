@@ -36,29 +36,27 @@ export default function FerraillagePage() {
   const [editOpen, setEditOpen] = useState(false);
   const [editItem, setEditItem] = useState<FerRapportDTO | null>(null);
 
+  async function loadRapports() {
+    setLoading(true);
+    setErr("");
+
+    try {
+      const response = await ferraillageApi.listRapports();
+      setItems(response.items || []);
+    } catch (e: unknown) {
+      setErr(isFerApiError(e) ? e.message : "Failed to load");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
     let cancelled = false;
 
-    Promise.resolve().then(() => {
+    void (async () => {
       if (cancelled) return;
-      setLoading(true);
-      setErr("");
-    });
-
-    ferraillageApi
-      .listRapports()
-      .then((r) => {
-        if (cancelled) return;
-        setItems(r.items || []);
-      })
-      .catch((e: unknown) => {
-        if (cancelled) return;
-        setErr(isFerApiError(e) ? e.message : "Failed to load");
-      })
-      .finally(() => {
-        if (cancelled) return;
-        setLoading(false);
-      });
+      await loadRapports();
+    })();
 
     return () => {
       cancelled = true;
@@ -70,7 +68,7 @@ export default function FerraillagePage() {
     if (!q) return items;
     return items.filter((r) => {
       const a = (r.chantierName || "").toLowerCase();
-      const b = (r.sousTraitant || "").toLowerCase();
+      const b = (r.responsable || "").toLowerCase();
       return a.includes(q) || b.includes(q);
     });
   }, [items, searchTerm]);
@@ -101,6 +99,17 @@ export default function FerraillagePage() {
   function onEdit(item: FerRapportDTO) {
     setEditItem(item);
     setEditOpen(true);
+  }
+
+  async function onProjectCreated(item: FerRapportDTO) {
+    setCurrentPage(1);
+    setProjectWizardOpen(false);
+
+    try {
+      await loadRapports();
+    } catch {
+      setItems((prev) => [item, ...prev.filter((x) => x.id !== item.id)]);
+    }
   }
 
   async function onDelete(id: string) {
@@ -141,7 +150,7 @@ export default function FerraillagePage() {
           <input
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Chantier / sous-traitant"
+            placeholder="Chantier / responsable"
             className="border border-gray-300 rounded px-2 py-1 bg-white"
           />
         </div>
@@ -154,7 +163,7 @@ export default function FerraillagePage() {
           <thead className="bg-(--primary) text-white">
             <tr>
               <th className="py-2 text-sm font-medium text-center">Chantier</th>
-              <th className="py-2 text-sm font-medium text-center border-x-4 border-white">Sous-traitant</th>
+              <th className="py-2 text-sm font-medium text-center border-x-4 border-white">Responsable</th>
               <th className="py-2 text-sm font-medium text-center">Créé le</th>
               <th className="py-2 text-sm font-medium text-center border-x-4 border-white">MàJ le</th>
               <th className="w-2/9 py-2 text-sm font-medium text-center">Actions</th>
@@ -177,7 +186,7 @@ export default function FerraillagePage() {
                 {displayed.map((r, i) => (
                   <tr key={r.id} className={i % 2 ? "bg-gray-100" : "bg-white"}>
                     <td className="py-2 text-center font-semibold truncate">{r.chantierName}</td>
-                    <td className="py-2 text-center truncate">{r.sousTraitant ?? "—"}</td>
+                    <td className="py-2 text-center truncate">{r.responsable ?? "—"}</td>
                     <td className="py-2 text-center">{fmtDate(r.createdAt)}</td>
                     <td className="py-2 text-center">{fmtDate(r.updatedAt)}</td>
                     <td className="py-2 w-2/9">
@@ -212,7 +221,7 @@ export default function FerraillagePage() {
       </div>
 
       <CreateRapportWizard open={wizardOpen} onClose={() => setWizardOpen(false)} />
-      <CreateProjetWizard open={projectWizardOpen} onClose={() => setProjectWizardOpen(false)} />
+      <CreateProjetWizard open={projectWizardOpen} onClose={() => setProjectWizardOpen(false)} onCreated={onProjectCreated} />
 
       <EditRapportWizard
         open={editOpen}

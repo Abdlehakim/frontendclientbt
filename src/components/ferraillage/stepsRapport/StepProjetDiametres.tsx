@@ -82,11 +82,11 @@ export default function StepProjetDiametres({ data, setData, selectedSet, toggle
           </div>
 
           <div className="flex flex-col">
-            <label className="text-sm font-semibold text-gray-700 mb-1">Sous-traitant</label>
+            <label className="text-sm font-semibold text-gray-700 mb-1">Responsable</label>
             <input
               className={inputClass}
-              value={data.sousTraitant}
-              onChange={(e) => setData((p) => ({ ...p, sousTraitant: e.target.value }))}
+              value={data.responsable}
+              onChange={(e) => setData((p) => ({ ...p, responsable: e.target.value }))}
               placeholder="Ex: Ste. AM SIOUD CONSTRUCTION"
             />
           </div>
