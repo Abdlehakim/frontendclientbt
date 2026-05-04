@@ -681,7 +681,7 @@ export default function EditCalculeTotalFerraillage({
   }, [initialData]);
 
   const inputClass =
-    "w-full rounded-md border px-3 py-2 text-sm font-medium truncate " +
+    "form-control w-full rounded-md border text-xs font-medium truncate " +
     "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 " +
     "border-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 " +
     "placeholder:text-emerald-800/60";

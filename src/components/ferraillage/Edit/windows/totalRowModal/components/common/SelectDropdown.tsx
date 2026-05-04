@@ -50,7 +50,7 @@ export default function SelectDropdown<T extends string>({
 
       <button
         type="button"
-        className="inline-flex w-full cursor-pointer items-center justify-between gap-2 truncate rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800 hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+        className="form-control form-control--select inline-flex w-full cursor-pointer items-center justify-between gap-2 truncate rounded-md border border-emerald-200 bg-emerald-50 text-xs font-medium text-emerald-800 hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-400"
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}

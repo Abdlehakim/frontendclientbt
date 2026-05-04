@@ -214,6 +214,12 @@ export default function TotalRowModalWindowInner({
   const normalizedDesignation = normalizeDesignation(designation);
   const isSemellesDesignation = normalizedDesignation === "semelles";
   const isSlabDesignation = isSlabDesignationValue(designation);
+  const restrictAddElementsToBarreOnly = [
+    "semelles",
+    "dalle pleine",
+    "chape",
+    "radier",
+  ].includes(normalizedDesignation);
   const showHauteurField = !isSlabDesignation;
   const showTopHauteurField = showHauteurField && !isSemellesDesignation;
   const expandNomenclatureField = isSemellesDesignation;
@@ -1045,9 +1051,9 @@ export default function TotalRowModalWindowInner({
                 onAddBarre={addBarre}
                 onAddEpingle={() => addExtraBox("EPINGLE")}
                 onAddEtriers={() => addExtraBox("ETRIERS")}
-                showCadreAddOption={!isSemellesDesignation}
-                showEpingleAddOption={!isSemellesDesignation}
-                showEtriersAddOption={!isSemellesDesignation}
+                showCadreAddOption={!restrictAddElementsToBarreOnly}
+                showEpingleAddOption={!restrictAddElementsToBarreOnly}
+                showEtriersAddOption={!restrictAddElementsToBarreOnly}
                 addDropdownCloseKey={normalizedDesignation}
               />
 

@@ -38,6 +38,30 @@ textarea {
   font: inherit;
 }
 
+.form-control {
+  box-sizing: border-box;
+  min-height: 40px;
+  height: 40px;
+  padding: 0 12px;
+  line-height: 1.25rem;
+}
+
+.form-control--select {
+  box-sizing: border-box;
+  min-height: 40px;
+  height: 40px;
+  padding: 0 12px;
+  line-height: 1.25rem;
+}
+
+.form-control--textarea {
+  box-sizing: border-box;
+  min-height: 40px;
+  height: auto;
+  padding: 8px 12px;
+  line-height: 1.5;
+}
+
 .input-no-spinner::-webkit-outer-spin-button,
 .input-no-spinner::-webkit-inner-spin-button {
   -webkit-appearance: none;

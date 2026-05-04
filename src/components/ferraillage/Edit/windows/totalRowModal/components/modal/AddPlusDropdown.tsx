@@ -71,7 +71,7 @@ export default function AddPlusDropdown({
       <button
         ref={btnRef}
         type="button"
-        className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold cursor-pointer bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+        className="form-control form-control--select inline-flex items-center gap-2 rounded-md border text-sm font-semibold cursor-pointer bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-400"
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
