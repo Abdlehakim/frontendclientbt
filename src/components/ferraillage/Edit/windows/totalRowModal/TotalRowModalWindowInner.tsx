@@ -1036,7 +1036,7 @@ export default function TotalRowModalWindowInner({
           <div className="flex h-full min-h-0 max-h-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
             <ModalHeader title={title} onClose={onClose} disabled={submitting} />
 
-            <div className="p-5 flex flex-1 min-h-0 flex-col overflow-hidden">
+            <div className="py-2 px-4 flex flex-1 min-h-0 flex-col overflow-hidden">
               <ModalTopFields
                 designation={designation}
                 onDesignationChange={handleDesignationChange}

@@ -61,13 +61,19 @@ export default function SemelleFields({
     semelle.semelleEqualSharedActive || semelle.semelleDiffSharedActive;
   const showDualDiameterRow =
     semelle.semelleEqualDualActive || semelle.semelleDiffDualActive;
-  const showSharedCountField =
+  const isSharedSemelleRelation =
     semelle.semelleEqualSharedActive || semelle.semelleDiffSharedActive;
-  const showDualCountFields =
+  const isDualSemelleRelation =
     semelle.semelleEqualDualActive || semelle.semelleDiffDualActive;
-  const showSharedLengthAnchorSharedDiaRow = semelle.semelleEqualSharedActive;
   const spacingModeValue = (x.slabSpacingMode ?? "ESPACEMENT") as "ESPACEMENT" | "NB_CADRE";
   const spacingRelationValue = (x.slabSpacingRelation ?? "EA_EQ_EB") as "EA_EQ_EB" | "EA_NE_EB";
+  const showSharedCountField =
+    spacingModeValue === "NB_CADRE" &&
+    isSharedSemelleRelation;
+  const showDualCountFields =
+    spacingModeValue === "NB_CADRE" &&
+    isDualSemelleRelation;
+  const showSharedLengthAnchorSharedDiaRow = semelle.semelleEqualSharedActive;
   const showSharedSpacingInput =
     spacingModeValue === "ESPACEMENT" && spacingRelationValue === "EA_EQ_EB";
   const showDualSpacingInputs =
@@ -229,7 +235,184 @@ export default function SemelleFields({
             </div>
           ) : null}
 
-          {showSharedSpacingInput ? (
+          {isSharedSemelleRelation ? (
+            <>
+              <div className="sm:col-span-2 grid gap-2 [grid-template-columns:1fr_1fr]">
+                <div className="flex flex-col">
+                  <SelectDropdown
+                    label="Mode de calcul"
+                    value={spacingModeValue}
+                    onChange={(value) => onPatch({ slabSpacingMode: value })}
+                    options={SLAB_SPACING_MODES}
+                    getOptionLabel={getSlabSpacingModeLabel}
+                  />
+                </div>
+
+                {showSharedCountField ? (
+                  <FieldInput
+                    label="Nb. Barres a et b"
+                    value={x.nBarreStr}
+                    onChange={(value) => onPatch({ nBarreStr: value })}
+                    inputClass={inputClass}
+                    placeholder="Ex: 4"
+                    inputMode="numeric"
+                  />
+                ) : (
+                  <div aria-hidden="true" />
+                )}
+              </div>
+
+              {showSharedSpacingInput ? (
+                <div className="sm:col-span-2 grid gap-2 [grid-template-columns:1fr_1fr]">
+                  <div className="flex flex-col">
+                    <SelectDropdown
+                      label="Re. Es."
+                      value={spacingRelationValue}
+                      onChange={(value) => onPatch({ slabSpacingRelation: value })}
+                      options={SLAB_SPACING_RELATIONS}
+                      getOptionLabel={getSlabSpacingRelationLabel}
+                    />
+                  </div>
+
+                  <FieldInput
+                    label="Es. a et b"
+                    value={x.slabEspacementAStr ?? "0"}
+                    onChange={(value) =>
+                      onPatch({
+                        slabEspacementAStr: value,
+                        slabEspacementBStr: value,
+                      })
+                    }
+                    inputClass={inputClass}
+                    placeholder="Ex: 0,2"
+                  />
+                </div>
+              ) : showDualSpacingInputs ? (
+                <div className="sm:col-span-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  <div className="flex flex-col">
+                    <SelectDropdown
+                      label="Re. Es."
+                      value={spacingRelationValue}
+                      onChange={(value) => onPatch({ slabSpacingRelation: value })}
+                      options={SLAB_SPACING_RELATIONS}
+                      getOptionLabel={getSlabSpacingRelationLabel}
+                    />
+                  </div>
+
+                  <FieldInput
+                    label="Es. a"
+                    value={x.slabEspacementAStr ?? "0"}
+                    onChange={(value) => onPatch({ slabEspacementAStr: value })}
+                    inputClass={inputClass}
+                    placeholder="Ex: 0,2"
+                  />
+
+                  <FieldInput
+                    label="Es. b"
+                    value={x.slabEspacementBStr ?? "0"}
+                    onChange={(value) => onPatch({ slabEspacementBStr: value })}
+                    inputClass={inputClass}
+                    placeholder="Ex: 0,2"
+                  />
+                </div>
+              ) : null}
+            </>
+          ) : isDualSemelleRelation ? (
+            <>
+              <div className="sm:col-span-2 grid gap-2 [grid-template-columns:1fr_1fr_1fr]">
+                <div className="flex flex-col">
+                  <SelectDropdown
+                    label="Mode de calcul"
+                    value={spacingModeValue}
+                    onChange={(value) => onPatch({ slabSpacingMode: value })}
+                    options={SLAB_SPACING_MODES}
+                    getOptionLabel={getSlabSpacingModeLabel}
+                  />
+                </div>
+
+                {showDualCountFields ? (
+                  <FieldInput
+                    label="Nb. Barres a"
+                    value={x.semelleNBarreAStr ?? "0"}
+                    onChange={(value) => onPatch({ semelleNBarreAStr: value })}
+                    inputClass={inputClass}
+                    placeholder="Ex: 4"
+                    inputMode="numeric"
+                  />
+                ) : (
+                  <div aria-hidden="true" />
+                )}
+
+                {showDualCountFields ? (
+                  <FieldInput
+                    label="Nb. Barres b"
+                    value={x.semelleNBarreBStr ?? "0"}
+                    onChange={(value) => onPatch({ semelleNBarreBStr: value })}
+                    inputClass={inputClass}
+                    placeholder="Ex: 4"
+                    inputMode="numeric"
+                  />
+                ) : (
+                  <div aria-hidden="true" />
+                )}
+              </div>
+
+              {showSharedSpacingInput ? (
+                <div className="sm:col-span-2 grid gap-2 [grid-template-columns:1fr_1fr]">
+                  <div className="flex flex-col">
+                    <SelectDropdown
+                      label="Re. Es."
+                      value={spacingRelationValue}
+                      onChange={(value) => onPatch({ slabSpacingRelation: value })}
+                      options={SLAB_SPACING_RELATIONS}
+                      getOptionLabel={getSlabSpacingRelationLabel}
+                    />
+                  </div>
+
+                  <FieldInput
+                    label="Es. a et b"
+                    value={x.slabEspacementAStr ?? "0"}
+                    onChange={(value) =>
+                      onPatch({
+                        slabEspacementAStr: value,
+                        slabEspacementBStr: value,
+                      })
+                    }
+                    inputClass={inputClass}
+                    placeholder="Ex: 0,2"
+                  />
+                </div>
+              ) : showDualSpacingInputs ? (
+                <div className="sm:col-span-2 grid gap-2 [grid-template-columns:1fr_1fr_1fr]">
+                  <div className="flex flex-col">
+                    <SelectDropdown
+                      label="Re. Es."
+                      value={spacingRelationValue}
+                      onChange={(value) => onPatch({ slabSpacingRelation: value })}
+                      options={SLAB_SPACING_RELATIONS}
+                      getOptionLabel={getSlabSpacingRelationLabel}
+                    />
+                  </div>
+
+                  <FieldInput
+                    label="Es. a"
+                    value={x.slabEspacementAStr ?? "0"}
+                    onChange={(value) => onPatch({ slabEspacementAStr: value })}
+                    inputClass={inputClass}
+                    placeholder="Ex: 0,2"
+                  />
+
+                  <FieldInput
+                    label="Es. b"
+                    value={x.slabEspacementBStr ?? "0"}
+                    onChange={(value) => onPatch({ slabEspacementBStr: value })}
+                    inputClass={inputClass}
+                    placeholder="Ex: 0,2"
+                  />
+                </div>
+              ) : null}
+            </>
+          ) : showSharedSpacingInput ? (
             <div className="sm:col-span-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
               <div className="flex flex-col">
                 <SelectDropdown
@@ -303,61 +486,16 @@ export default function SemelleFields({
               />
             </>
           ) : (
-            <>
-              <div className="flex flex-col">
-                <SelectDropdown
-                  label="Mode de calcul"
-                  value={spacingModeValue}
-                  onChange={(value) => onPatch({ slabSpacingMode: value })}
-                  options={SLAB_SPACING_MODES}
-                  getOptionLabel={getSlabSpacingModeLabel}
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <SelectDropdown
-                  label="Re. Es."
-                  value={spacingRelationValue}
-                  onChange={(value) => onPatch({ slabSpacingRelation: value })}
-                  options={SLAB_SPACING_RELATIONS}
-                  getOptionLabel={getSlabSpacingRelationLabel}
-                />
-              </div>
-            </>
+            <div className="flex flex-col">
+              <SelectDropdown
+                label="Mode de calcul"
+                value={spacingModeValue}
+                onChange={(value) => onPatch({ slabSpacingMode: value })}
+                options={SLAB_SPACING_MODES}
+                getOptionLabel={getSlabSpacingModeLabel}
+              />
+            </div>
           )}
-
-          {showSharedCountField ? (
-            <FieldInput
-              label="Nb. Barres a et b"
-              value={x.nBarreStr}
-              onChange={(value) => onPatch({ nBarreStr: value })}
-              inputClass={inputClass}
-              placeholder="Ex: 4"
-              inputMode="numeric"
-              className="sm:col-span-2"
-            />
-          ) : null}
-
-          {showDualCountFields ? (
-            <>
-              <FieldInput
-                label="Nb. Barres a"
-                value={x.semelleNBarreAStr ?? "0"}
-                onChange={(value) => onPatch({ semelleNBarreAStr: value })}
-                inputClass={inputClass}
-                placeholder="Ex: 4"
-                inputMode="numeric"
-              />
-              <FieldInput
-                label="Nb. Barres b"
-                value={x.semelleNBarreBStr ?? "0"}
-                onChange={(value) => onPatch({ semelleNBarreBStr: value })}
-                inputClass={inputClass}
-                placeholder="Ex: 4"
-                inputMode="numeric"
-              />
-            </>
-          ) : null}
         </>
       )}
     </>

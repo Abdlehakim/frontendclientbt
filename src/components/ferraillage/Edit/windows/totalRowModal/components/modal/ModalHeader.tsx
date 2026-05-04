@@ -10,7 +10,7 @@ export default function ModalHeader({
   disabled?: boolean;
 }) {
   return (
-    <div className="px-5 py-3 bg-gray-50 rounded-t-xl border-b border-gray-200 flex items-center justify-between shrink-0">
+    <div className="px-5 py-1 bg-gray-50 rounded-t-xl border-b border-gray-200 flex items-center justify-between shrink-0">
       <div className="text-sm font-semibold text-gray-900">{title}</div>
 
       <div className="flex items-center gap-2">

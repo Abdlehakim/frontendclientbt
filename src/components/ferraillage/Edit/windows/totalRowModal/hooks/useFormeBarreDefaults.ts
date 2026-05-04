@@ -39,7 +39,7 @@ export function useFormeBarreDefaults({
       slabSurfaceStr: "0",
       slabQtePerM2Str: "0",
       slabRelation: "ab_equal_same_if",
-      slabSpacingMode: "ESPACEMENT",
+      slabSpacingMode: isSemelle ? "NB_CADRE" : "ESPACEMENT",
       slabSpacingRelation: "EA_EQ_EB",
       slabLongueurAStr: "0",
       slabLongueurBStr: "0",
@@ -60,7 +60,7 @@ export function useFormeBarreDefaults({
       attenteStr: "0",
       ancrageStr: "0",
     });
-  }, [normalizedDesignation, fallbackDiametreValue, onPatch]);
+  }, [normalizedDesignation, fallbackDiametreValue, isSemelle, onPatch]);
 
   useEffect(() => {
     if (isSemelle && !(x.barreCategorie ?? "").trim()) {
@@ -79,6 +79,24 @@ export function useFormeBarreDefaults({
       onPatch({ semelleRelation: "ab_equal_same_if" });
     }
   }, [isSemelle, x.semelleRelation, onPatch]);
+
+  useEffect(() => {
+    if (!isSemelle) return;
+
+    const patch: Partial<FormeState> = {};
+
+    if (!(x.slabSpacingMode ?? "").trim()) patch.slabSpacingMode = "NB_CADRE";
+    if (
+      !(
+        (x.slabSpacingRelation ?? "").trim() === "EA_EQ_EB" ||
+        (x.slabSpacingRelation ?? "").trim() === "EA_NE_EB"
+      )
+    ) {
+      patch.slabSpacingRelation = "EA_EQ_EB";
+    }
+
+    if (Object.keys(patch).length > 0) onPatch(patch);
+  }, [isSemelle, x.slabSpacingMode, x.slabSpacingRelation, onPatch]);
 
   useEffect(() => {
     if (!isSlab) return;

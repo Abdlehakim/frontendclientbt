@@ -4,6 +4,7 @@ import { useFormeBarreBaseState } from "../../hooks/useFormeBarreBaseState";
 import { useFormeBarreDefaults } from "../../hooks/useFormeBarreDefaults";
 import { useFormeBarreResult } from "../../hooks/useFormeBarreResult";
 import { useSemelleAutoValues } from "../../hooks/useSemelleAutoValues";
+import { useSemelleSpacingCountSync } from "../../hooks/useSemelleSpacingCountSync";
 import { useSemelleState } from "../../hooks/useSemelleState";
 import { useSlabAutoValues } from "../../hooks/useSlabAutoValues";
 import { useSlabState } from "../../hooks/useSlabState";
@@ -61,6 +62,17 @@ export default function FormeBarre({
     isSlabSurfacePerM2SpacingDesignation: base.isSlabSurfacePerM2SpacingDesignation,
     fallbackDiametreValue: base.fallbackDiametreValue,
     normalizedDesignation: base.normalizedDesignation,
+    onPatch,
+  });
+
+  useSemelleSpacingCountSync({
+    x,
+    isSemelle: base.isSemelle,
+    isChaise: semelle.isChaise,
+    semelleEqualSharedActive: semelle.semelleEqualSharedActive,
+    semelleEqualDualActive: semelle.semelleEqualDualActive,
+    semelleDiffSharedActive: semelle.semelleDiffSharedActive,
+    semelleDiffDualActive: semelle.semelleDiffDualActive,
     onPatch,
   });
 
