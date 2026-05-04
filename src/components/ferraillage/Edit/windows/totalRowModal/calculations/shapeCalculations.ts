@@ -1,5 +1,5 @@
 import type { ExtraBoxKind, FormeKind } from "../types";
-import { parseNonNegativeNumber } from "../utils";
+import { parseNonNegativeInt, parseNonNegativeNumber } from "../utils";
 
 export function computeExtraPerimetre(kind: ExtraBoxKind, longueurStr: string, ancrageStr: string) {
   const L = parseNonNegativeNumber(longueurStr);
@@ -9,6 +9,28 @@ export function computeExtraPerimetre(kind: ExtraBoxKind, longueurStr: string, a
   const a = A ?? 0;
   if (kind === "EPINGLE") return l + 2 * a;
   return 2 * l + 2 * a;
+}
+
+export function computeExtraSpacingNt(
+  nbStr: string,
+  hauteurStr: string,
+  nbExtraParCadreStr: string,
+  espacementStr: string,
+) {
+  const NB = parseNonNegativeInt(nbStr);
+  const H = parseNonNegativeNumber(hauteurStr);
+  const N = parseNonNegativeInt(nbExtraParCadreStr);
+  const E = parseNonNegativeNumber(espacementStr);
+
+  if (NB == null && H == null && N == null && E == null) return 0;
+
+  const nb = NB ?? 0;
+  const h = H ?? 0;
+  const n = N ?? 0;
+  const e = E ?? 0;
+
+  if (e <= 0) return 0;
+  return (h / e) * nb * n;
 }
 
 export function computeCadrePerimetre(

@@ -51,7 +51,7 @@ export default function ModalTopFields({
       </div>
 
       <div className="flex flex-col md:col-span-3">
-        <label className="text-sm font-semibold text-gray-700 mb-1">Nomenclature</label>
+        <label className="text-xs font-semibold text-gray-700 mb-1">Nomenclature</label>
         <input
           className={inputClass}
           value={nomenclature}
@@ -61,7 +61,7 @@ export default function ModalTopFields({
       </div>
 
       <div className={`flex flex-col ${showHauteurField ? "md:col-span-2" : "md:col-span-5"}`}>
-        <label className="text-sm font-semibold text-gray-700 mb-1">NB</label>
+        <label className="text-xs font-semibold text-gray-700 mb-1">NB</label>
         <input
           className={inputClass}
           value={nbStr}
@@ -73,7 +73,7 @@ export default function ModalTopFields({
 
       {showHauteurField ? (
         <div className="flex flex-col md:col-span-3">
-          <label className="text-sm font-semibold text-gray-700 mb-1">{hauteurLabel}</label>
+          <label className="text-xs font-semibold text-gray-700 mb-1">{hauteurLabel}</label>
           <input
             className={inputClass}
             value={hauteurStr}

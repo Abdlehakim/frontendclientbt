@@ -360,17 +360,17 @@ function FerraillageCalcPanel({
       <div className="p-5">
         <div className="grid grid-cols-1 gap-4">
           <div className="flex flex-col">
-            <label className="text-sm font-semibold text-gray-700 mb-1">Diamètre</label>
+            <label className="text-xs font-semibold text-gray-700 mb-1">Diamètre</label>
             <DiametreDropdown mms={mms} value={activeCalcMm} onChange={setCalcMm} />
           </div>
 
           <div className="flex flex-col">
-            <label className="text-sm font-semibold text-gray-700 mb-1">Longueur (m)</label>
+            <label className="text-xs font-semibold text-gray-700 mb-1">Longueur (m)</label>
             <input className={inputClass} value={lenM} onChange={(e) => setLenM(e.target.value)} placeholder="Ex: 12,5" />
           </div>
 
           <div className="flex flex-col">
-            <label className="text-sm font-semibold text-gray-700 mb-1">Nombre de barres</label>
+            <label className="text-xs font-semibold text-gray-700 mb-1">Nombre de barres</label>
             <input className={inputClass} value={nbBarres} onChange={(e) => setNbBarres(e.target.value)} placeholder="Ex: 10" />
           </div>
         </div>
@@ -539,7 +539,7 @@ function RowModal({
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="flex flex-col">
-                  <label className="text-sm font-semibold text-gray-700 mb-1">Date</label>
+                  <label className="text-xs font-semibold text-gray-700 mb-1">Date</label>
 
                   <div data-date-picker className="relative">
                     <div className="flex items-center gap-2">
@@ -555,7 +555,7 @@ function RowModal({
 
                 {showType ? (
                   <div className="flex flex-col">
-                    <label className="text-sm font-semibold text-gray-700 mb-1">Type</label>
+                    <label className="text-xs font-semibold text-gray-700 mb-1">Type</label>
                     <TypeDropdown value={type} onChange={setType} />
                   </div>
                 ) : (
@@ -564,7 +564,7 @@ function RowModal({
 
                 {showBon ? (
                   <div className={`flex flex-col ${showType ? "" : "md:col-span-2"}`}>
-                    <label className="text-sm font-semibold text-gray-700 mb-1">N° Bon de livraison</label>
+                    <label className="text-xs font-semibold text-gray-700 mb-1">N° Bon de livraison</label>
                     <input className={inputClass} value={bon} onChange={(e) => setBon(e.target.value)} placeholder="Ex: 2416285" />
                   </div>
                 ) : (
@@ -573,7 +573,7 @@ function RowModal({
 
                 {showNote ? (
                   <div className="flex flex-col md:col-span-3">
-                    <label className="text-sm font-semibold text-gray-700 mb-1">Note</label>
+                    <label className="text-xs font-semibold text-gray-700 mb-1">Note</label>
                     <textarea
                       className={inputClass + " min-h-24 resize-y"}
                       value={note}

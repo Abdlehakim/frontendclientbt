@@ -1,18 +1,10 @@
 import { useMemo } from "react";
 import { CiCircleRemove } from "react-icons/ci";
 import type { ExtraBoxState } from "../../types";
+import { computeExtraPerimetre, computeExtraSpacingNt } from "../../calculations/shapeCalculations";
 import DiametreDropdown from "../common/DiametreDropdown";
 
 type ExtraCalcMode = "ESPACEMENT" | "NB";
-
-function parseNum(raw: string) {
-  const s = (raw ?? "").trim();
-  if (!s) return 0;
-  const v = Number(s.replace(",", "."));
-  if (!Number.isFinite(v)) return 0;
-  if (v < 0) return 0;
-  return v;
-}
 
 function parseIntNum(raw: string) {
   const s = (raw ?? "").trim();
@@ -27,14 +19,6 @@ function fmt(n: number) {
   const r = Math.round(n * 1000) / 1000;
   const s = String(r);
   return s.replace(".", ",");
-}
-
-function computeNTFromEspacement(nbStr: string, hauteurStr: string, espacementStr: string) {
-  const nb = parseIntNum(nbStr);
-  const h = parseNum(hauteurStr);
-  const e = parseNum(espacementStr);
-  if (e <= 0) return 0;
-  return nb * (h / e);
 }
 
 function computeNTFromNb(nbStr: string, nbExtraStr: string) {
@@ -73,25 +57,32 @@ export default function ExtraBoxCard({
   const designationLabel = (designation ?? "").trim() || "élément";
 
   const computedPerimetre = useMemo(() => {
-    const L = parseNum(b.longueurStr);
-    const A = parseNum(b.ancrageStr);
-    return isEpingle ? L + 2 * A : 2 * L + 2 * A;
-  }, [b.longueurStr, b.ancrageStr, isEpingle]);
+    return computeExtraPerimetre(b.kind, b.longueurStr, b.ancrageStr) ?? 0;
+  }, [b.kind, b.longueurStr, b.ancrageStr]);
 
   const computedPerimetreStr = useMemo(() => fmt(computedPerimetre), [computedPerimetre]);
 
   const computedNT = useMemo(() => {
+    if (calcMode === "ESPACEMENT") {
+      return computeExtraSpacingNt(
+        nbStr,
+        hauteurStr,
+        b.valueStr,
+        b.espacementStr,
+      );
+    }
     if (calcMode === "NB") return computeNTFromNb(nbStr, nbExtraStr);
-    return computeNTFromEspacement(nbStr, hauteurStr, b.espacementStr);
-  }, [calcMode, nbStr, nbExtraStr, hauteurStr, b.espacementStr]);
+    return 0;
+  }, [calcMode, nbStr, nbExtraStr, hauteurStr, b.valueStr, b.espacementStr]);
 
   const computedNTStr = useMemo(() => fmt(computedNT), [computedNT]);
 
   const computedQtyFerStr = useMemo(() => {
+    if (calcMode === "ESPACEMENT") return fmt(computedPerimetre * computedNT);
     const n = parseIntNum(b.valueStr);
     const q = n * computedPerimetre * computedNT;
     return fmt(q);
-  }, [b.valueStr, computedPerimetre, computedNT]);
+  }, [calcMode, b.valueStr, computedPerimetre, computedNT]);
 
   const ntLabel = isEpingle ? "N.T.Épingle" : "N.T.Étriers";
   const countLabel = isEpingle ? "Nb. Épingles" : "Nb. Étriers";
@@ -129,7 +120,7 @@ export default function ExtraBoxCard({
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-700 mb-1">Longueur (m)</label>
+          <label className="text-xs font-semibold text-gray-700 mb-1">Longueur (m)</label>
           <input
             className={inputClass}
             value={b.longueurStr}
@@ -140,7 +131,7 @@ export default function ExtraBoxCard({
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-700 mb-1">Crochet (m)</label>
+          <label className="text-xs font-semibold text-gray-700 mb-1">Crochet (m)</label>
           <input
             className={inputClass}
             value={b.ancrageStr}
@@ -151,7 +142,7 @@ export default function ExtraBoxCard({
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-700 mb-1">Périmètre (auto)</label>
+          <label className="text-xs font-semibold text-gray-700 mb-1">Périmètre (auto)</label>
           <input
             className={[inputClass, "font-semibold"].join(" ")}
             value={computedPerimetreStr}
@@ -224,7 +215,7 @@ export default function ExtraBoxCard({
         {calcMode === "ESPACEMENT" ? (
           <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col">
-              <label className="text-sm font-semibold text-gray-700 mb-1">{valuePerCadreLabel}</label>
+              <label className="text-xs font-semibold text-gray-700 mb-1">{valuePerCadreLabel}</label>
               <input
                 className={inputClass}
                 value={b.valueStr}
@@ -235,7 +226,7 @@ export default function ExtraBoxCard({
             </div>
 
             <div className="flex flex-col">
-              <label className="text-sm font-semibold text-gray-700 mb-1">Espacement (m)</label>
+              <label className="text-xs font-semibold text-gray-700 mb-1">Espacement (m)</label>
               <input
                 className={inputClass}
                 value={b.espacementStr}
@@ -247,7 +238,7 @@ export default function ExtraBoxCard({
           </div>
         ) : (
           <div className="flex flex-col">
-            <label className="text-sm font-semibold text-gray-700 mb-1">{valuePerDesignationLabel}</label>
+            <label className="text-xs font-semibold text-gray-700 mb-1">{valuePerDesignationLabel}</label>
             <input
               className={inputClass}
               value={nbExtraStr}
@@ -260,7 +251,7 @@ export default function ExtraBoxCard({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:col-span-2">
           <div className="flex flex-col">
-            <label className="text-sm font-semibold text-gray-700 mb-1">Quantités de Fer (m)</label>
+            <label className="text-xs font-semibold text-gray-700 mb-1">Quantités de Fer (m)</label>
             <input
               className={[inputClass, "font-semibold"].join(" ")}
               value={computedQtyFerStr}
@@ -275,7 +266,7 @@ export default function ExtraBoxCard({
           </div>
 
           <div className="flex flex-col">
-            <label className="text-sm font-semibold text-gray-700 mb-1">{ntLabel}</label>
+            <label className="text-xs font-semibold text-gray-700 mb-1">{ntLabel}</label>
             <input
               className={[inputClass, "font-semibold"].join(" ")}
               value={computedNTStr}

@@ -22,6 +22,9 @@ import {
   FormeCard,
 } from "./components";
 import {
+  computeBarreNTStandard,
+} from "./calculations/barreCalculations";
+import {
   computeDiffDualSlabSpacingRecapMetrics,
   computeDiffSharedSlabSpacingRecapMetrics,
   computeSlabQte,
@@ -35,6 +38,7 @@ import {
 } from "./calculations/slabCalculations";
 import {
   computeCadrePerimetre,
+  computeExtraSpacingNt,
   computeExtraPerimetre,
 } from "./calculations/shapeCalculations";
 import {
@@ -826,10 +830,18 @@ export default function TotalRowModalWindowInner({
         const att = parseNonNegativeNumber(asString(f.attenteStr)) ?? 0;
         const barLen = parseNonNegativeNumber(asString(f.longueurStr)) ?? 0;
 
-        const nt = nb * n;
+        const cutLenM = usesLongueurLabel ? barLen + anc : h + att + anc;
+        const nt = usesLongueurLabel
+          ? nb * n
+          : computeBarreNTStandard(
+              nbStr,
+              asString(f.nBarreStr),
+              hauteurStr,
+              asString(f.attenteStr),
+              asString(f.ancrageStr),
+            );
         const qtyM = usesLongueurLabel ? nb * (n * (barLen + anc)) : nb * (n * (h + att + anc));
         const safeNt = nt > 0 ? nt : 0;
-        const cutLenM = safeNt > 0 ? qtyM / safeNt : 0;
 
         const steelTypeRaw = asTrimmedString(f.barreCategorie, "");
         const steelType = usesLongueurLabel && steelTypeRaw ? steelTypeRaw : undefined;
@@ -842,7 +854,7 @@ export default function TotalRowModalWindowInner({
           label: "N.T.Barre",
           dia,
           qtyM: qtyM > 0 ? qtyM : 0,
-          nt: nt > 0 ? nt : 0,
+          nt: safeNt,
           cutLenM: cutLenM > 0 ? cutLenM : 0,
           steelType,
           litLabel,
@@ -900,10 +912,24 @@ export default function TotalRowModalWindowInner({
       const esp = parsePositiveNumber(asString(b.espacementStr)) ?? 0;
 
       const ratio = calcMode === "NB" ? nbExtra : esp > 0 ? h / esp : 0;
-      const nt = nb * ratio;
-      const qtyM = n * per * nt;
+      const extraSpacingNt =
+        calcMode === "ESPACEMENT"
+          ? computeExtraSpacingNt(
+              nbStr,
+              hauteurStr,
+              asString(b.valueStr),
+              asString(b.espacementStr),
+            )
+          : null;
+      const nt = extraSpacingNt ?? nb * ratio;
+      const qtyM = extraSpacingNt != null ? per * extraSpacingNt : n * per * (nb * ratio);
       const safeNt = nt > 0 ? nt : 0;
-      const cutLenM = safeNt > 0 ? qtyM / safeNt : 0;
+      const cutLenM =
+        extraSpacingNt != null
+          ? per
+          : safeNt > 0
+            ? qtyM / safeNt
+            : 0;
 
       const ntLabel = b.kind === "EPINGLE" ? "N.T.Épingle" : "N.T.Étriers";
 

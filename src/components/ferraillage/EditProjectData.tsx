@@ -85,7 +85,7 @@ function TypeAcierDropdown({
 
   return (
     <div className="flex flex-col" ref={wrapRef}>
-      <label className="text-sm font-semibold text-gray-700 mb-1">Type d&apos;acier</label>
+      <label className="text-xs font-semibold text-gray-700 mb-1">Type d&apos;acier</label>
 
       <button
         type="button"
@@ -392,7 +392,7 @@ function EditProjectInfoModal({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="flex flex-col">
-                <label className="text-sm font-semibold text-gray-700 mb-1">Chantier</label>
+                <label className="text-xs font-semibold text-gray-700 mb-1">Chantier</label>
                 <input
                   value={chantierName}
                   onChange={(e) => setChantierName(e.target.value)}
@@ -403,7 +403,7 @@ function EditProjectInfoModal({
               </div>
 
               <div className="flex flex-col">
-                <label className="text-sm font-semibold text-gray-700 mb-1">Responsable</label>
+                <label className="text-xs font-semibold text-gray-700 mb-1">Responsable</label>
                 <input
                   value={responsable}
                   onChange={(e) => setResponsable(e.target.value)}
@@ -416,7 +416,7 @@ function EditProjectInfoModal({
               <TypeAcierDropdown value={acierType} onChange={setAcierType} />
 
               <div className="flex flex-col md:col-span-3">
-                <label className="text-sm font-semibold text-gray-700 mb-1">Note</label>
+                <label className="text-xs font-semibold text-gray-700 mb-1">Note</label>
                 <textarea
                   value={note}
                   onChange={(e) => setNote(e.target.value)}

@@ -223,17 +223,17 @@ export default function NiveauxPF({ data, setData }: Props) {
 
               <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="flex flex-col">
-                  <label className="text-sm font-semibold text-gray-700 mb-1">Nom du niveau</label>
+                  <label className="text-xs font-semibold text-gray-700 mb-1">Nom du niveau</label>
                   <input className={inputClass} value={n.name} onChange={(e) => updateNiveau(n.id, { name: e.target.value })} placeholder="Ex: Etage 1" />
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-sm font-semibold text-gray-700 mb-1">Note</label>
+                  <label className="text-xs font-semibold text-gray-700 mb-1">Note</label>
                   <input className={inputClass} value={n.note} onChange={(e) => updateNiveau(n.id, { note: e.target.value })} placeholder="Optionnel" />
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-sm font-semibold text-gray-700 mb-1">Sous-traitants</label>
+                  <label className="text-xs font-semibold text-gray-700 mb-1">Sous-traitants</label>
 
                   <SousTraitantsField
                     niveauId={n.id}

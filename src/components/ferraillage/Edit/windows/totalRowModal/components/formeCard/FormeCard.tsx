@@ -197,7 +197,7 @@ export default function FormeCard({
         {cadreForme === "CARRE" ? (
           <>
             <div className="flex flex-col">
-              <label className="text-sm font-semibold text-gray-700 mb-1">Longueur (m)</label>
+              <label className="text-xs font-semibold text-gray-700 mb-1">Longueur (m)</label>
               <input
                 className={inputClass}
                 value={longueurStr}
@@ -208,7 +208,7 @@ export default function FormeCard({
             </div>
 
             <div className="flex flex-col">
-              <label className="text-sm font-semibold text-gray-700 mb-1">Ancrage (m)</label>
+              <label className="text-xs font-semibold text-gray-700 mb-1">Crochet (m)</label>
               <input
                 className={inputClass}
                 value={ancrageStr}
@@ -223,7 +223,7 @@ export default function FormeCard({
         {cadreForme === "CIRCULAIRE" ? (
           <>
             <div className="flex flex-col">
-              <label className="text-sm font-semibold text-gray-700 mb-1">
+              <label className="text-xs font-semibold text-gray-700 mb-1">
                 Diamètre du cercle (m)
               </label>
               <input
@@ -236,7 +236,7 @@ export default function FormeCard({
             </div>
 
             <div className="flex flex-col">
-              <label className="text-sm font-semibold text-gray-700 mb-1">Ancrage (m)</label>
+              <label className="text-xs font-semibold text-gray-700 mb-1">Crochet (m)</label>
               <input
                 className={inputClass}
                 value={ancrageStr}
@@ -251,7 +251,7 @@ export default function FormeCard({
         {cadreForme === "RECTANGULAIRE" ? (
           <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="flex flex-col">
-              <label className="text-sm font-semibold text-gray-700 mb-1">Longueur (m)</label>
+              <label className="text-xs font-semibold text-gray-700 mb-1">Longueur (m)</label>
               <input
                 className={inputClass}
                 value={longueurStr}
@@ -262,7 +262,7 @@ export default function FormeCard({
             </div>
 
             <div className="flex flex-col">
-              <label className="text-sm font-semibold text-gray-700 mb-1">Largeur (m)</label>
+              <label className="text-xs font-semibold text-gray-700 mb-1">Largeur (m)</label>
               <input
                 className={inputClass}
                 value={largeurStr}
@@ -273,7 +273,7 @@ export default function FormeCard({
             </div>
 
             <div className="flex flex-col">
-              <label className="text-sm font-semibold text-gray-700 mb-1">Ancrage</label>
+              <label className="text-xs font-semibold text-gray-700 mb-1">Crochet (m)</label>
               <input
                 className={inputClass}
                 value={ancrageStr}
@@ -342,7 +342,7 @@ export default function FormeCard({
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-700 mb-1">Périmètre (auto)</label>
+          <label className="text-xs font-semibold text-gray-700 mb-1">Périmètre (auto)</label>
           <input
             className={[inputClass, "font-semibold"].join(" ")}
             value={fmt(perimetreAuto)}
@@ -353,7 +353,7 @@ export default function FormeCard({
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-700 mb-1">
+          <label className="text-xs font-semibold text-gray-700 mb-1">
             {cadreCalcMode === "NB_CADRE" ? "Nb. Cadres" : "Espacement (m)"}
           </label>
           <input
@@ -371,7 +371,7 @@ export default function FormeCard({
 
         <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col">
-            <label className="text-sm font-semibold text-gray-700 mb-1">Quantités de Fer (m)</label>
+            <label className="text-xs font-semibold text-gray-700 mb-1">Quantités de Fer (m)</label>
             <input
               className={[inputClass, "font-semibold"].join(" ")}
               value={fmt(cadreQteAuto)}
@@ -382,7 +382,7 @@ export default function FormeCard({
           </div>
 
           <div className="flex flex-col">
-            <label className="text-sm font-semibold text-gray-700 mb-1">{ntCadreLabel}</label>
+            <label className="text-xs font-semibold text-gray-700 mb-1">{ntCadreLabel}</label>
             <input
               className={[inputClass, "font-semibold"].join(" ")}
               value={fmt(cadreNTAuto)}

@@ -72,7 +72,7 @@ export default function StepProjetDiametres({ data, setData, selectedSet, toggle
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="flex flex-col">
-            <label className="text-sm font-semibold text-gray-700 mb-1">Chantier</label>
+            <label className="text-xs font-semibold text-gray-700 mb-1">Chantier</label>
             <input
               className={inputClass}
               value={data.chantierName}
@@ -82,7 +82,7 @@ export default function StepProjetDiametres({ data, setData, selectedSet, toggle
           </div>
 
           <div className="flex flex-col">
-            <label className="text-sm font-semibold text-gray-700 mb-1">Responsable</label>
+            <label className="text-xs font-semibold text-gray-700 mb-1">Responsable</label>
             <input
               className={inputClass}
               value={data.responsable}
@@ -92,7 +92,7 @@ export default function StepProjetDiametres({ data, setData, selectedSet, toggle
           </div>
 
           <div className="flex flex-col" ref={wrapRef}>
-            <label className="text-sm font-semibold text-gray-700 mb-1">Type d'acier</label>
+            <label className="text-xs font-semibold text-gray-700 mb-1">Type d'acier</label>
 
             <button
               type="button"

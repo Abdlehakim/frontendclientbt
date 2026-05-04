@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import type { FormeState } from "../types";
 import {
   computeBarreNT,
+  computeBarreNTStandard,
   computeBarreQteLongueur,
   computeBarreQteStandard,
 } from "../calculations/barreCalculations";
@@ -152,7 +153,15 @@ export function useBarreAutoValues({
       );
     }
 
-    return computeBarreNT(nbStr, x.nBarreStr);
+    if (showBarreOptions) return computeBarreNT(nbStr, x.nBarreStr);
+
+    return computeBarreNTStandard(
+      nbStr,
+      x.nBarreStr,
+      hauteurStr,
+      x.attenteStr,
+      x.ancrageStr,
+    );
   }, [
     isSlab,
     slabNt,
@@ -161,8 +170,12 @@ export function useBarreAutoValues({
     semelleDiffSharedActive,
     semelleEqualDualActive,
     semelleDiffDualActive,
+    showBarreOptions,
     nbStr,
+    hauteurStr,
     x.nBarreStr,
+    x.attenteStr,
+    x.ancrageStr,
     x.semelleNBarreAStr,
     x.semelleNBarreBStr,
   ]);

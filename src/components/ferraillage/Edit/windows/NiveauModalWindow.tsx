@@ -72,7 +72,7 @@ export default function NiveauModalWindow({
           <div className="p-5">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="flex flex-col">
-                <label className="text-sm font-semibold text-gray-700 mb-1">Nom du niveau</label>
+                <label className="text-xs font-semibold text-gray-700 mb-1">Nom du niveau</label>
                 <input
                   className={inputClass}
                   value={nameValue}
@@ -83,12 +83,12 @@ export default function NiveauModalWindow({
               </div>
 
               <div className="flex flex-col">
-                <label className="text-sm font-semibold text-gray-700 mb-1">Note</label>
+                <label className="text-xs font-semibold text-gray-700 mb-1">Note</label>
                 <input className={inputClass} value={noteValue} onChange={(e) => onNoteChange(e.target.value)} placeholder="Optionnel" />
               </div>
 
               <div className="flex flex-col">
-                <label className="text-sm font-semibold text-gray-700 mb-1">Entreprise - Mains d'oeuvres</label>
+                <label className="text-xs font-semibold text-gray-700 mb-1">Entreprise - Mains d'oeuvres</label>
                 {sousTraitantsField}
               </div>
             </div>

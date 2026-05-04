@@ -50,7 +50,7 @@ function AcierDropdown({ value, onChange }: { value: AcierType; onChange: (v: Ac
 
   return (
     <div className="flex flex-col" ref={wrapRef}>
-      <label className="text-sm font-semibold text-gray-700 mb-1">Type d'acier</label>
+      <label className="text-xs font-semibold text-gray-700 mb-1">Type d'acier</label>
 
       <button
         type="button"
@@ -122,7 +122,7 @@ export default function DetailsProjetPF({ data, setData }: Props) {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-700 mb-1">Chantier</label>
+          <label className="text-xs font-semibold text-gray-700 mb-1">Chantier</label>
           <input
             className={inputClass}
             value={data.chantierName}
@@ -132,7 +132,7 @@ export default function DetailsProjetPF({ data, setData }: Props) {
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-700 mb-1">Responsable</label>
+          <label className="text-xs font-semibold text-gray-700 mb-1">Responsable</label>
           <input
             className={inputClass}
             value={data.responsable}
@@ -144,7 +144,7 @@ export default function DetailsProjetPF({ data, setData }: Props) {
         <AcierDropdown value={data.acierType} onChange={(v) => setData((p) => ({ ...p, acierType: v }))} />
 
         <div className="flex flex-col md:col-span-3">
-          <label className="text-sm font-semibold text-gray-700 mb-1">Note</label>
+          <label className="text-xs font-semibold text-gray-700 mb-1">Note</label>
           <textarea
             className={textareaClass}
             value={data.note ?? ""}

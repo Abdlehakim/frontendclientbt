@@ -58,7 +58,7 @@ export default function FormeDropdown({
 
   return (
     <div className="flex flex-col" ref={wrapRef}>
-      <label className="text-sm font-semibold text-gray-700 mb-1">{label}</label>
+      <label className="text-xs font-semibold text-gray-700 mb-1">{label}</label>
 
       <button
         ref={btnRef}

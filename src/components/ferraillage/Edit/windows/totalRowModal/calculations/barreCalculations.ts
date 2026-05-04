@@ -7,6 +7,16 @@ export function computeBarreNT(nbStr: string, nBarreStr: string) {
   return (NB ?? 0) * (N ?? 0);
 }
 
+export function computeBarreNTStandard(
+  nbStr: string,
+  nBarreStr: string,
+  hauteurStr: string,
+  attenteStr: string,
+  ancrageStr: string,
+) {
+  return computeBarreQteStandard(nbStr, nBarreStr, hauteurStr, attenteStr, ancrageStr) / 12;
+}
+
 export function computeBarreQteStandard(
   nbStr: string,
   nBarreStr: string,
