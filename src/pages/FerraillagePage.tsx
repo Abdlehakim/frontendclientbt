@@ -121,6 +121,56 @@ export default function FerraillagePage() {
     }
   }
 
+  function handleProjectUpdated(updatedProject: {
+    id: string;
+    chantierName: string;
+    responsable: string | null;
+    acierType?: "F400" | "F500" | null;
+    note?: string | null;
+    updatedAt: string;
+  }) {
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id !== updatedProject.id
+          ? item
+          : {
+              ...item,
+              chantierName: updatedProject.chantierName,
+              responsable: updatedProject.responsable,
+              acierType: updatedProject.acierType ?? null,
+              note: updatedProject.note ?? null,
+              updatedAt: updatedProject.updatedAt,
+            },
+      ),
+    );
+
+    setEditItem((prev) =>
+      prev && prev.id === updatedProject.id
+        ? {
+            ...prev,
+            chantierName: updatedProject.chantierName,
+            responsable: updatedProject.responsable,
+            acierType: updatedProject.acierType ?? null,
+            note: updatedProject.note ?? null,
+            updatedAt: updatedProject.updatedAt,
+          }
+        : prev,
+    );
+
+    setViewItem((prev) =>
+      prev && prev.id === updatedProject.id
+        ? {
+            ...prev,
+            chantierName: updatedProject.chantierName,
+            responsable: updatedProject.responsable,
+            acierType: updatedProject.acierType ?? null,
+            note: updatedProject.note ?? null,
+            updatedAt: updatedProject.updatedAt,
+          }
+        : prev,
+    );
+  }
+
   function onDeleteClick(item: FerRapportDTO) {
     setDeleteTarget({ id: item.id, chantierName: item.chantierName });
   }
@@ -251,6 +301,7 @@ export default function FerraillagePage() {
       <EditRapportWizard
         open={editOpen}
         rapport={editItem}
+        onProjectUpdated={handleProjectUpdated}
         onClose={() => {
           setEditOpen(false);
           setEditItem(null);

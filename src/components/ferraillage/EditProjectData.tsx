@@ -29,6 +29,7 @@ type Props = {
   open: boolean;
   onClose: () => void;
   rapport: FerRapportDTO | null;
+  onProjectUpdated?: (project: FerProjectDetailDTO) => void;
 };
 
 const ACIER_OPTIONS = ["F400", "F500"] as const;
@@ -263,11 +264,13 @@ function EmptyAttachementTab({ mmCols }: { mmCols: number[] }) {
 function EditProjectInfoModal({
   open,
   project,
+  projectId,
   onClose,
   onUpdated,
 }: {
   open: boolean;
   project: FerProjectDetailDTO | null;
+  projectId: string;
   onClose: () => void;
   onUpdated: (project: FerProjectDetailDTO) => void;
 }) {
@@ -306,7 +309,6 @@ function EditProjectInfoModal({
   }, [open, submitting, onClose]);
 
   if (!open || !project) return null;
-  const projectId = project.id;
 
   const inputClass =
     "w-full rounded-md border px-3 py-2 text-sm font-medium truncate " +
@@ -326,10 +328,16 @@ function EditProjectInfoModal({
   }
 
   async function handleSubmit() {
+    const nextProjectId = projectId.trim();
     const nextChantierName = chantierName.trim();
     const nextResponsable = responsable.trim();
     const nextAcierType = acierType.trim();
     const nextNote = note.trim();
+
+    if (!nextProjectId) {
+      setErr("Identifiant du projet introuvable.");
+      return;
+    }
 
     if (!nextChantierName) {
       setErr("Le chantier est obligatoire.");
@@ -344,21 +352,25 @@ function EditProjectInfoModal({
     setSubmitting(true);
     setErr("");
 
+    let updatedProject: FerProjectDetailDTO;
+
     try {
-      const response = await ferraillageApi.updateProject(projectId, {
-        chantierName: nextChantierName,
+      const response = await ferraillageApi.updateProject(nextProjectId, {
+        chantier: nextChantierName,
         responsable: nextResponsable || null,
-        acierType: nextAcierType,
+        typeAcier: nextAcierType,
         note: nextNote || null,
       });
-
-      onUpdated(response.item);
-      onClose();
+      updatedProject = response.item;
     } catch (error: unknown) {
       setErr(isFerApiError(error) ? error.message : "Failed to update project");
-    } finally {
       setSubmitting(false);
+      return;
     }
+
+    setSubmitting(false);
+    onUpdated(updatedProject);
+    onClose();
   }
 
   return createPortal(
@@ -462,7 +474,15 @@ function EditProjectInfoModal({
   );
 }
 
-function EditProjectDataPanel({ onClose, rapport }: { onClose: () => void; rapport: FerRapportDTO | null }) {
+function EditProjectDataPanel({
+  onClose,
+  rapport,
+  onProjectUpdated,
+}: {
+  onClose: () => void;
+  rapport: FerRapportDTO | null;
+  onProjectUpdated?: (project: FerProjectDetailDTO) => void;
+}) {
   const [tab, setTab] = useState<TabKey>("TOTAL_FERRAILLAGE");
 
   const [project, setProject] = useState<FerProjectDetailDTO | null>(null);
@@ -581,6 +601,7 @@ function EditProjectDataPanel({ onClose, rapport }: { onClose: () => void; rappo
 
   const handleProjectUpdated = (updatedProject: FerProjectDetailDTO) => {
     setProject(updatedProject);
+    onProjectUpdated?.(updatedProject);
   };
 
   return (
@@ -678,6 +699,7 @@ function EditProjectDataPanel({ onClose, rapport }: { onClose: () => void; rappo
           <EditProjectInfoModal
             open={projectEditOpen}
             project={project}
+            projectId={project?.id ?? rapport?.id ?? ""}
             onClose={() => setProjectEditOpen(false)}
             onUpdated={handleProjectUpdated}
           />
@@ -687,11 +709,16 @@ function EditProjectDataPanel({ onClose, rapport }: { onClose: () => void; rappo
   );
 }
 
-export default function EditProjectData({ open, onClose, rapport }: Props) {
+export default function EditProjectData({ open, onClose, rapport, onProjectUpdated }: Props) {
   if (!open) return null;
 
   return createPortal(
-    <EditProjectDataPanel key={rapport?.id ?? "none"} onClose={onClose} rapport={rapport} />,
+    <EditProjectDataPanel
+      key={rapport?.id ?? "none"}
+      onClose={onClose}
+      rapport={rapport}
+      onProjectUpdated={onProjectUpdated}
+    />,
     document.body,
   );
 }
