@@ -25,6 +25,7 @@ import {
   computeBarreNTLongueurDesignation,
   computeBarreNTStandard,
 } from "./calculations/barreCalculations";
+import { computeSemelleNTSharedSpacing } from "./calculations/semelleCalculations";
 import {
   computeDiffDualSlabSpacingRecapMetrics,
   computeDiffSharedSlabSpacingRecapMetrics,
@@ -806,6 +807,12 @@ export default function TotalRowModalWindowInner({
           const isEqualDual = relation === "ab_equal_diff_if";
           const isDiffDual = relation === "ab_diff_diff_if";
           const isDiffShared = relation === "ab_diff_same_if";
+          const spacingMode = asSlabSpacingMode(f.slabSpacingMode);
+          const spacingRelation = normalizeSlabSpacingRelationValue(f.slabSpacingRelation);
+          const useSemelleSharedSpacingNt =
+            relation === "ab_equal_same_if" &&
+            spacingMode === "ESPACEMENT" &&
+            spacingRelation === "EA_EQ_EB";
 
           if (isEqualDual || isDiffDual) {
             const diaA =
@@ -846,9 +853,16 @@ export default function TotalRowModalWindowInner({
           const longueurB = parseNonNegativeNumber(asString(f.semelleLongueurBStr)) ?? 0;
 
           const effectiveLength = isDiffShared ? (longueurA + longueurB) / 2 : longueurA;
-          const nt = nb * totalN;
           const cutLen = effectiveLength + semelleAncrage;
-          const qtyM = nt * cutLen;
+          const nt = useSemelleSharedSpacingNt
+            ? computeSemelleNTSharedSpacing(
+                nbStr,
+                asString(f.semelleLongueurAStr),
+                asString(f.slabEspacementAStr),
+                asString(f.ancrageStr),
+              )
+            : nb * totalN;
+          const qtyM = (nb * totalN) * cutLen;
 
           linesBarres.push({
             key: `${f.id}:ab`,

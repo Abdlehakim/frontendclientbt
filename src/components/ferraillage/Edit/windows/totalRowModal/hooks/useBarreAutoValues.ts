@@ -10,6 +10,7 @@ import {
 import {
   computeSemelleNTDual,
   computeSemelleNTEqualShared,
+  computeSemelleNTSharedSpacing,
   computeSemelleNTDiffShared,
   computeSemelleQteDiffDual,
   computeSemelleQteDiffShared,
@@ -143,6 +144,20 @@ export function useBarreAutoValues({
     if (isSlab) return slabNt;
     if (isChaise) return computeBarreNT(nbStr, x.nBarreStr);
 
+    const useSemelleSharedSpacingNt =
+      semelleEqualSharedActive &&
+      x.slabSpacingMode === "ESPACEMENT" &&
+      (x.slabSpacingRelation ?? "EA_EQ_EB") === "EA_EQ_EB";
+
+    if (useSemelleSharedSpacingNt) {
+      return computeSemelleNTSharedSpacing(
+        nbStr,
+        x.semelleLongueurAStr ?? "",
+        x.slabEspacementAStr ?? "",
+        semelleAncrage,
+      );
+    }
+
     if (semelleEqualSharedActive) return computeSemelleNTEqualShared(nbStr, x.nBarreStr);
     if (semelleDiffSharedActive) return computeSemelleNTDiffShared(nbStr, x.nBarreStr);
 
@@ -184,9 +199,14 @@ export function useBarreAutoValues({
     x.longueurStr,
     x.attenteStr,
     x.ancrageStr,
+    x.semelleLongueurAStr,
     x.semelleNBarreAStr,
     x.semelleNBarreBStr,
+    x.slabSpacingMode,
+    x.slabSpacingRelation,
+    x.slabEspacementAStr,
     effectiveAncrageStr,
+    semelleAncrage,
   ]);
 
   return { qte, nt };

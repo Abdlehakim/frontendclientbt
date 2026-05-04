@@ -1,4 +1,4 @@
-import { parseNonNegativeInt, parseNonNegativeNumber } from "../utils";
+import { parseNonNegativeInt, parseNonNegativeNumber, safeDivide, safeNumber } from "../utils";
 import { computeBarreNT, computeBarreQteLongueur } from "./barreCalculations";
 
 export function computeSemelleQteEqualShared(
@@ -72,6 +72,28 @@ export function computeSemelleQteDiffDual(
 
 export function computeSemelleNTEqualShared(nbStr: string, nBarreStr: string) {
   return computeBarreNT(nbStr, nBarreStr);
+}
+
+export function computeSemelleNTSharedSpacing(
+  nbStr: string,
+  longueurBarreStr: string,
+  spacingStr: string,
+  ancrageStr: string,
+) {
+  const nb = parseNonNegativeInt(nbStr);
+  const longueur = parseNonNegativeNumber(longueurBarreStr);
+  const spacing = parseNonNegativeNumber(spacingStr);
+  const ancrage = parseNonNegativeNumber(ancrageStr);
+
+  if (nb == null && longueur == null && spacing == null && ancrage == null) return 0;
+
+  const safeNb = nb ?? 0;
+  const safeLongueur = longueur ?? 0;
+  const safeAncrage = ancrage ?? 0;
+
+  return safeNumber(
+    (safeDivide(safeLongueur, spacing ?? 0) * (safeLongueur + safeAncrage) * 2 * safeNb) / 12,
+  );
 }
 
 export function computeSemelleNTDiffShared(nbStr: string, nBarreStr: string) {
