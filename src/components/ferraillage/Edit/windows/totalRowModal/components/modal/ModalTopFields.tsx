@@ -5,7 +5,7 @@ import DesignationDropdown from "./DesignationDropdown";
 
 export default function ModalTopFields({
   designation,
-  setDesignation,
+  onDesignationChange,
   nomenclature,
   setNomenclature,
   nbStr,
@@ -27,9 +27,10 @@ export default function ModalTopFields({
   showCadreAddOption,
   showEpingleAddOption,
   showEtriersAddOption,
+  addDropdownCloseKey,
 }: {
   designation: string;
-  setDesignation: Dispatch<SetStateAction<string>>;
+  onDesignationChange: (value: string) => void;
   nomenclature: string;
   setNomenclature: Dispatch<SetStateAction<string>>;
   nbStr: string;
@@ -51,11 +52,12 @@ export default function ModalTopFields({
   showCadreAddOption: boolean;
   showEpingleAddOption: boolean;
   showEtriersAddOption: boolean;
+  addDropdownCloseKey: string;
 }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 shrink-0">
       <div className="flex flex-col md:col-span-4">
-        <DesignationDropdown label="Designations" value={designation} onChange={setDesignation} />
+        <DesignationDropdown label="Designations" value={designation} onChange={onDesignationChange} />
       </div>
 
       <div className={`flex flex-col ${expandNomenclatureField ? "md:col-span-5" : "md:col-span-3"}`}>
@@ -107,6 +109,7 @@ export default function ModalTopFields({
           showBarreOption
           showEpingleOption={showEpingleAddOption}
           showEtriersOption={showEtriersAddOption}
+          closeOnChangeKey={addDropdownCloseKey}
         />
       </div>
     </div>

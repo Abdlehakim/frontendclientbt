@@ -90,6 +90,15 @@ type ModalState = {
   page: number;
 };
 
+function createEmptyModalState(): ModalState {
+  return {
+    extraBoxes: [],
+    formes: [],
+    cardOrder: [],
+    page: 1,
+  };
+}
+
 export default function TotalRowModalWindowInner({
   open,
   title,
@@ -285,6 +294,16 @@ export default function TotalRowModalWindowInner({
   const totalPages = useMemo(() => Math.max(1, Math.ceil(totalCount / FORMS_PER_PAGE)), [totalCount]);
 
   const safePage = useMemo(() => clamp(st.page, 1, totalPages), [st.page, totalPages]);
+
+  const handleDesignationChange = (nextDesignation: string) => {
+    if (normalizeDesignation(nextDesignation) === normalizedDesignation) {
+      setDesignation(nextDesignation);
+      return;
+    }
+
+    setDesignation(nextDesignation);
+    setSt(createEmptyModalState());
+  };
 
   const handlePageChange = (p: number) => {
     setSt((prev) => {
@@ -1007,7 +1026,7 @@ export default function TotalRowModalWindowInner({
             <div className="p-5 flex flex-1 min-h-0 flex-col overflow-hidden">
               <ModalTopFields
                 designation={designation}
-                setDesignation={setDesignation}
+                onDesignationChange={handleDesignationChange}
                 nomenclature={nomenclature}
                 setNomenclature={setNomenclature}
                 nbStr={nbStr}
@@ -1029,6 +1048,7 @@ export default function TotalRowModalWindowInner({
                 showCadreAddOption={!isSemellesDesignation}
                 showEpingleAddOption={!isSemellesDesignation}
                 showEtriersAddOption={!isSemellesDesignation}
+                addDropdownCloseKey={normalizedDesignation}
               />
 
               <div className="mt-4 flex-1 min-h-0 overflow-y-auto overflow-x-hidden">

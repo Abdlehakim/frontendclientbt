@@ -12,6 +12,7 @@ export default function AddPlusDropdown({
   showBarreOption = true,
   showEpingleOption = true,
   showEtriersOption = true,
+  closeOnChangeKey,
 }: {
   onAddCadre: () => void;
   onAddBarre: () => void;
@@ -21,6 +22,7 @@ export default function AddPlusDropdown({
   showBarreOption?: boolean;
   showEpingleOption?: boolean;
   showEtriersOption?: boolean;
+  closeOnChangeKey?: string;
 }) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const btnRef = useRef<HTMLButtonElement | null>(null);
@@ -53,6 +55,10 @@ export default function AddPlusDropdown({
       document.removeEventListener("keydown", onKey);
     };
   }, [open]);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [closeOnChangeKey]);
 
   const items: { key: "CADRE" | "BARRE" | "EPINGLE" | "ETRIERS"; label: string }[] = [];
   if (showBarreOption) items.push({ key: "BARRE", label: "Ajouter Barre" });
