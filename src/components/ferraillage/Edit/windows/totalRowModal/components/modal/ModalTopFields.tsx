@@ -13,7 +13,6 @@ export default function ModalTopFields({
   hauteurStr,
   setHauteurStr,
   showHauteurField,
-  expandNomenclatureField,
   hauteurLabel,
   hauteurPlaceholder,
   inputClass,
@@ -40,7 +39,6 @@ export default function ModalTopFields({
   hauteurStr: string;
   setHauteurStr: Dispatch<SetStateAction<string>>;
   showHauteurField: boolean;
-  expandNomenclatureField: boolean;
   hauteurLabel: string;
   hauteurPlaceholder: string;
   inputClass: string;
@@ -58,51 +56,53 @@ export default function ModalTopFields({
   isRecapOpen: boolean;
   onToggleRecap: () => void;
 }) {
+  const topFieldsClass = showHauteurField
+    ? "grid grid-cols-1 gap-4 md:grid-cols-[minmax(14rem,20rem)_minmax(0,1fr)_120px_minmax(9rem,12rem)] md:items-end"
+    : "grid grid-cols-1 gap-4 md:grid-cols-[minmax(14rem,20rem)_minmax(0,1fr)_120px] md:items-end";
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 shrink-0">
-      <div className="flex flex-col md:col-span-4">
-        <DesignationDropdown label="Designations" value={designation} onChange={onDesignationChange} />
-      </div>
+    <div className="grid grid-cols-1 gap-4 shrink-0">
+      <div className={topFieldsClass}>
+        <div className="flex flex-col">
+          <DesignationDropdown label="Designations" value={designation} onChange={onDesignationChange} />
+        </div>
 
-      <div className={`flex flex-col ${expandNomenclatureField ? "md:col-span-5" : "md:col-span-3"}`}>
-        <label className="text-xs font-semibold text-gray-700 mb-1">Nomenclature</label>
-        <input
-          className={inputClass}
-          value={nomenclature}
-          onChange={(e) => setNomenclature(e.target.value)}
-          placeholder="Ex: Code nomenclature"
-        />
-      </div>
-
-      <div
-        className={`flex flex-col ${
-          showHauteurField ? "md:col-span-2" : expandNomenclatureField ? "md:col-span-3" : "md:col-span-5"
-        }`}
-      >
-        <label className="text-xs font-semibold text-gray-700 mb-1">NB</label>
-        <input
-          className={inputClass}
-          value={nbStr}
-          onChange={(e) => setNbStr(e.target.value)}
-          placeholder="Ex: 1"
-          inputMode="numeric"
-        />
-      </div>
-
-      {showHauteurField ? (
-        <div className="flex flex-col md:col-span-3">
-          <label className="text-xs font-semibold text-gray-700 mb-1">{hauteurLabel}</label>
+        <div className="flex min-w-0 flex-col md:flex-1">
+          <label className="text-xs font-semibold text-gray-700 mb-1">Nomenclature</label>
           <input
             className={inputClass}
-            value={hauteurStr}
-            onChange={(e) => setHauteurStr(e.target.value)}
-            placeholder={hauteurPlaceholder}
-            inputMode="decimal"
+            value={nomenclature}
+            onChange={(e) => setNomenclature(e.target.value)}
+            placeholder="Ex: Code nomenclature"
           />
         </div>
-      ) : null}
 
-      <div className="md:col-span-12 flex flex-col gap-3 border-t border-gray-200 pt-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex w-full flex-col md:w-[120px]">
+          <label className="text-xs font-semibold text-gray-700 mb-1">NB</label>
+          <input
+            className={inputClass}
+            value={nbStr}
+            onChange={(e) => setNbStr(e.target.value)}
+            placeholder="Ex: 1"
+            inputMode="numeric"
+          />
+        </div>
+
+        {showHauteurField ? (
+          <div className="flex flex-col">
+            <label className="text-xs font-semibold text-gray-700 mb-1">{hauteurLabel}</label>
+            <input
+              className={inputClass}
+              value={hauteurStr}
+              onChange={(e) => setHauteurStr(e.target.value)}
+              placeholder={hauteurPlaceholder}
+              inputMode="decimal"
+            />
+          </div>
+        ) : null}
+      </div>
+
+      <div className="flex flex-col gap-3 border-t border-gray-200 pt-3 sm:flex-row sm:items-center sm:justify-between">
         <DotsPagination currentPage={safePage} totalPages={totalPages} onPageChange={onPageChange} />
         <div className="flex flex-wrap items-center justify-end gap-2">
           <button

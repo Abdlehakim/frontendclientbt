@@ -223,7 +223,6 @@ export default function TotalRowModalWindowInner({
   ].includes(normalizedDesignation);
   const showHauteurField = !isSlabDesignation;
   const showTopHauteurField = showHauteurField && !isSemellesDesignation;
-  const expandNomenclatureField = isSemellesDesignation;
 
   const extraMap = useMemo(() => new Map(extraBoxes.map((b) => [b.id, b] as const)), [extraBoxes]);
   const formesMap = useMemo(() => new Map(formes.map((f) => [f.id, f] as const)), [formes]);
@@ -1048,7 +1047,6 @@ export default function TotalRowModalWindowInner({
                 hauteurStr={hauteurStr}
                 setHauteurStr={setHauteurStr}
                 showHauteurField={showTopHauteurField}
-                expandNomenclatureField={expandNomenclatureField}
                 hauteurLabel={hauteurLabel}
                 hauteurPlaceholder={hauteurPlaceholder}
                 inputClass={inputClass}

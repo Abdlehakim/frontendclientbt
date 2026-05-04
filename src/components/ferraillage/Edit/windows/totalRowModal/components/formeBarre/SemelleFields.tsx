@@ -65,6 +65,7 @@ export default function SemelleFields({
     semelle.semelleEqualSharedActive || semelle.semelleDiffSharedActive;
   const showDualCountFields =
     semelle.semelleEqualDualActive || semelle.semelleDiffDualActive;
+  const showSharedLengthAnchorSharedDiaRow = semelle.semelleEqualSharedActive;
   const spacingModeValue = (x.slabSpacingMode ?? "ESPACEMENT") as "ESPACEMENT" | "NB_CADRE";
   const spacingRelationValue = (x.slabSpacingRelation ?? "EA_EQ_EB") as "EA_EQ_EB" | "EA_NE_EB";
   const showSharedSpacingInput =
@@ -117,24 +118,53 @@ export default function SemelleFields({
                 onChange={(value) => onPatch({ semelleRelation: value })}
               />
 
-              <FieldInput
-                label="L. Barre a ou b (m)"
-                value={x.semelleLongueurAStr ?? "0"}
-                onChange={(value) =>
-                  onPatch({
-                    semelleLongueurAStr: value,
-                    semelleLongueurBStr: value,
-                  })
-                }
-                inputClass={inputClass}
-                placeholder="Ex: 2,4"
-              />
+              {showSharedLengthAnchorSharedDiaRow ? (
+                <div className="sm:col-span-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  <FieldInput
+                    label="L. Barre a ou b (m)"
+                    value={x.semelleLongueurAStr ?? "0"}
+                    onChange={(value) =>
+                      onPatch({
+                        semelleLongueurAStr: value,
+                        semelleLongueurBStr: value,
+                      })
+                    }
+                    inputClass={inputClass}
+                    placeholder="Ex: 2,4"
+                  />
+                  <FieldInput
+                    label="Ancrage (m)"
+                    value={x.ancrageStr}
+                    onChange={(value) => onPatch({ ancrageStr: value })}
+                    inputClass={inputClass}
+                    placeholder="Ex: 0,4"
+                  />
+                  <DiametreField
+                    label="Di. a et b"
+                    mms={safeMms}
+                    value={base.diametreValue}
+                    onChange={(v) => onPatch({ diametreMm: v })}
+                  />
+                </div>
+              ) : (
+                <FieldInput
+                  label="L. Barre a ou b (m)"
+                  value={x.semelleLongueurAStr ?? "0"}
+                  onChange={(value) =>
+                    onPatch({
+                      semelleLongueurAStr: value,
+                      semelleLongueurBStr: value,
+                    })
+                  }
+                  inputClass={inputClass}
+                  placeholder="Ex: 2,4"
+                />
+              )}
             </>
           ) : (
             <SemelleRelationField
               value={semelle.semelleRelationValue}
               onChange={(value) => onPatch({ semelleRelation: value })}
-              className="sm:col-span-2"
             />
           )}
 
@@ -157,7 +187,7 @@ export default function SemelleFields({
             </>
           ) : null}
 
-          {showSharedDiameterRow ? (
+          {showSharedDiameterRow && !showSharedLengthAnchorSharedDiaRow ? (
             <div className="sm:col-span-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <FieldInput
                 label="Ancrage (m)"
