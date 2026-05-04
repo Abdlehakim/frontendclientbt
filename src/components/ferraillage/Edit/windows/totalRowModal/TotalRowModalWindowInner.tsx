@@ -811,8 +811,10 @@ export default function TotalRowModalWindowInner({
           const spacingRelation = normalizeSlabSpacingRelationValue(f.slabSpacingRelation);
           const useSemelleSharedSpacingNt =
             relation === "ab_equal_same_if" &&
-            spacingMode === "ESPACEMENT" &&
-            spacingRelation === "EA_EQ_EB";
+            spacingMode === "ESPACEMENT";
+          const useSemelleSharedCountNt =
+            relation === "ab_equal_same_if" &&
+            spacingMode === "NB_CADRE";
 
           if (isEqualDual || isDiffDual) {
             const diaA =
@@ -854,15 +856,18 @@ export default function TotalRowModalWindowInner({
 
           const effectiveLength = isDiffShared ? (longueurA + longueurB) / 2 : longueurA;
           const cutLen = effectiveLength + semelleAncrage;
+          const qtyM = (nb * totalN) * cutLen;
           const nt = useSemelleSharedSpacingNt
             ? computeSemelleNTSharedSpacing(
                 nbStr,
                 asString(f.semelleLongueurAStr),
                 asString(f.slabEspacementAStr),
                 asString(f.ancrageStr),
+                spacingRelation === "EA_NE_EB" ? asString(f.slabEspacementBStr) : undefined,
               )
-            : nb * totalN;
-          const qtyM = (nb * totalN) * cutLen;
+            : useSemelleSharedCountNt
+              ? qtyM / 12
+              : nb * totalN;
 
           linesBarres.push({
             key: `${f.id}:ab`,

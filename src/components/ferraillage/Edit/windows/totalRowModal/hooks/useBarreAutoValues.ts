@@ -145,9 +145,9 @@ export function useBarreAutoValues({
     if (isChaise) return computeBarreNT(nbStr, x.nBarreStr);
 
     const useSemelleSharedSpacingNt =
-      semelleEqualSharedActive &&
-      x.slabSpacingMode === "ESPACEMENT" &&
-      (x.slabSpacingRelation ?? "EA_EQ_EB") === "EA_EQ_EB";
+      semelleEqualSharedActive && x.slabSpacingMode === "ESPACEMENT";
+    const useSemelleSharedCountNt =
+      semelleEqualSharedActive && x.slabSpacingMode === "NB_CADRE";
 
     if (useSemelleSharedSpacingNt) {
       return computeSemelleNTSharedSpacing(
@@ -155,7 +155,17 @@ export function useBarreAutoValues({
         x.semelleLongueurAStr ?? "",
         x.slabEspacementAStr ?? "",
         semelleAncrage,
+        (x.slabSpacingRelation ?? "EA_EQ_EB") === "EA_NE_EB" ? (x.slabEspacementBStr ?? "") : undefined,
       );
+    }
+
+    if (useSemelleSharedCountNt) {
+      return computeSemelleQteEqualShared(
+        nbStr,
+        x.nBarreStr,
+        x.semelleLongueurAStr ?? "",
+        semelleAncrage,
+      ) / 12;
     }
 
     if (semelleEqualSharedActive) return computeSemelleNTEqualShared(nbStr, x.nBarreStr);
@@ -205,6 +215,7 @@ export function useBarreAutoValues({
     x.slabSpacingMode,
     x.slabSpacingRelation,
     x.slabEspacementAStr,
+    x.slabEspacementBStr,
     effectiveAncrageStr,
     semelleAncrage,
   ]);

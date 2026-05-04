@@ -77,22 +77,30 @@ export function computeSemelleNTEqualShared(nbStr: string, nBarreStr: string) {
 export function computeSemelleNTSharedSpacing(
   nbStr: string,
   longueurBarreStr: string,
-  spacingStr: string,
+  spacingAStr: string,
   ancrageStr: string,
+  spacingBStr?: string,
 ) {
   const nb = parseNonNegativeInt(nbStr);
   const longueur = parseNonNegativeNumber(longueurBarreStr);
-  const spacing = parseNonNegativeNumber(spacingStr);
+  const spacingA = parseNonNegativeNumber(spacingAStr);
+  const spacingB = spacingBStr == null ? null : parseNonNegativeNumber(spacingBStr);
   const ancrage = parseNonNegativeNumber(ancrageStr);
 
-  if (nb == null && longueur == null && spacing == null && ancrage == null) return 0;
+  if (nb == null && longueur == null && spacingA == null && spacingB == null && ancrage == null) return 0;
 
   const safeNb = nb ?? 0;
   const safeLongueur = longueur ?? 0;
   const safeAncrage = ancrage ?? 0;
+  const cutLength = safeLongueur + safeAncrage;
+  const partA = safeDivide(safeLongueur, spacingA ?? 0) * cutLength;
+  const totalSpacingValue =
+    spacingBStr == null
+      ? partA * 2
+      : partA + (safeDivide(safeLongueur, spacingB ?? 0) * cutLength);
 
   return safeNumber(
-    (safeDivide(safeLongueur, spacing ?? 0) * (safeLongueur + safeAncrage) * 2 * safeNb) / 12,
+    (totalSpacingValue * safeNb) / 12,
   );
 }
 
