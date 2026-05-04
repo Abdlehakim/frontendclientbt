@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEven
 import { FaRegEdit, FaTrashAlt } from "react-icons/fa";
 import { LuPlus } from "react-icons/lu";
 import { IoIosArrowDropdown, IoIosArrowDropup } from "react-icons/io";
+import DeleteConfirmModal from "@/components/common/DeleteConfirmModal";
 import {
   ferraillageApi,
   isApiError as isFerApiError,
@@ -54,6 +55,8 @@ type EditCalculeTotalFerraillageProps = {
   initialData?: TotalFerraillageData | null;
   onNiveauCreated?: (niveau: FerProjectNiveauDTO) => void;
   onLineCreated?: (niveauId: string, ligne: FerProjectLineDTO) => void;
+  onLineUpdated?: (niveauId: string, ligne: FerProjectLineDTO) => void;
+  onLineDeleted?: (niveauId: string, ligneId: string) => void;
 };
 
 type Totals = {
@@ -642,27 +645,39 @@ function NiveauModal({
   );
 }
 
-export default function EditCalculeTotalFerraillage({ initialData, onNiveauCreated, onLineCreated }: EditCalculeTotalFerraillageProps) {
+export default function EditCalculeTotalFerraillage({
+  initialData,
+  onNiveauCreated,
+  onLineCreated,
+  onLineUpdated,
+  onLineDeleted,
+}: EditCalculeTotalFerraillageProps) {
   const [data, setData] = useState<TotalFerraillageData>(() => initialData ?? EMPTY_TOTAL_FERRAILLAGE);
 
   const [openAdd, setOpenAdd] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
 
   const [rowModal, setRowModal] = useState<{ mode: "add" | "edit"; niveauId: string; rowId?: string } | null>(null);
+  const [rowDeleteTarget, setRowDeleteTarget] = useState<{ niveauId: string; rowId: string; itemName: string } | null>(null);
   const [addSubmitting, setAddSubmitting] = useState(false);
   const [addErr, setAddErr] = useState("");
   const [rowSubmitting, setRowSubmitting] = useState(false);
   const [rowErr, setRowErr] = useState("");
+  const [rowDeleteLoading, setRowDeleteLoading] = useState(false);
+  const [rowDeleteErr, setRowDeleteErr] = useState("");
 
   useEffect(() => {
     setData(initialData ?? EMPTY_TOTAL_FERRAILLAGE);
     setOpenAdd(false);
     setEditId(null);
     setRowModal(null);
+    setRowDeleteTarget(null);
     setAddSubmitting(false);
     setAddErr("");
     setRowSubmitting(false);
     setRowErr("");
+    setRowDeleteLoading(false);
+    setRowDeleteErr("");
   }, [initialData]);
 
   const inputClass =
@@ -799,35 +814,102 @@ export default function EditCalculeTotalFerraillage({ initialData, onNiveauCreat
     }
   };
 
-  const updateRowInNiveau = (niveauId: string, rowId: string, payload: TotalRowModalPayload) => {
-    setData((p) => ({
-      ...p,
-      niveaux: (p.niveaux ?? []).map((n) => {
-        if (n.id !== niveauId) return n;
-        const mms = [...(n.diametres?.length ? n.diametres : DEFAULT_MMS)].sort((a, b) => a - b);
+  const updateRowInNiveau = async (niveauId: string, rowId: string, payload: TotalRowModalPayload) => {
+    const projectId = String(data.rapportId ?? "").trim();
+    if (!projectId) {
+      setRowErr("Projet introuvable.");
+      return;
+    }
 
-        const { qtyByMm, poidsByMm, payload: normalizedPayload } = computeQtyPoidsByMmFromPayload(payload, mms);
+    const targetNiveau = (data.niveaux ?? []).find((niveau) => niveau.id === niveauId);
+    const mms = [...(targetNiveau?.diametres?.length ? targetNiveau.diametres : DEFAULT_MMS)].sort((a, b) => a - b);
+    const { qtyByMm, poidsByMm, payload: normalizedPayload } = computeQtyPoidsByMmFromPayload(payload, mms);
 
-        return {
-          ...n,
-          rows: (n.rows ?? []).map((r) =>
-            r.id !== rowId
-              ? r
+    setRowSubmitting(true);
+    setRowErr("");
+
+    try {
+      const response = await ferraillageApi.updateProjectLine(rowId, {
+        projectId,
+        niveauId,
+        designation: normalizedPayload.designation,
+        nomenclature: normalizedPayload.typeName ?? null,
+        nb: normalizedPayload.nb ?? null,
+        hauteur: normalizedPayload.hauteur ?? null,
+        forme: normalizedPayload.forme ?? null,
+        diametreMm: normalizedPayload.diametreMm ?? null,
+        payload: normalizedPayload as unknown as Record<string, unknown>,
+        qtyByMm,
+        poidsByMm,
+      });
+
+      if (onLineUpdated) {
+        onLineUpdated(niveauId, response.item);
+      } else {
+        const row = mapProjectLineToLocal(response.item);
+        setData((current) => ({
+          ...current,
+          niveaux: (current.niveaux ?? []).map((niveau) =>
+            niveau.id !== niveauId
+              ? niveau
               : {
-                  ...r,
-                  designation: normalizedPayload.designation,
-                  typeName: normalizedPayload.typeName,
-                  nb: normalizedPayload.nb,
-                  forme: normalizedPayload.forme,
-                  diametre: normalizedPayload.diametreMm,
-                  qtyByMm,
-                  poidsByMm,
-                  payload: normalizedPayload,
+                  ...niveau,
+                  rows: (niveau.rows ?? []).map((item) => (item.id === rowId ? row : item)),
                 },
           ),
-        };
-      }),
-    }));
+        }));
+      }
+
+      setRowModal(null);
+      setRowErr("");
+    } catch (error: unknown) {
+      setRowErr(isFerApiError(error) ? error.message : "Echec de la modification de la ligne");
+    } finally {
+      setRowSubmitting(false);
+    }
+  };
+
+  const deleteRowFromNiveau = async () => {
+    if (!rowDeleteTarget) return;
+
+    const projectId = String(data.rapportId ?? "").trim();
+    if (!projectId) {
+      setRowDeleteErr("Projet introuvable.");
+      return;
+    }
+
+    setRowDeleteLoading(true);
+    setRowDeleteErr("");
+
+    try {
+      await ferraillageApi.deleteProjectLine(rowDeleteTarget.rowId, {
+        projectId,
+        niveauId: rowDeleteTarget.niveauId,
+      });
+
+      if (onLineDeleted) {
+        onLineDeleted(rowDeleteTarget.niveauId, rowDeleteTarget.rowId);
+      } else {
+        setData((current) => ({
+          ...current,
+          niveaux: (current.niveaux ?? []).map((niveau) =>
+            niveau.id !== rowDeleteTarget.niveauId
+              ? niveau
+              : {
+                  ...niveau,
+                  rows: (niveau.rows ?? []).filter((row) => row.id !== rowDeleteTarget.rowId),
+                },
+          ),
+        }));
+      }
+
+      setRowDeleteTarget(null);
+      setRowDeleteErr("");
+    } catch (error: unknown) {
+      setRowDeleteErr(isFerApiError(error) ? error.message : "Echec de la suppression de la ligne");
+    } finally {
+      setRowDeleteLoading(false);
+    }
   };
 
   return (
@@ -886,8 +968,8 @@ export default function EditCalculeTotalFerraillage({ initialData, onNiveauCreat
         <TotalRowModalWindow
           key={`${rowModal.mode}-${rowModal.niveauId}-${rowModal.rowId ?? "add"}`}
           open
-          title={rowModal.mode === "edit" ? "Mettre a jour ligne" : "Ajouter une ligne"}
-          submitLabel={rowModal.mode === "edit" ? "Mettre a jour" : "Ajouter"}
+          title={rowModal.mode === "edit" ? "Modifier une ligne" : "Ajouter une ligne"}
+          submitLabel={rowModal.mode === "edit" ? "Modifier" : "Ajouter"}
           inputClass={inputClass}
           mms={rowModalMms}
           initial={
@@ -922,14 +1004,27 @@ export default function EditCalculeTotalFerraillage({ initialData, onNiveauCreat
           errorMessage={rowErr}
           onSubmit={async (payload: TotalRowModalPayload) => {
             if (rowModal.mode === "edit" && rowModal.rowId) {
-              updateRowInNiveau(rowModal.niveauId, rowModal.rowId, payload);
-              setRowModal(null);
+              await updateRowInNiveau(rowModal.niveauId, rowModal.rowId, payload);
               return;
             }
             await addRowToNiveau(rowModal.niveauId, payload);
           }}
         />
       ) : null}
+
+      <DeleteConfirmModal
+        open={Boolean(rowDeleteTarget)}
+        title="Supprimer la ligne"
+        itemName={rowDeleteTarget?.itemName ?? ""}
+        message={rowDeleteErr || "sera definitivement supprimee."}
+        loading={rowDeleteLoading}
+        onConfirm={() => void deleteRowFromNiveau()}
+        onCancel={() => {
+          if (rowDeleteLoading) return;
+          setRowDeleteTarget(null);
+          setRowDeleteErr("");
+        }}
+      />
 
       {(data.niveaux ?? []).map((niv) => (
         <NiveauBlock
@@ -944,6 +1039,13 @@ export default function EditCalculeTotalFerraillage({ initialData, onNiveauCreat
           onEditRow={(rowId: string) => {
             setRowErr("");
             setRowModal({ mode: "edit", niveauId: niv.id, rowId });
+          }}
+          onDeleteRow={(rowId: string) => {
+            const row = (niv.rows ?? []).find((item) => item.id === rowId);
+            if (!row) return;
+            const itemName = [row.designation, row.typeName].filter(Boolean).join(" - ") || "Ligne";
+            setRowDeleteErr("");
+            setRowDeleteTarget({ niveauId: niv.id, rowId, itemName });
           }}
         />
       ))}
@@ -972,7 +1074,7 @@ function RecapByNiveau({ niveaux, allMms }: { niveaux: NiveauTotal[]; allMms: nu
   return (
     <div className="bg-white shadow-sm overflow-hidden">
       <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between gap-3">
-        <div className="w-full text-xl font-bold text-gray-900 text-center align-middle items-center uppercase">Récapitulatif par niveau</div>
+        <div className="w-full text-xs font-bold text-gray-900 text-center align-middle items-center uppercase">Récapitulatif par niveau</div>
       </div>
 
       <div className="p-4">
@@ -1083,18 +1185,20 @@ function NiveauBlock({
   onDelete,
   onAddRow,
   onEditRow,
+  onDeleteRow,
 }: {
   niveau: NiveauTotal;
   onEdit: () => void;
   onDelete: () => void;
   onAddRow: () => void;
   onEditRow: (rowId: string) => void;
+  onDeleteRow: (rowId: string) => void;
 }) {
   const mms = useMemo(() => [...(niveau.diametres?.length ? niveau.diametres : DEFAULT_MMS)].sort((a, b) => a - b), [niveau.diametres]);
   const totals = useMemo(() => computeTotals(niveau.rows ?? [], mms), [niveau.rows, mms]);
 
   const stickyTotalH = 40;
-  const colSpan = 2 + 2 * mms.length;
+  const colSpan = 3 + 2 * mms.length;
 
   return (
     <div className="bg-white shadow-sm overflow-hidden">
@@ -1102,8 +1206,8 @@ function NiveauBlock({
         <div className="flex w-full flex-col gap-2">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-baseline gap-2">
-              <span className="text-xl font-bold text-gray-900">Niveau :</span>
-              <span className="text-xl font-semibold text-gray-900">{niveau.niveauName || "—"}</span>
+              <span className="text-xs font-medium uppercase tracking-wide text-gray-600">Niveau</span>
+              <span className="text-xs font-semibold text-gray-900">{niveau.niveauName || "—"}</span>
             </div>
 
             <div className="flex items-center gap-2">
@@ -1126,7 +1230,7 @@ function NiveauBlock({
             </div>
 
             <div className="w-1/2 flex flex-col items-end gap-1 px-3 py-2">
-              <span className="text-sm font-semibold uppercase tracking-wide text-gray-900">Entreprise - Mains d'oeuvres</span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-gray-900">Entreprise - Mains d'oeuvres</span>
 
               {niveau.sousTraitants?.length ? (
                 <ul className="list-disc list-inside text-xs text-gray-700 leading-relaxed space-y-0.5">
@@ -1163,6 +1267,10 @@ function NiveauBlock({
 
                 <th className="py-2 text-[11px] font-semibold text-center uppercase tracking-wide" colSpan={mms.length}>
                   Poids <span className="text-[10px] font-semibold normal-case">(en tonnes)</span>
+                </th>
+
+                <th className="border-l-2 py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-26" rowSpan={2}>
+                  Actions
                 </th>
               </tr>
 
@@ -1219,6 +1327,34 @@ function NiveauBlock({
                         {cellVal(row.poidsByMm, mm)}
                       </td>
                     ))}
+
+                    <td className="py-2 px-2 border-l-2">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          className="ButtonSquare"
+                          title="Modifier la ligne"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onEditRow(row.id);
+                          }}
+                        >
+                          <FaRegEdit size={14} />
+                        </button>
+
+                        <button
+                          type="button"
+                          className="ButtonSquareDelete"
+                          title="Supprimer la ligne"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onDeleteRow(row.id);
+                          }}
+                        >
+                          <FaTrashAlt size={14} />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))
               )}
@@ -1250,6 +1386,8 @@ function NiveauBlock({
                     {fmtNumTrim3(totals.poids[mm] ?? 0)}
                   </td>
                 ))}
+
+                <td className="sticky bottom-0 z-30 bg-(--primary) text-white border-l-2" />
               </tr>
             </tbody>
           </table>

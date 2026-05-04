@@ -99,6 +99,16 @@ export type FerProjectLineCreatePayload = {
   poidsByMm: Record<string, number>;
 };
 
+export type FerProjectLineUpdatePayload = FerProjectLineCreatePayload & {
+  projectId: string;
+  niveauId: string;
+};
+
+export type FerProjectLineDeletePayload = {
+  projectId: string;
+  niveauId: string;
+};
+
 class ApiError extends Error {
   status: number;
   constructor(status: number, message: string) {
@@ -173,6 +183,18 @@ export const ferraillageApi = {
   createProjectNiveauLine: (projectId: string, niveauId: string, payload: Omit<FerProjectLineCreatePayload, "niveauId">) =>
     request<{ item: FerProjectLineDTO }>(`${BASE}/projects/${encodeURIComponent(projectId)}/niveaux/${encodeURIComponent(niveauId)}/lignes`, {
       method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  updateProjectLine: (ligneId: string, payload: FerProjectLineUpdatePayload) =>
+    request<{ item: FerProjectLineDTO }>(`${BASE}/lignes/${encodeURIComponent(ligneId)}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+
+  deleteProjectLine: (ligneId: string, payload: FerProjectLineDeletePayload) =>
+    request<{ ok: true }>(`${BASE}/lignes/${encodeURIComponent(ligneId)}`, {
+      method: "DELETE",
       body: JSON.stringify(payload),
     }),
 

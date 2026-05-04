@@ -70,6 +70,12 @@ textarea {
   border-color: #d1d5db;
 }
 
+.hoverButtons:hover {
+  background-color: var(--primary);
+  color: #fff;
+    cursor: pointer;
+}
+
 .ButtonSquareDelete:hover {
   color: #fff;
   background-color: #ef4444;
@@ -163,4 +169,337 @@ textarea {
 
 .ButtonSquare.ButtonSquare--expandText svg {
   display: block;
+}
+
+.print-only {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: 210mm 297mm;
+    margin: 6mm;
+  }
+
+  html,
+  body {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  #root {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  body.project-print-active {
+    margin: 0 !important;
+    overflow: visible !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  body.project-print-active > :not(.project-print-modal) {
+    display: none !important;
+  }
+
+  body.project-print-active .project-print-modal,
+  body.project-print-active .project-print-modal-viewport,
+  body.project-print-active .project-print-modal-panel,
+  body.project-print-active .project-print-modal-body,
+  body.project-print-active .modal,
+  body.project-print-active .modal-content,
+  body.project-print-active .modal-body,
+  body.project-print-active .project-detail-modal,
+  body.project-print-active .print-wrapper,
+  body.project-print-active .project-print-flow,
+  body.project-print-active .project-print-section,
+  body.project-print-active .project-print-table-wrap {
+    position: static !important;
+    inset: auto !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  body.project-print-active .project-print-modal,
+  body.project-print-active .project-print-modal-viewport,
+  body.project-print-active .project-print-modal-panel {
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+
+  body.project-print-active .project-print-modal-body,
+  body.project-print-active .project-print-area {
+    background: #fff !important;
+  }
+
+  body.project-print-active .project-print-area {
+    position: static !important;
+    display: block !important;
+    width: 198mm !important;
+    max-width: 198mm !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    transform: none !important;
+    box-sizing: border-box !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  body.project-print-active .project-print-area,
+  body.project-print-active .project-print-area > *,
+  body.project-print-active .project-print-area .project-print-section,
+  body.project-print-active .project-print-area .project-print-project-header,
+  body.project-print-active .project-print-area .project-print-card,
+  body.project-print-active .project-print-area .niveau-card,
+  body.project-print-active .project-print-area .recap-section,
+  body.project-print-active .project-print-area .print-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.project-print-active .project-print-area * {
+    box-sizing: border-box !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  body.project-print-active .project-print-area,
+  body.project-print-active .project-print-area .project-print-card,
+  body.project-print-active .project-print-area .project-print-table-wrap,
+  body.project-print-active .modal,
+  body.project-print-active .modal-content,
+  body.project-print-active .modal-body,
+  body.project-print-active .project-detail-modal,
+  body.project-print-active .print-wrapper,
+  body.project-print-active .project-print-area .table-wrapper,
+  body.project-print-active .project-print-area .overflow-auto,
+  body.project-print-active .project-print-area .overflow-x-auto,
+  body.project-print-active .project-print-area table {
+    transform: none !important;
+    scale: none !important;
+  }
+
+  body.project-print-active .no-print,
+  body.project-print-active .sidebar,
+  body.project-print-active .modal-footer,
+  body.project-print-active .print-button,
+  body.project-print-active .close-button {
+    display: none !important;
+  }
+
+  body.project-print-active .print-only {
+    display: block !important;
+  }
+
+  body.project-print-active .niveau-card,
+  body.project-print-active .recap-section,
+  body.project-print-active .total-poids-block,
+  body.project-print-active .project-print-project-header {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  body.project-print-active .project-print-flow,
+  body.project-print-active .project-print-section,
+  body.project-print-active .project-print-table-wrap,
+  body.project-print-active .project-print-table,
+  body.project-print-active table,
+  body.project-print-active thead,
+  body.project-print-active tbody {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  body.project-print-active .project-print-area tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  body.project-print-active .project-print-card {
+    background: #fff !important;
+    box-shadow: none !important;
+    border: 1px solid #e5e7eb !important;
+    overflow: visible !important;
+  }
+
+  body.project-print-active .project-print-table-wrap {
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  body.project-print-active .project-print-area .table-wrapper,
+  body.project-print-active .project-print-area .overflow-auto,
+  body.project-print-active .project-print-area .overflow-x-auto {
+    width: 100% !important;
+    max-width: none !important;
+    overflow: visible !important;
+  }
+
+  body.project-print-active .modal,
+  body.project-print-active .modal-content,
+  body.project-print-active .modal-body,
+  body.project-print-active .project-detail-modal,
+  body.project-print-active .print-wrapper {
+    width: auto !important;
+    max-width: none !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    position: static !important;
+    transform: none !important;
+  }
+
+  body.project-print-active .project-print-area .sticky {
+    position: static !important;
+  }
+
+  body.project-print-active .project-print-area thead {
+    display: table-header-group !important;
+  }
+
+  body.project-print-active .project-print-area table {
+    width: 100% !important;
+    table-layout: fixed !important;
+    font-size: 6.5px !important;
+    color: #111827 !important;
+    border-collapse: collapse !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  body.project-print-active .project-print-area .fer-table,
+  body.project-print-active .project-print-area .recap-table {
+    width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+    font-size: 6.5px !important;
+  }
+
+  body.project-print-active .project-print-area .fer-table th,
+  body.project-print-active .project-print-area .fer-table td,
+  body.project-print-active .project-print-area .recap-table th,
+  body.project-print-active .project-print-area .recap-table td {
+    padding: 2px 2px !important;
+    font-size: 6.5px !important;
+    line-height: 1.2 !important;
+    word-break: break-word !important;
+    border-color: inherit !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  body.project-print-active .project-print-area .fer-table col.fer-col-designation {
+    width: var(--print-first-col-width, 15%) !important;
+  }
+
+  body.project-print-active .project-print-area .fer-table col.fer-col-nb {
+    width: var(--print-nb-col-width, 5%) !important;
+  }
+
+  body.project-print-active .project-print-area .fer-table col.fer-col-other,
+  body.project-print-active .project-print-area .recap-table col.recap-col-other {
+    width: var(--print-other-col-width, auto) !important;
+  }
+
+  body.project-print-active .project-print-area .recap-table col.recap-col-label {
+    width: var(--print-first-col-width, 15%) !important;
+  }
+
+  body.project-print-active .project-print-area .min-w-350,
+  body.project-print-active .project-print-area .min-w-262\.5 {
+    min-width: 100% !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  body.project-print-active .project-print-area .w-70,
+  body.project-print-active .project-print-area .w-80,
+  body.project-print-active .project-print-area .w-40,
+  body.project-print-active .project-print-area .w-23\.75,
+  body.project-print-active .project-print-area .w-21\.25 {
+    width: auto !important;
+    max-width: none !important;
+  }
+
+  body.project-print-active .project-print-area .shadow,
+  body.project-print-active .project-print-area .shadow-sm,
+  body.project-print-active .project-print-area .rounded-xl {
+    box-shadow: none !important;
+  }
+
+  body.project-print-active .project-print-area .fer-table thead th,
+  body.project-print-active .project-print-area .fer-table tbody tr:last-child td,
+  body.project-print-active .project-print-area [class~="bg-(--primary)"] {
+    background: #173a67 !important;
+    color: #fff !important;
+  }
+
+  body.project-print-active .project-print-area .recap-table thead th,
+  body.project-print-active .project-print-area .recap-table tbody tr:last-child td,
+  body.project-print-active .project-print-area [class~="bg-emerald-700"] {
+    background: #008557 !important;
+    color: #fff !important;
+  }
+
+  body.project-print-active .project-print-area [class~="bg-emerald-50"] {
+    background-color: rgb(236 253 245) !important;
+  }
+
+  body.project-print-active .project-print-area [class~="bg-gray-50"] {
+    background-color: rgb(249 250 251) !important;
+  }
+
+  body.project-print-active .project-print-area [class~="bg-gray-100"] {
+    background-color: rgb(243 244 246) !important;
+  }
+
+  body.project-print-active .project-print-area [class~="bg-gray-200"] {
+    background-color: rgb(229 231 235) !important;
+  }
+
+  body.project-print-active .project-print-area [class~="text-white"] {
+    color: #fff !important;
+  }
+
+  body.project-print-active .project-print-area [class*="border-"] {
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  body.project-print-active .project-print-area .min-h-65,
+  body.project-print-active .project-print-area .min-h-80 {
+    min-height: 0 !important;
+  }
 }

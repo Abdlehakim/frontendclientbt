@@ -1,9 +1,12 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { CiCircleRemove } from "react-icons/ci";
+import { FaRegEdit } from "react-icons/fa";
 import { FaSpinner } from "react-icons/fa6";
 import { IoIosArrowDropdown, IoIosArrowDropup } from "react-icons/io";
+import { CiCircleRemove } from "react-icons/ci";
 import CalculeTotalFerraillage from "@/components/ferraillage/Edit/EditCalculeTotalFerraillage";
+import ProjectModalShell from "@/components/ferraillage/ProjectModalShell";
+import { buildTotalFerraillageData } from "@/components/ferraillage/shared/totalFerraillageData";
 import {
   ferraillageApi,
   isApiError as isFerApiError,
@@ -82,7 +85,7 @@ function TypeAcierDropdown({
 
   return (
     <div className="flex flex-col" ref={wrapRef}>
-      <label className="text-sm font-semibold text-gray-700 mb-1">Type d'acier</label>
+      <label className="text-sm font-semibold text-gray-700 mb-1">Type d&apos;acier</label>
 
       <button
         type="button"
@@ -92,7 +95,11 @@ function TypeAcierDropdown({
         onClick={() => setOpen((v) => !v)}
       >
         <span className={value.trim() ? "truncate" : "truncate text-emerald-800/60"}>{shownValue}</span>
-        {open ? <IoIosArrowDropup className="shrink-0" size={18} /> : <IoIosArrowDropdown className="shrink-0" size={18} />}
+        {open ? (
+          <IoIosArrowDropup className="shrink-0" size={18} />
+        ) : (
+          <IoIosArrowDropdown className="shrink-0" size={18} />
+        )}
       </button>
 
       {open ? (
@@ -146,7 +153,9 @@ function EmptyAttachementTab({ mmCols }: { mmCols: number[] }) {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <div className="text-sm font-semibold uppercase tracking-wide text-gray-800">ETAT DE FER LIVRE AU CHANTIER</div>
+          <div className="text-sm font-semibold uppercase tracking-wide text-gray-800">
+            ETAT DE FER LIVRE AU CHANTIER
+          </div>
           <div className="text-sm text-gray-700">
             <strong>Etat Date:</strong> -
           </div>
@@ -156,7 +165,9 @@ function EmptyAttachementTab({ mmCols }: { mmCols: number[] }) {
           <table className="border-collapse table-fixed w-full min-w-262.5">
             <thead>
               <tr className="bg-(--primary) text-white">
-                <th className="border-r-2 py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-40">Date</th>
+                <th className="border-r-2 py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-40">
+                  Date
+                </th>
                 <th className="border-r-2 py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-80">
                   Ndeg Bon de livraison
                 </th>
@@ -179,7 +190,9 @@ function EmptyAttachementTab({ mmCols }: { mmCols: number[] }) {
               </tr>
 
               <tr className="bg-(--primary) text-white">
-                <td className="py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-40">TOTAL</td>
+                <td className="py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-40">
+                  TOTAL
+                </td>
                 <td className="border-r-2 py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-40" />
                 {mmCols.map((mm) => (
                   <td
@@ -195,7 +208,9 @@ function EmptyAttachementTab({ mmCols }: { mmCols: number[] }) {
 
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <div className="text-sm font-semibold uppercase tracking-wide text-gray-800">Quantite restante non confectionne</div>
+          <div className="text-sm font-semibold uppercase tracking-wide text-gray-800">
+            Quantite restante non confectionne
+          </div>
           <div className="text-sm text-gray-700">
             <strong>Rapport Date:</strong> -
           </div>
@@ -205,7 +220,9 @@ function EmptyAttachementTab({ mmCols }: { mmCols: number[] }) {
           <table className="border-collapse table-fixed w-full min-w-262.5">
             <thead>
               <tr className="bg-(--primary) text-white">
-                <th className="border-r-2 py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-40">Date</th>
+                <th className="border-r-2 py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-40">
+                  Date
+                </th>
                 {mmCols.map((mm) => (
                   <th
                     key={`rest-h-${mm}`}
@@ -225,7 +242,9 @@ function EmptyAttachementTab({ mmCols }: { mmCols: number[] }) {
               </tr>
 
               <tr className="bg-(--primary) text-white">
-                <td className="py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-40">TOTAL</td>
+                <td className="py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-40">
+                  TOTAL
+                </td>
                 {mmCols.map((mm) => (
                   <td
                     key={`rest-t-${mm}`}
@@ -241,64 +260,215 @@ function EmptyAttachementTab({ mmCols }: { mmCols: number[] }) {
   );
 }
 
-function buildTotalFerraillageData(project: FerProjectDetailDTO | null) {
-  if (!project) return null;
-
-  return {
-    rapportId: project.id,
-    chantierName: project.chantierName,
-    niveaux: (project.niveaux ?? []).map((niveau) => ({
-      id: niveau.id,
-      niveauName: niveau.name,
-      note: niveau.note ?? "",
-      diametres: [...(niveau.selectedMms ?? [])].sort((a, b) => a - b),
-      sousTraitants: [...(niveau.sousTraitants ?? [])],
-      rows: (niveau.lignes ?? []).map((ligne) => ({
-        id: ligne.id,
-        designation: ligne.designation,
-        typeName: ligne.nomenclature ?? "",
-        forme: (typeof ligne.forme === "string" && ligne.forme ? ligne.forme : "BARRE") as "BARRE" | "CARRE" | "CIRCULAIRE" | "RECTANGULAIRE",
-        nb: ligne.nb ?? null,
-        diametre: ligne.diametreMm ?? 0,
-        qtyByMm: Object.fromEntries(Object.entries(ligne.qtyByMm ?? {}).map(([key, value]) => [Number(key), value])),
-        poidsByMm: Object.fromEntries(Object.entries(ligne.poidsByMm ?? {}).map(([key, value]) => [Number(key), value])),
-        payload: ligne.payload as never,
-      })),
-    })),
-  };
-}
-
-function EditProjectDataPanel({ onClose, rapport }: { onClose: () => void; rapport: FerRapportDTO | null }) {
+function EditProjectInfoModal({
+  open,
+  project,
+  onClose,
+  onUpdated,
+}: {
+  open: boolean;
+  project: FerProjectDetailDTO | null;
+  onClose: () => void;
+  onUpdated: (project: FerProjectDetailDTO) => void;
+}) {
   const panelRef = useRef<HTMLDivElement | null>(null);
-  const [tab, setTab] = useState<TabKey>("TOTAL_FERRAILLAGE");
-
-  const [project, setProject] = useState<FerProjectDetailDTO | null>(null);
-  const [loading, setLoading] = useState(Boolean(rapport?.id));
-  const [err, setErr] = useState("");
 
   const [chantierName, setChantierName] = useState("");
   const [responsable, setResponsable] = useState("");
   const [acierType, setAcierType] = useState("");
   const [note, setNote] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [err, setErr] = useState("");
 
   useEffect(() => {
-    const onKeyDown = (ev: KeyboardEvent) => {
-      if (ev.key === "Escape") onClose();
-    };
+    if (!open || !project) return;
+
+    setChantierName(project.chantierName ?? "");
+    setResponsable(project.responsable ?? "");
+    setAcierType(project.acierType ?? "");
+    setNote(project.note ?? "");
+    setErr("");
+    setSubmitting(false);
+  }, [open, project]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape" && !submitting) onClose();
+    }
 
     document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [onClose]);
+
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open, submitting, onClose]);
+
+  if (!open || !project) return null;
+
+  const inputClass =
+    "w-full rounded-md border px-3 py-2 text-sm font-medium truncate " +
+    "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 " +
+    "border-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 " +
+    "placeholder:text-emerald-800/60";
+
+  const textareaClass =
+    "w-full rounded-md border px-3 py-2 text-sm font-medium " +
+    "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 " +
+    "border-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 " +
+    "placeholder:text-emerald-800/60 min-h-24 resize-y";
+
+  function closeOnBackdrop(event: React.MouseEvent<HTMLDivElement>) {
+    if (submitting) return;
+    if (event.target === event.currentTarget) onClose();
+  }
+
+  async function handleSubmit() {
+    const nextChantierName = chantierName.trim();
+    const nextResponsable = responsable.trim();
+    const nextAcierType = acierType.trim();
+    const nextNote = note.trim();
+
+    if (!nextChantierName) {
+      setErr("Le chantier est obligatoire.");
+      return;
+    }
+
+    setSubmitting(true);
+    setErr("");
+
+    try {
+      const response = await ferraillageApi.updateProject(project.id, {
+        chantierName: nextChantierName,
+        responsable: nextResponsable,
+        acierType: nextAcierType,
+        note: nextNote,
+      });
+
+      onUpdated(response.item);
+      onClose();
+    } catch (error: unknown) {
+      setErr(isFerApiError(error) ? error.message : "Failed to update project");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return createPortal(
+    <div className="fixed inset-0 z-220">
+      <div className="absolute inset-0 bg-black/40" onMouseDown={closeOnBackdrop} />
+
+      <div className="absolute inset-0 flex items-center justify-center p-4">
+        <div
+          ref={panelRef}
+          className="w-full max-w-6xl rounded-xl bg-white shadow-xl border border-gray-200 flex flex-col overflow-hidden"
+        >
+          <div className="px-5 py-3 bg-gray-50 rounded-t-xl border-b border-gray-200 flex items-center justify-between">
+            <div>
+              <div className="text-sm font-semibold text-gray-900">Modifier les données du projet</div>
+            </div>
+
+            <button
+                          type="button"
+                          onClick={onClose}
+                          aria-label="Fermer"
+                          title="Fermer"
+                          disabled={submitting}
+                          className="p-1 text-gray-700 hover:cursor-pointer hover:text-red-600 hover:scale-120 transition-transform disabled:opacity-50 disabled:hover:scale-100"
+                        >
+                          <CiCircleRemove size={26} />
+                        </button>
+          </div>
+
+          <div className="p-5">
+            {err ? <div className="mb-4 text-sm text-red-600">{err}</div> : null}
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="flex flex-col">
+                <label className="text-sm font-semibold text-gray-700 mb-1">Chantier</label>
+                <input
+                  value={chantierName}
+                  onChange={(e) => setChantierName(e.target.value)}
+                  className={inputClass}
+                  placeholder="Ex: Pharmaghreb - El Agba"
+                  disabled={submitting}
+                />
+              </div>
+
+              <div className="flex flex-col">
+                <label className="text-sm font-semibold text-gray-700 mb-1">Responsable</label>
+                <input
+                  value={responsable}
+                  onChange={(e) => setResponsable(e.target.value)}
+                  className={inputClass}
+                  placeholder="Ex: SIOUD"
+                  disabled={submitting}
+                />
+              </div>
+
+              <TypeAcierDropdown value={acierType} onChange={setAcierType} />
+
+              <div className="flex flex-col md:col-span-3">
+                <label className="text-sm font-semibold text-gray-700 mb-1">Note</label>
+                <textarea
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  className={textareaClass}
+                  placeholder="Optionnel"
+                  disabled={submitting}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div
+            className="
+              rounded-b-xl bg-gray-50
+              border-t border-slate-900/10
+              px-3.5 pt-2.5 pb-3.5
+              flex items-center justify-between gap-3
+            "
+            aria-label="Actions du formulaire"
+          >
+            <div className="flex items-center justify-start gap-2 flex-1">
+              <button type="button" className="stepper__nav" onClick={onClose} disabled={submitting}>
+                Annuler
+              </button>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 flex-1 whitespace-nowrap">
+              <button
+                type="button"
+                className="stepper__nav"
+                onClick={handleSubmit}
+                disabled={submitting}
+                aria-disabled={submitting}
+              >
+                {submitting ? "Modification..." : "Modifier"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+function EditProjectDataPanel({ onClose, rapport }: { onClose: () => void; rapport: FerRapportDTO | null }) {
+  const [tab, setTab] = useState<TabKey>("TOTAL_FERRAILLAGE");
+
+  const [project, setProject] = useState<FerProjectDetailDTO | null>(null);
+  const [loading, setLoading] = useState(Boolean(rapport?.id));
+  const [err, setErr] = useState("");
+  const [projectEditOpen, setProjectEditOpen] = useState(false);
 
   useEffect(() => {
     if (!rapport?.id) {
       setProject(null);
       setLoading(false);
       setErr("");
-      setChantierName("");
-      setResponsable("");
-      setAcierType("");
-      setNote("");
       return;
     }
 
@@ -328,16 +498,10 @@ function EditProjectDataPanel({ onClose, rapport }: { onClose: () => void; rappo
     };
   }, [rapport?.id]);
 
-  useEffect(() => {
-    if (!project) return;
-    setChantierName(project.chantierName ?? "");
-    setResponsable(project.responsable ?? "");
-    setAcierType(project.acierType ?? "");
-    setNote(project.note ?? "");
-  }, [project]);
-
   const mmCols = useMemo(() => {
-    const values = Array.from(new Set((project?.niveaux ?? []).flatMap((niveau) => niveau.selectedMms ?? []))).sort((a, b) => a - b);
+    const values = Array.from(new Set((project?.niveaux ?? []).flatMap((niveau) => niveau.selectedMms ?? []))).sort(
+      (a, b) => a - b,
+    );
     return values.length ? values : DEFAULT_MM_COLS;
   }, [project]);
 
@@ -373,156 +537,155 @@ function EditProjectDataPanel({ onClose, rapport }: { onClose: () => void; rappo
     });
   };
 
-  const closeOnBackdrop = (ev: React.MouseEvent<HTMLDivElement>) => {
-    if (panelRef.current && !panelRef.current.contains(ev.target as Node)) onClose();
+  const handleLineUpdated = (niveauId: string, ligne: FerProjectLineDTO) => {
+    setProject((current) => {
+      if (!current) return current;
+
+      return {
+        ...current,
+        niveaux: current.niveaux.map((niveau) =>
+          niveau.id !== niveauId
+            ? niveau
+            : {
+                ...niveau,
+                lignes: niveau.lignes.map((item) => (item.id === ligne.id ? ligne : item)),
+              },
+        ),
+      };
+    });
   };
 
-  const inputClass =
-    "w-full rounded-md border px-3 py-2 text-sm font-medium truncate " +
-    "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 " +
-    "border-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 " +
-    "placeholder:text-emerald-800/60";
+  const handleLineDeleted = (niveauId: string, ligneId: string) => {
+    setProject((current) => {
+      if (!current) return current;
 
-  const textareaClass =
-    "w-full rounded-md border px-3 py-2 text-sm font-medium " +
-    "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 " +
-    "border-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 " +
-    "placeholder:text-emerald-800/60 min-h-24 resize-y";
+      return {
+        ...current,
+        niveaux: current.niveaux.map((niveau) =>
+          niveau.id !== niveauId
+            ? niveau
+            : {
+                ...niveau,
+                lignes: niveau.lignes.filter((item) => item.id !== ligneId),
+              },
+        ),
+      };
+    });
+  };
+
+  const handleProjectUpdated = (updatedProject: FerProjectDetailDTO) => {
+    setProject(updatedProject);
+  };
 
   return (
-    <div className="fixed inset-0 z-99">
-      <div className="absolute inset-0 bg-black/40" onMouseDown={closeOnBackdrop} />
-
-      <div className="absolute inset-0 flex items-center justify-center p-4">
-        <div ref={panelRef} className="w-full max-w-[98%] h-[98%] rounded-xl bg-white shadow-xl border border-gray-200 flex flex-col">
-          <div className="px-5 py-2 bg-gray-50 rounded-t-xl border-b border-gray-200 flex items-center justify-between">
-            <div className="flex flex-col">
-              <div className="text-sm font-semibold text-gray-900">Modifier - Donnees du projet</div>
-              <div className="text-xs text-gray-600">
-                {project?.chantierName || rapport?.chantierName ? (
-                  <span className="font-semibold">{project?.chantierName ?? rapport?.chantierName}</span>
-                ) : (
-                  "-"
-                )}
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Fermer"
-              title="Fermer"
-              className="p-1 text-gray-700 hover:cursor-pointer hover:text-red-600 hover:scale-120 transition-transform"
-            >
-              <CiCircleRemove size={28} />
-            </button>
-          </div>
-
-          <div className="p-4 flex-1 overflow-auto bg-green-50">
-            {loading ? (
-              <div className="flex min-h-80 items-center justify-center">
-                <FaSpinner className="animate-spin text-4xl text-(--primary)" />
-              </div>
-            ) : err ? (
-              <div className="rounded-lg bg-white p-6 text-red-600 shadow-sm">{err}</div>
-            ) : (
-              <>
-                <div className="bg-white shadow rounded p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="flex flex-col">
-                    <label className="text-sm font-semibold text-gray-700 mb-1">Chantier</label>
-                    <input
-                      value={chantierName}
-                      onChange={(e) => setChantierName(e.target.value)}
-                      className={inputClass}
-                      placeholder="Ex: Pharmaghreb - El Agba"
-                    />
-                  </div>
-
-                  <div className="flex flex-col">
-                    <label className="text-sm font-semibold text-gray-700 mb-1">Responsable</label>
-                    <input
-                      value={responsable}
-                      onChange={(e) => setResponsable(e.target.value)}
-                      className={inputClass}
-                      placeholder="Ex: Ste. AM SIOUD CONSTRUCTION"
-                    />
-                  </div>
-
-                  <TypeAcierDropdown value={acierType} onChange={setAcierType} />
-
-                  <div className="flex flex-col md:col-span-3">
-                    <label className="text-sm font-semibold text-gray-700 mb-1">Note</label>
-                    <textarea value={note} onChange={(e) => setNote(e.target.value)} className={textareaClass} placeholder="Optionnel" />
-                  </div>
+    <ProjectModalShell
+      title="Modifier - Donnees du projet"
+      subtitle={
+        project?.chantierName || rapport?.chantierName ? (
+          <span className="font-semibold">{project?.chantierName ?? rapport?.chantierName}</span>
+        ) : (
+          "-"
+        )
+      }
+      onClose={onClose}
+    >
+      {loading ? (
+        <div className="flex min-h-80 items-center justify-center">
+          <FaSpinner className="animate-spin text-4xl text-(--primary)" />
+        </div>
+      ) : err ? (
+        <div className="rounded-lg bg-white p-6 text-red-600 shadow-sm">{err}</div>
+      ) : (
+        <>
+          <div className="bg-white shadow rounded p-2">
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div className="grid flex-1 grid-cols-1 md:grid-cols-3 gap-2">
+                <div className="text-xs">
+                  <strong>Chantier:</strong> {project?.chantierName ?? "-"}
                 </div>
-
-                <div className="mt-4">
-                  <div className="flex flex-wrap justify-center gap-2 border-b-transparent p-3">
-                    {TABS.map((t) => {
-                      const active = t.key === tab;
-
-                      return (
-                        <button
-                          key={t.key}
-                          onClick={() => setTab(t.key)}
-                          className={
-                            active
-                              ? "px-4 py-2 rounded bg-(--primary) text-white font-semibold"
-                              : "px-4 py-2 rounded bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
-                          }
-                          type="button"
-                        >
-                          {t.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <div className="min-h-65">
-                    {tab === "TOTAL_FERRAILLAGE" ? (
-                      <CalculeTotalFerraillage
-                        initialData={totalFerraillageData}
-                        onNiveauCreated={handleNiveauCreated}
-                        onLineCreated={handleLineCreated}
-                      />
-                    ) : tab === "ATTACHEMENT" ? (
-                      <EmptyAttachementTab mmCols={mmCols} />
-                    ) : (
-                      <div className="text-gray-500">
-                        <strong>{tabLabel}</strong>
-                        <div className="mt-2 italic">Contenu a definir...</div>
-                      </div>
-                    )}
-                  </div>
+                <div className="text-xs">
+                  <strong>Responsable:</strong> {project?.responsable ?? "-"}
                 </div>
-              </>
-            )}
-          </div>
+                <div className="text-xs">
+                  <strong>Type d&apos;acier:</strong> {project?.acierType ?? "-"}
+                </div>
+                <div className="text-xs md:col-span-3">
+                  <strong>Note:</strong> {project?.note ?? "-"}
+                </div>
+              </div>
 
-          <div
-            className="
-              rounded-b-xl bg-gray-50
-              border-t border-slate-900/10
-              px-3.5 pt-2.5 pb-3.5
-              flex items-center justify-between gap-3
-            "
-            aria-label="Actions"
-          >
-            <div className="flex items-center justify-start gap-2 flex-1">
-              <button type="button" onClick={onClose} className="stepper__nav" id="modelCancelFlowBtn">
-                Fermer
+              <button
+                type="button"
+                onClick={() => setProjectEditOpen(true)}
+                disabled={!project}
+                className="ButtonSquare"
+                title="Modifier les données du projet"
+                aria-label="Modifier les données du projet"
+              >
+                <FaRegEdit size={14} />
               </button>
             </div>
-
-            <div className="flex items-center justify-end gap-2 flex-1 whitespace-nowrap" />
           </div>
-        </div>
-      </div>
-    </div>
+
+          <div className="mt-4">
+            <div className="flex flex-wrap justify-center gap-2 border-b-transparent p-3">
+              {TABS.map((t) => {
+                const active = t.key === tab;
+
+                return (
+                  <button
+                    key={t.key}
+                    onClick={() => setTab(t.key)}
+                    className={
+                      active
+                        ? "px-4 py-2 rounded bg-(--primary) text-white font-semibold"
+                        : "px-4 py-2 rounded bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+                    }
+                    type="button"
+                  >
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="min-h-65">
+              {tab === "TOTAL_FERRAILLAGE" ? (
+                <CalculeTotalFerraillage
+                  initialData={totalFerraillageData}
+                  onNiveauCreated={handleNiveauCreated}
+                  onLineCreated={handleLineCreated}
+                  onLineUpdated={handleLineUpdated}
+                  onLineDeleted={handleLineDeleted}
+                />
+              ) : tab === "ATTACHEMENT" ? (
+                <EmptyAttachementTab mmCols={mmCols} />
+              ) : (
+                <div className="text-gray-500">
+                  <strong>{tabLabel}</strong>
+                  <div className="mt-2 italic">Contenu a definir...</div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <EditProjectInfoModal
+            open={projectEditOpen}
+            project={project}
+            onClose={() => setProjectEditOpen(false)}
+            onUpdated={handleProjectUpdated}
+          />
+        </>
+      )}
+    </ProjectModalShell>
   );
 }
 
 export default function EditProjectData({ open, onClose, rapport }: Props) {
   if (!open) return null;
-  return createPortal(<EditProjectDataPanel key={rapport?.id ?? "none"} onClose={onClose} rapport={rapport} />, document.body);
+
+  return createPortal(
+    <EditProjectDataPanel key={rapport?.id ?? "none"} onClose={onClose} rapport={rapport} />,
+    document.body,
+  );
 }

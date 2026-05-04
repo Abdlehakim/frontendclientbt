@@ -1,12 +1,11 @@
 // src/pages/FerraillagePage.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { FaRegEdit, FaRegEye, FaTrashAlt } from "react-icons/fa";
 import { FaSpinner } from "react-icons/fa6";
 import DeleteConfirmModal from "@/components/common/DeleteConfirmModal";
+import ViewProjectData from "@/components/ferraillage/ViewProjectData";
 import TablePagination from "@/components/tablePagination";
 import { ferraillageApi, type FerRapportDTO, isApiError as isFerApiError } from "@/lib/ferraillageApi";
-import { APP_HREFS } from "@/routes/paths";
 import CreateRapportWizard from "@/components/ferraillage/CreateRapportWizard";
 import CreateProjetWizard from "@/components/ferraillage/CreateProjetWizard";
 import EditRapportWizard from "@/components/ferraillage/EditProjectData";
@@ -26,8 +25,6 @@ function fmtDate(iso: string | null | undefined) {
 }
 
 export default function FerraillagePage() {
-  const nav = useNavigate();
-
   const [items, setItems] = useState<FerRapportDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -41,6 +38,8 @@ export default function FerraillagePage() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [editItem, setEditItem] = useState<FerRapportDTO | null>(null);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [viewItem, setViewItem] = useState<FerRapportDTO | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
@@ -101,7 +100,9 @@ export default function FerraillagePage() {
   }, [searchTerm]);
 
   function onView(id: string) {
-    nav(APP_HREFS.ferraillageRapportView(id));
+    const target = items.find((item) => item.id === id) ?? null;
+    setViewItem(target);
+    setViewOpen(true);
   }
 
   function onEdit(item: FerRapportDTO) {
@@ -253,6 +254,15 @@ export default function FerraillagePage() {
         onClose={() => {
           setEditOpen(false);
           setEditItem(null);
+        }}
+      />
+      <ViewProjectData
+        open={viewOpen}
+        projectId={viewItem?.id ?? null}
+        projectName={viewItem?.chantierName ?? ""}
+        onClose={() => {
+          setViewOpen(false);
+          setViewItem(null);
         }}
       />
     </div>
