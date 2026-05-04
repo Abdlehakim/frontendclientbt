@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { CiCircleRemove } from "react-icons/ci";
 import { parsePositiveInt, parsePositiveNumber, safeNumber } from "../../utils";
 
 export type RecapLine = {
@@ -25,8 +26,6 @@ type GroupedBarreEntry =
 
 function fmtNum(n: number | null | undefined, digits = 2) {
   if (n == null || !Number.isFinite(n)) return "0";
-  if (n == null) return "—";
-  if (!Number.isFinite(n)) return "—";
   return safeNumber(n).toLocaleString(undefined, { maximumFractionDigits: digits });
 }
 
@@ -84,14 +83,14 @@ function BarreSingleCard({ l }: { l: RecapLine }) {
     <div className="rounded-md border border-gray-200 bg-white px-3 py-2">
       <div className="flex items-center justify-between text-xs">
         <div className="font-semibold text-gray-900">{l.label || "N.T.Barre"}</div>
-        <div className="text-gray-600">{l.dia != null ? ferLabel(l.dia) : "—"}</div>
+        <div className="text-gray-600">{l.dia != null ? ferLabel(l.dia) : "-"}</div>
       </div>
 
       {l.steelType || l.litLabel ? (
         <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
           {l.steelType ? (
             <>
-              <div className="text-gray-500">Type d’acier</div>
+              <div className="text-gray-500">Type d'acier</div>
               <div className="text-right font-semibold text-gray-900">{l.steelType}</div>
             </>
           ) : null}
@@ -128,9 +127,9 @@ function BarrePairColumn({
 }) {
   return (
     <>
-      <div className="flex items-center justify-between text-xs gap-2">
+      <div className="flex items-center justify-between gap-2 text-xs">
         <div className="font-semibold text-gray-900">{title}</div>
-        <div className="text-gray-600 shrink-0">{line.dia != null ? ferLabel(line.dia) : "—"}</div>
+        <div className="shrink-0 text-gray-600">{line.dia != null ? ferLabel(line.dia) : "-"}</div>
       </div>
 
       <div className="mt-2 grid grid-cols-2 gap-x-2 gap-y-1.5 text-xs">
@@ -156,7 +155,7 @@ function BarrePairCard({
 }) {
   return (
     <div className="rounded-md border border-gray-200 bg-white px-3 py-2">
-      <div className="text-xs font-semibold text-gray-900 mb-2">N.T.Barre</div>
+      <div className="mb-2 text-xs font-semibold text-gray-900">N.T.Barre</div>
 
       <div className="grid grid-cols-1 gap-2">
         <BarrePairColumn title="(a)" line={left} />
@@ -172,12 +171,16 @@ export default function RecapPanel({
   nbStr,
   hauteurStr,
   recap,
+  className = "",
+  onClose,
 }: {
   designation: string;
   typeName: string;
   nbStr: string;
   hauteurStr: string;
   recap: RecapData;
+  className?: string;
+  onClose?: () => void;
 }) {
   const designationLabel = useMemo(() => (designation ?? "").trim(), [designation]);
 
@@ -199,33 +202,52 @@ export default function RecapPanel({
   }, [recap.linesBarres]);
 
   const hauteurLabel = usesLongueurLabel ? "Longueur" : "Hauteur";
-  const headTitle = designationLabel || "—";
+  const headTitle = designationLabel || "-";
   const subTitle = (typeName ?? "").trim();
 
   return (
-    <div className="hidden lg:flex w-85 shrink-0 rounded-xl bg-white shadow-xl border border-gray-200 overflow-hidden flex-col">
-      <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
-        <div className="text-sm font-semibold text-gray-900">Récapitulatif</div>
-        <div className="text-xs text-gray-600 mt-0.5">
-          {headTitle} {(subTitle && `• ${subTitle}`) || ""}
+    <div
+      className={[
+        "flex min-h-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl",
+        className,
+      ].join(" ").trim()}
+    >
+      <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 py-3">
+        <div>
+          <div className="text-sm font-semibold text-gray-900">Récapitulatif</div>
+          <div className="mt-0.5 text-xs text-gray-600">
+            {headTitle} {(subTitle && `• ${subTitle}`) || ""}
+          </div>
         </div>
+
+        {onClose ? (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fermer le récapitulatif"
+            title="Fermer le récapitulatif"
+            className="shrink-0 p-1 text-gray-700 transition-transform hover:scale-120 hover:cursor-pointer hover:text-red-600"
+          >
+            <CiCircleRemove size={24} />
+          </button>
+        ) : null}
       </div>
 
-      <div className="p-4 flex-1 min-h-0 overflow-y-auto">
+      <div className="flex-1 min-h-0 overflow-y-auto p-4">
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="text-gray-500">NB</div>
-          <div className="font-semibold text-gray-900 text-right">
+          <div className="text-right font-semibold text-gray-900">
             {fmtNum(parsePositiveInt(nbStr) ?? null, 0)}
           </div>
 
           <div className="text-gray-500">{hauteurLabel}</div>
-          <div className="font-semibold text-gray-900 text-right">
+          <div className="text-right font-semibold text-gray-900">
             {fmtNum(parsePositiveNumber(hauteurStr) ?? null)} m
           </div>
         </div>
 
         <div className="mt-4 border-t border-gray-200 pt-3">
-          <div className="text-xs font-semibold text-gray-800 mb-2">Totaux par diamètre</div>
+          <div className="mb-2 text-xs font-semibold text-gray-800">Totaux par diamètre</div>
 
           {recap.totals.length ? (
             <div className="space-y-2">
@@ -248,14 +270,14 @@ export default function RecapPanel({
         </div>
 
         <div className="mt-4 border-t border-gray-200 pt-3">
-          <div className="text-xs font-semibold text-gray-800 mb-2">Détails rapides</div>
+          <div className="mb-2 text-xs font-semibold text-gray-800">Détails rapides</div>
 
           <div className="space-y-2">
             {recap.linesCadres.map((l) => (
               <div key={l.key} className="rounded-md border border-gray-200 bg-white px-3 py-2">
                 <div className="flex items-center justify-between text-xs">
                   <div className="font-semibold text-gray-900">{l.label}</div>
-                  <div className="text-gray-600">{l.dia != null ? ferLabel(l.dia) : "—"}</div>
+                  <div className="text-gray-600">{l.dia != null ? ferLabel(l.dia) : "-"}</div>
                 </div>
 
                 <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
@@ -289,7 +311,7 @@ export default function RecapPanel({
               <div key={l.key} className="rounded-md border border-gray-200 bg-white px-3 py-2">
                 <div className="flex items-center justify-between text-xs">
                   <div className="font-semibold text-gray-900">{l.label}</div>
-                  <div className="text-gray-600">{l.dia != null ? ferLabel(l.dia) : "—"}</div>
+                  <div className="text-gray-600">{l.dia != null ? ferLabel(l.dia) : "-"}</div>
                 </div>
 
                 <div className="mt-1 grid grid-cols-2 gap-2 text-xs">

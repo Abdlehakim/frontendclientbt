@@ -197,6 +197,7 @@ export default function TotalRowModalWindowInner({
   const [nbStr, setNbStr] = useState(() => (initial?.nb == null ? "0" : String(initial.nb)));
   const [hauteurStr, setHauteurStr] = useState(() => (initial?.hauteur == null ? "0" : String(initial.hauteur)));
   const [showAbbreviationHelp, setShowAbbreviationHelp] = useState(false);
+  const [isRecapOpen, setIsRecapOpen] = useState(false);
 
   const isAbbreviationHelpOpen = open && showAbbreviationHelp;
 
@@ -438,12 +439,22 @@ export default function TotalRowModalWindowInner({
     if (!open) return;
 
     const onKeyDown = (ev: KeyboardEvent) => {
-      if (ev.key === "Escape" && !submitting) onClose();
+      if (ev.key !== "Escape" || submitting) return;
+      if (isRecapOpen) {
+        setIsRecapOpen(false);
+        return;
+      }
+      onClose();
     };
 
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose, submitting]);
+  }, [isRecapOpen, open, onClose, submitting]);
+
+  useEffect(() => {
+    if (open) return;
+    setIsRecapOpen(false);
+  }, [open]);
 
   const closeOnBackdrop = (ev: ReactMouseEvent<HTMLDivElement>) => {
     if (submitting) return;
@@ -1009,6 +1020,11 @@ export default function TotalRowModalWindowInner({
 
     if (payload) void onSubmit(payload);
   };
+
+  const closeRecapOnBackdrop = (ev: ReactMouseEvent<HTMLDivElement>) => {
+    if (ev.target === ev.currentTarget) setIsRecapOpen(false);
+  };
+
   return createPortal(
     <div className="fixed inset-0 z-220">
       <div className="absolute inset-0 bg-black/40" onMouseDown={closeOnBackdrop} />
@@ -1016,17 +1032,9 @@ export default function TotalRowModalWindowInner({
       <div className="absolute inset-0 flex items-center justify-center p-4">
         <div
           ref={panelRef}
-          className="w-full max-w-[95%] h-[90vh] max-h-[90vh] min-h-0 flex gap-4 items-stretch overflow-hidden"
+          className="relative h-[90vh] min-h-0 w-full max-w-[95%] overflow-hidden"
         >
-          <RecapPanel
-            designation={designation}
-            typeName={nomenclature}
-            nbStr={nbStr}
-            hauteurStr={showHauteurField ? hauteurStr : "0"}
-            recap={recap}
-          />
-
-          <div className="flex-1 min-h-0 max-h-full rounded-xl bg-white shadow-xl border border-gray-200 flex flex-col overflow-hidden">
+          <div className="flex h-full min-h-0 max-h-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
             <ModalHeader title={title} onClose={onClose} disabled={submitting} />
 
             <div className="p-5 flex flex-1 min-h-0 flex-col overflow-hidden">
@@ -1055,6 +1063,8 @@ export default function TotalRowModalWindowInner({
                 showEpingleAddOption={!restrictAddElementsToBarreOnly}
                 showEtriersAddOption={!restrictAddElementsToBarreOnly}
                 addDropdownCloseKey={normalizedDesignation}
+                isRecapOpen={isRecapOpen}
+                onToggleRecap={() => setIsRecapOpen((prev) => !prev)}
               />
 
               <div className="mt-4 flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
@@ -1156,6 +1166,23 @@ export default function TotalRowModalWindowInner({
               submitting={submitting}
             />
           </div>
+
+          {isRecapOpen ? (
+            <div
+              className="absolute inset-0 z-30 flex justify-end bg-slate-900/10 p-3 sm:p-4"
+              onMouseDown={closeRecapOnBackdrop}
+            >
+              <RecapPanel
+                designation={designation}
+                typeName={nomenclature}
+                nbStr={nbStr}
+                hauteurStr={showHauteurField ? hauteurStr : "0"}
+                recap={recap}
+                className="h-full w-full max-w-[24rem]"
+                onClose={() => setIsRecapOpen(false)}
+              />
+            </div>
+          ) : null}
         </div>
       </div>
 

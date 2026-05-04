@@ -28,6 +28,8 @@ export default function ModalTopFields({
   showEpingleAddOption,
   showEtriersAddOption,
   addDropdownCloseKey,
+  isRecapOpen,
+  onToggleRecap,
 }: {
   designation: string;
   onDesignationChange: (value: string) => void;
@@ -53,6 +55,8 @@ export default function ModalTopFields({
   showEpingleAddOption: boolean;
   showEtriersAddOption: boolean;
   addDropdownCloseKey: string;
+  isRecapOpen: boolean;
+  onToggleRecap: () => void;
 }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 shrink-0">
@@ -98,19 +102,37 @@ export default function ModalTopFields({
         </div>
       ) : null}
 
-      <div className="md:col-span-12 flex justify-between border-t border-gray-200 pt-3">
+      <div className="md:col-span-12 flex flex-col gap-3 border-t border-gray-200 pt-3 sm:flex-row sm:items-center sm:justify-between">
         <DotsPagination currentPage={safePage} totalPages={totalPages} onPageChange={onPageChange} />
-        <AddPlusDropdown
-          onAddCadre={onAddCadre}
-          onAddBarre={onAddBarre}
-          onAddEpingle={onAddEpingle}
-          onAddEtriers={onAddEtriers}
-          showCadreOption={showCadreAddOption}
-          showBarreOption
-          showEpingleOption={showEpingleAddOption}
-          showEtriersOption={showEtriersAddOption}
-          closeOnChangeKey={addDropdownCloseKey}
-        />
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <button
+            type="button"
+            className={[
+              "form-control form-control--select inline-flex items-center gap-2 rounded-md border text-sm font-semibold cursor-pointer transition-colors",
+              isRecapOpen
+                ? "border-emerald-300 bg-emerald-100 text-emerald-900 hover:bg-emerald-200"
+                : "border-gray-300 bg-white text-slate-700 hover:bg-gray-50",
+              "focus:outline-none focus:ring-2 focus:ring-emerald-400",
+            ].join(" ")}
+            onClick={onToggleRecap}
+            aria-pressed={isRecapOpen}
+            title="Récapitulatif"
+          >
+            <span>Récapitulatif</span>
+          </button>
+
+          <AddPlusDropdown
+            onAddCadre={onAddCadre}
+            onAddBarre={onAddBarre}
+            onAddEpingle={onAddEpingle}
+            onAddEtriers={onAddEtriers}
+            showCadreOption={showCadreAddOption}
+            showBarreOption
+            showEpingleOption={showEpingleAddOption}
+            showEtriersOption={showEtriersAddOption}
+            closeOnChangeKey={addDropdownCloseKey}
+          />
+        </div>
       </div>
     </div>
   );
