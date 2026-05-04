@@ -1,4 +1,3 @@
-// src/components/ferraillage/Edit/windows/NiveauModalWindow.tsx
 import { createPortal } from "react-dom";
 import { CiCircleRemove } from "react-icons/ci";
 import type { MouseEvent as ReactMouseEvent } from "react";
@@ -63,7 +62,8 @@ export default function NiveauModalWindow({
               onClick={onClose}
               aria-label="Fermer"
               title="Fermer"
-              className="p-1 text-gray-700 hover:cursor-pointer hover:text-red-600 hover:scale-120 transition-transform"
+              disabled={submitting}
+              className="p-1 text-gray-700 hover:cursor-pointer hover:text-red-600 hover:scale-120 transition-transform disabled:opacity-50 disabled:hover:scale-100"
             >
               <CiCircleRemove size={26} />
             </button>
@@ -93,8 +93,10 @@ export default function NiveauModalWindow({
               </div>
             </div>
 
+            {errorMessage ? <div className="mt-4 text-sm text-red-600">{errorMessage}</div> : null}
+
             <div className="mt-6 border-t border-gray-200 pt-3">
-              <div className="text-sm font-semibold text-gray-700 mb-4">Diamètres actifs</div>
+              <div className="text-sm font-semibold text-gray-700 mb-4">Diametres actifs</div>
 
               <div className="max-h-72 overflow-auto pr-1" aria-invalid={mmsInvalid}>
                 <div className="grid grid-cols-5 gap-2 items-start">
@@ -120,8 +122,6 @@ export default function NiveauModalWindow({
             </div>
           </div>
 
-          {errorMessage ? <div className="px-5 pb-1 text-sm text-red-600">{errorMessage}</div> : null}
-
           <div
             className="
               rounded-b-xl bg-gray-50
@@ -142,10 +142,10 @@ export default function NiveauModalWindow({
                 type="button"
                 className="stepper__nav"
                 onClick={onSubmit}
-                disabled={submitting || !canSubmit}
-                aria-disabled={submitting || !canSubmit}
+                disabled={!canSubmit || submitting}
+                aria-disabled={!canSubmit || submitting}
               >
-                {submitLabel}
+                {submitting ? "Enregistrement..." : submitLabel}
               </button>
             </div>
           </div>

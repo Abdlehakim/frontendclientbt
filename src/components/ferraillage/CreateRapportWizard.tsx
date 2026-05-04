@@ -39,7 +39,7 @@ function uniqSorted(nums: number[]) {
 
 const INITIAL_DATA: WizardData = {
   chantierName: "",
-  sousTraitant: "",
+  responsable: "",
   acierType: "F500",
   selectedMms: [],
 };

@@ -1,6 +1,15 @@
 import { useEffect, useState, type RefObject } from "react";
-import type { PortalPos } from "./types";
-import { clamp } from "./utils";
+import { clamp } from "../utils";
+
+type PortalPos =
+  | null
+  | {
+      left: number;
+      width: number;
+      top?: number;
+      bottom?: number;
+      maxHeight: number;
+    };
 
 export function usePortalPos(open: boolean, btnRef: RefObject<HTMLElement | null>) {
   const [pos, setPos] = useState<PortalPos>(null);

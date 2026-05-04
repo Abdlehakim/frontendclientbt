@@ -1,42 +1,16 @@
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { IoIosArrowDropdown, IoIosArrowDropup } from "react-icons/io";
-import { useEffect, useRef, useState } from "react";
-import type { FormeState } from "../types";
-import { usePortalPos } from "../utils";
+import { usePortalPos } from "../../hooks/usePortalPos";
+import { CheckIcon } from "../../icons";
 
-type CadreForme = Exclude<FormeState["forme"], "BARRE">;
-
-function labelCadreForme(v: CadreForme) {
-  if (v === "CARRE") return "Carré";
-  if (v === "CIRCULAIRE") return "Circulaire";
-  return "Rectangulaire";
-}
-
-function CheckIcon() {
-  return (
-    <svg
-      stroke="currentColor"
-      fill="none"
-      strokeWidth="2"
-      viewBox="0 0 24 24"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      height="12"
-      width="12"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <polyline points="20 6 9 17 4 12"></polyline>
-    </svg>
-  );
-}
-
-export default function FormeDropdown({
+export default function DesignationDropdown({
   value,
   onChange,
   label,
 }: {
-  value: CadreForme;
-  onChange: (v: CadreForme) => void;
+  value: string;
+  onChange: (v: string) => void;
   label: string;
 }) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -46,7 +20,29 @@ export default function FormeDropdown({
   const [open, setOpen] = useState(false);
   const pos = usePortalPos(open, btnRef);
 
-  const OPTIONS: CadreForme[] = ["CARRE", "CIRCULAIRE", "RECTANGULAIRE"];
+const DEFAULTS = useMemo(
+  () => [
+    "Poteaux",
+    "Longrines",
+    "Semelles",
+    "Raidisseurs",
+    "Linteaux",
+    "Chaînages",
+    "Poutres",
+    "Nervures",
+    "Dalle pleine",
+    "Chape",
+    "Radier",
+    "Voile",
+  ],
+  [],
+);
+
+  const OPTIONS = useMemo(() => {
+    const v = (value ?? "").trim();
+    if (v && !DEFAULTS.includes(v)) return [v, ...DEFAULTS];
+    return DEFAULTS;
+  }, [DEFAULTS, value]);
 
   useEffect(() => {
     if (!open) return;
@@ -73,6 +69,8 @@ export default function FormeDropdown({
     };
   }, [open]);
 
+  const shown = (value ?? "").trim() ? (value ?? "").trim() : "Choisir...";
+
   return (
     <div className="flex flex-col" ref={wrapRef}>
       <label className="text-sm font-semibold text-gray-700 mb-1">{label}</label>
@@ -85,7 +83,7 @@ export default function FormeDropdown({
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="truncate">{labelCadreForme(value)}</span>
+        <span className="truncate">{shown}</span>
         {open ? <IoIosArrowDropup className="shrink-0" size={18} /> : <IoIosArrowDropdown className="shrink-0" size={18} />}
       </button>
 
@@ -107,7 +105,7 @@ export default function FormeDropdown({
               }}
             >
               {OPTIONS.map((opt) => {
-                const selected = opt === value;
+                const selected = (opt ?? "").trim() === (value ?? "").trim();
                 return (
                   <button
                     key={opt}
@@ -132,7 +130,7 @@ export default function FormeDropdown({
                     >
                       <CheckIcon />
                     </span>
-                    <span className="truncate">{labelCadreForme(opt)}</span>
+                    <span className="truncate">{opt}</span>
                   </button>
                 );
               })}

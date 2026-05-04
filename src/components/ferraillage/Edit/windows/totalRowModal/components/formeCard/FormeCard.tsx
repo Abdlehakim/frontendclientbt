@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { CiCircleRemove } from "react-icons/ci";
-import type { FormeState } from "../types";
-import { parseNonNegativeInt, parseNonNegativeNumber } from "../utils";
-import DiametreDropdown from "./DiametreDropdown";
+import type { FormeState } from "../../types";
+import { parseNonNegativeInt, parseNonNegativeNumber } from "../../utils";
+import DiametreDropdown from "../common/DiametreDropdown";
 import FormeDropdown from "./FormeDropdown";
 
 type CadreForme = Exclude<FormeState["forme"], "BARRE">;
@@ -13,7 +13,21 @@ function fmt(n: number) {
   return String(r).replace(".", ",");
 }
 
-function computeCadrePerimetre(forme: CadreForme, longueurStr: string, largeurStr: string, diamCercleStr: string, ancrageStr: string) {
+function asString(value: unknown, fallback = "0") {
+  return typeof value === "string" ? value : fallback;
+}
+
+function isCadreForme(value: FormeState["forme"]): value is CadreForme {
+  return value === "CARRE" || value === "CIRCULAIRE" || value === "RECTANGULAIRE";
+}
+
+function computeCadrePerimetre(
+  forme: CadreForme,
+  longueurStr: string,
+  largeurStr: string,
+  diamCercleStr: string,
+  ancrageStr: string,
+) {
   const L = parseNonNegativeNumber(longueurStr);
   const W = parseNonNegativeNumber(largeurStr);
   const D = parseNonNegativeNumber(diamCercleStr);
@@ -61,7 +75,13 @@ function computeCadreNTFromNbCadre(nbStr: string, nbCadreStr: string) {
   return nb * nbCadre;
 }
 
-function computeCadreNT(mode: CadreCalcMode, nbStr: string, hauteurStr: string, espacementStr: string, nbCadreStr: string) {
+function computeCadreNT(
+  mode: CadreCalcMode,
+  nbStr: string,
+  hauteurStr: string,
+  espacementStr: string,
+  nbCadreStr: string,
+) {
   if (mode === "NB_CADRE") return computeCadreNTFromNbCadre(nbStr, nbCadreStr);
   return computeCadreNTFromEspacement(nbStr, hauteurStr, espacementStr);
 }
@@ -94,36 +114,61 @@ export default function FormeCard({
   onSetForme: (v: FormeState["forme"]) => void;
   onPatch: (patch: Partial<FormeState>) => void;
 }) {
-  const cadreForme = x.forme as CadreForme;
+  const fallbackDiametreValue = useMemo(() => safeMms[0] ?? 6, [safeMms]);
+
+  const cadreForme: CadreForme = isCadreForme(x.forme) ? x.forme : "CARRE";
   const cadreCalcMode: CadreCalcMode = x.cadreCalcMode === "NB_CADRE" ? "NB_CADRE" : "ESPACEMENT";
-  const nbCadreStr = x.nbCadreStr ?? "0";
+  const nbCadreStr = asString(x.nbCadreStr);
+  const cadreDiametreValue =
+    typeof x.diametreMm === "number" && Number.isFinite(x.diametreMm)
+      ? x.diametreMm
+      : fallbackDiametreValue;
+
+  const longueurStr = asString(x.longueurStr);
+  const largeurStr = asString(x.largeurStr);
+  const rayonStr = asString(x.rayonStr);
+  const ancrageStr = asString(x.ancrageStr);
+  const espacementStr = asString(x.espacementStr);
 
   const perimetreAuto = useMemo(() => {
-    return computeCadrePerimetre(cadreForme, x.longueurStr, x.largeurStr, x.rayonStr, x.ancrageStr);
-  }, [cadreForme, x.longueurStr, x.largeurStr, x.rayonStr, x.ancrageStr]);
+    return computeCadrePerimetre(cadreForme, longueurStr, largeurStr, rayonStr, ancrageStr);
+  }, [cadreForme, longueurStr, largeurStr, rayonStr, ancrageStr]);
 
   const cadreNTAuto = useMemo(() => {
-    return computeCadreNT(cadreCalcMode, nbStr, hauteurStr, x.espacementStr, nbCadreStr);
-  }, [cadreCalcMode, nbStr, hauteurStr, x.espacementStr, nbCadreStr]);
+    return computeCadreNT(cadreCalcMode, nbStr, hauteurStr, espacementStr, nbCadreStr);
+  }, [cadreCalcMode, nbStr, hauteurStr, espacementStr, nbCadreStr]);
 
   const cadreQteAuto = useMemo(() => {
     return computeCadreQte(cadreNTAuto, perimetreAuto);
   }, [cadreNTAuto, perimetreAuto]);
 
-  const blueAutoStyle = { backgroundColor: "#EFF6FF", borderColor: "#3B82F6", color: "#1E40AF" } as const;
+  const blueAutoStyle = {
+    backgroundColor: "#EFF6FF",
+    borderColor: "#3B82F6",
+    color: "#1E40AF",
+  } as const;
 
   const ntCadreLabel =
-    cadreForme === "CARRE" ? "N.T.C. Carré" : cadreForme === "CIRCULAIRE" ? "N.T.C. Circulaire" : "N.T.C. Rectangulaire";
+    cadreForme === "CARRE"
+      ? "N.T.C. Carré"
+      : cadreForme === "CIRCULAIRE"
+        ? "N.T.C. Circulaire"
+        : "N.T.C. Rectangulaire";
 
-  const modeBtnBase =
-    "inline-flex items-center px-3 py-2 text-sm font-medium transition-colors";
+  const modeBtnBase = "inline-flex items-center px-3 py-2 text-sm font-medium transition-colors";
   const modeBtnActive = "text-emerald-800";
   const modeBtnInactive = "text-slate-600";
 
   return (
-    <div className={["h-100 md:col-span-4 rounded-lg min-h-12.5 border p-4", "border-slate-200 bg-slate-50/60"].join(" ")}>
+    <div
+      className={[
+        "h-120 md:col-span-4 rounded-lg min-h-12.5 border p-4",
+        "border-slate-200 bg-slate-50/60",
+      ].join(" ")}
+    >
       <div className="flex items-center justify-between mb-3">
         <div className="text-sm font-semibold text-slate-900">{cadreLabel}</div>
+
         <button
           type="button"
           className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-red-600 hover:cursor-pointer"
@@ -141,7 +186,12 @@ export default function FormeCard({
         </div>
 
         <div className="flex flex-col">
-          <DiametreDropdown label="Diamètre" mms={safeMms} value={x.diametreMm} onChange={(v) => onPatch({ diametreMm: v })} />
+          <DiametreDropdown
+            label="Diamètre"
+            mms={safeMms}
+            value={cadreDiametreValue}
+            onChange={(v) => onPatch({ diametreMm: v })}
+          />
         </div>
 
         {cadreForme === "CARRE" ? (
@@ -150,7 +200,7 @@ export default function FormeCard({
               <label className="text-sm font-semibold text-gray-700 mb-1">Longueur (m)</label>
               <input
                 className={inputClass}
-                value={x.longueurStr}
+                value={longueurStr}
                 onChange={(e) => onPatch({ longueurStr: e.target.value })}
                 placeholder="Ex: 3,5"
                 inputMode="decimal"
@@ -161,7 +211,7 @@ export default function FormeCard({
               <label className="text-sm font-semibold text-gray-700 mb-1">Ancrage (m)</label>
               <input
                 className={inputClass}
-                value={x.ancrageStr}
+                value={ancrageStr}
                 onChange={(e) => onPatch({ ancrageStr: e.target.value })}
                 placeholder="Ex: 0,4"
                 inputMode="decimal"
@@ -173,10 +223,12 @@ export default function FormeCard({
         {cadreForme === "CIRCULAIRE" ? (
           <>
             <div className="flex flex-col">
-              <label className="text-sm font-semibold text-gray-700 mb-1">Diamètre du cercle (m)</label>
+              <label className="text-sm font-semibold text-gray-700 mb-1">
+                Diamètre du cercle (m)
+              </label>
               <input
                 className={inputClass}
-                value={x.rayonStr}
+                value={rayonStr}
                 onChange={(e) => onPatch({ rayonStr: e.target.value })}
                 placeholder="Ex: 0,25"
                 inputMode="decimal"
@@ -187,7 +239,7 @@ export default function FormeCard({
               <label className="text-sm font-semibold text-gray-700 mb-1">Ancrage (m)</label>
               <input
                 className={inputClass}
-                value={x.ancrageStr}
+                value={ancrageStr}
                 onChange={(e) => onPatch({ ancrageStr: e.target.value })}
                 placeholder="Ex: 0,4"
                 inputMode="decimal"
@@ -202,7 +254,7 @@ export default function FormeCard({
               <label className="text-sm font-semibold text-gray-700 mb-1">Longueur (m)</label>
               <input
                 className={inputClass}
-                value={x.longueurStr}
+                value={longueurStr}
                 onChange={(e) => onPatch({ longueurStr: e.target.value })}
                 placeholder="Ex: 3,5"
                 inputMode="decimal"
@@ -213,7 +265,7 @@ export default function FormeCard({
               <label className="text-sm font-semibold text-gray-700 mb-1">Largeur (m)</label>
               <input
                 className={inputClass}
-                value={x.largeurStr}
+                value={largeurStr}
                 onChange={(e) => onPatch({ largeurStr: e.target.value })}
                 placeholder="Ex: 2,2"
                 inputMode="decimal"
@@ -224,7 +276,7 @@ export default function FormeCard({
               <label className="text-sm font-semibold text-gray-700 mb-1">Ancrage</label>
               <input
                 className={inputClass}
-                value={x.ancrageStr}
+                value={ancrageStr}
                 onChange={(e) => onPatch({ ancrageStr: e.target.value })}
                 placeholder="Ex: 0,4"
                 inputMode="decimal"
@@ -291,7 +343,13 @@ export default function FormeCard({
 
         <div className="flex flex-col">
           <label className="text-sm font-semibold text-gray-700 mb-1">Périmètre (auto)</label>
-          <input className={[inputClass, "font-semibold"].join(" ")} value={fmt(perimetreAuto)} readOnly aria-readonly="true" style={blueAutoStyle} />
+          <input
+            className={[inputClass, "font-semibold"].join(" ")}
+            value={fmt(perimetreAuto)}
+            readOnly
+            aria-readonly="true"
+            style={blueAutoStyle}
+          />
         </div>
 
         <div className="flex flex-col">
@@ -300,7 +358,7 @@ export default function FormeCard({
           </label>
           <input
             className={inputClass}
-            value={cadreCalcMode === "NB_CADRE" ? nbCadreStr : x.espacementStr}
+            value={cadreCalcMode === "NB_CADRE" ? nbCadreStr : espacementStr}
             onChange={(e) =>
               cadreCalcMode === "NB_CADRE"
                 ? onPatch({ nbCadreStr: e.target.value })
@@ -314,12 +372,24 @@ export default function FormeCard({
         <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col">
             <label className="text-sm font-semibold text-gray-700 mb-1">Quantités de Fer (m)</label>
-            <input className={[inputClass, "font-semibold"].join(" ")} value={fmt(cadreQteAuto)} readOnly aria-readonly="true" style={blueAutoStyle} />
+            <input
+              className={[inputClass, "font-semibold"].join(" ")}
+              value={fmt(cadreQteAuto)}
+              readOnly
+              aria-readonly="true"
+              style={blueAutoStyle}
+            />
           </div>
 
           <div className="flex flex-col">
             <label className="text-sm font-semibold text-gray-700 mb-1">{ntCadreLabel}</label>
-            <input className={[inputClass, "font-semibold"].join(" ")} value={fmt(cadreNTAuto)} readOnly aria-readonly="true" style={blueAutoStyle} />
+            <input
+              className={[inputClass, "font-semibold"].join(" ")}
+              value={fmt(cadreNTAuto)}
+              readOnly
+              aria-readonly="true"
+              style={blueAutoStyle}
+            />
           </div>
         </div>
       </div>

@@ -1,18 +1,25 @@
-import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { IoIosArrowDropdown, IoIosArrowDropup } from "react-icons/io";
-import { usePortalPos } from "../usePortalPos";
-import { CheckIcon } from "../icons";
+import { useEffect, useRef, useState } from "react";
+import type { FormeState } from "../../types";
+import { CheckIcon } from "../../icons";
+import { usePortalPos } from "../../hooks/usePortalPos";
 
-export default function DiametreDropdown({
-  mms,
+type CadreForme = Exclude<FormeState["forme"], "BARRE">;
+
+function labelCadreForme(v: CadreForme) {
+  if (v === "CARRE") return "Carré";
+  if (v === "CIRCULAIRE") return "Circulaire";
+  return "Rectangulaire";
+}
+
+export default function FormeDropdown({
   value,
   onChange,
   label,
 }: {
-  mms: number[];
-  value: number;
-  onChange: (v: number) => void;
+  value: CadreForme;
+  onChange: (v: CadreForme) => void;
   label: string;
 }) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -21,6 +28,8 @@ export default function DiametreDropdown({
 
   const [open, setOpen] = useState(false);
   const pos = usePortalPos(open, btnRef);
+
+  const OPTIONS: CadreForme[] = ["CARRE", "CIRCULAIRE", "RECTANGULAIRE"];
 
   useEffect(() => {
     if (!open) return;
@@ -59,7 +68,7 @@ export default function DiametreDropdown({
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="truncate">{`Fer de ${value}`}</span>
+        <span className="truncate">{labelCadreForme(value)}</span>
         {open ? <IoIosArrowDropup className="shrink-0" size={18} /> : <IoIosArrowDropdown className="shrink-0" size={18} />}
       </button>
 
@@ -80,14 +89,14 @@ export default function DiametreDropdown({
                 zIndex: 9999,
               }}
             >
-              {mms.map((mm) => {
-                const selected = mm === value;
+              {OPTIONS.map((opt) => {
+                const selected = opt === value;
                 return (
                   <button
-                    key={mm}
+                    key={opt}
                     type="button"
                     onClick={() => {
-                      onChange(mm);
+                      onChange(opt);
                       setOpen(false);
                     }}
                     className={[
@@ -106,7 +115,7 @@ export default function DiametreDropdown({
                     >
                       <CheckIcon />
                     </span>
-                    <span className="truncate">{`Fer de ${mm}`}</span>
+                    <span className="truncate">{labelCadreForme(opt)}</span>
                   </button>
                 );
               })}

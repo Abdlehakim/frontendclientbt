@@ -1,109 +1,18 @@
-import { useEffect, useState, type RefObject } from "react";
 import type { FormeState } from "./types";
 
 export function clamp(n: number, a: number, b: number) {
   return Math.min(b, Math.max(a, n));
 }
 
-function coerceNumberish(value: unknown) {
-  if (typeof value === "number") return value;
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    if (!trimmed) return Number.NaN;
-    return Number(trimmed.replace(/\s+/g, "").replace(",", "."));
-  }
-  if (typeof value === "bigint") return Number(value);
-  if (typeof value === "boolean") return value ? 1 : 0;
-  return Number.NaN;
+export function safeNumber(value: unknown) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
 }
 
-export function safeNumber(value: unknown, fallback = 0) {
-  const n = coerceNumberish(value);
-  return Number.isFinite(n) ? n : fallback;
-}
-
-export function safeDivide(numerator: unknown, denominator: unknown, fallback = 0) {
-  const n = safeNumber(numerator, Number.NaN);
-  const d = safeNumber(denominator, Number.NaN);
-  if (!Number.isFinite(n) || !Number.isFinite(d) || d === 0) return fallback;
-  const result = n / d;
-  return Number.isFinite(result) ? result : fallback;
-}
-
-export type PortalPos =
-  | null
-  | {
-      left: number;
-      width: number;
-      top?: number;
-      bottom?: number;
-      maxHeight: number;
-    };
-
-export function usePortalPos(open: boolean, btnRef: RefObject<HTMLElement | null>) {
-  const [pos, setPos] = useState<PortalPos>(null);
-
-  useEffect(() => {
-    if (!open) return;
-
-    let raf = 0;
-
-    const calc = () => {
-      const btn = btnRef.current;
-      if (!btn) {
-        setPos(null);
-        return;
-      }
-
-      const r = btn.getBoundingClientRect();
-      const margin = 8;
-
-      const below = window.innerHeight - r.bottom - margin;
-      const above = r.top - margin;
-
-      const wantUp = below < 220 && above > below;
-      const maxHeight = Math.max(120, Math.min(320, wantUp ? above : below));
-
-      const rawLeft = r.left;
-      const maxLeft = Math.max(margin, window.innerWidth - r.width - margin);
-      const left = clamp(rawLeft, margin, maxLeft);
-      const width = Math.min(r.width, window.innerWidth - margin * 2);
-
-      if (wantUp) {
-        setPos({
-          left,
-          width,
-          bottom: window.innerHeight - r.top + margin,
-          maxHeight,
-        });
-      } else {
-        setPos({
-          left,
-          width,
-          top: r.bottom + margin,
-          maxHeight,
-        });
-      }
-    };
-
-    const schedule = () => {
-      if (raf) cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(calc);
-    };
-
-    schedule();
-
-    window.addEventListener("resize", schedule);
-    window.addEventListener("scroll", schedule, true);
-
-    return () => {
-      if (raf) cancelAnimationFrame(raf);
-      window.removeEventListener("resize", schedule);
-      window.removeEventListener("scroll", schedule, true);
-    };
-  }, [open, btnRef]);
-
-  return pos;
+export function safeDivide(a: unknown, b: unknown) {
+  const denominator = Number(b);
+  if (!b || !Number.isFinite(denominator) || denominator === 0) return 0;
+  return safeNumber(a) / denominator;
 }
 
 export function parsePositiveNumber(raw: string) {

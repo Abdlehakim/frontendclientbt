@@ -1,38 +1,32 @@
-export type PortalPos =
-  | null
-  | {
-      left: number;
-      width: number;
-      top?: number;
-      bottom?: number;
-      maxHeight: number;
-    };
+export type FormeKind = "BARRE" | "CARRE" | "CIRCULAIRE" | "RECTANGULAIRE";
+export type RowForme = FormeKind;
 
-export type RowForme = "BARRE" | "CARRE" | "CIRCULAIRE" | "RECTANGULAIRE";
+export type ExtraBoxKind = "EPINGLE" | "ETRIERS";
+
+export type Card =
+  | { kind: "EXTRA"; id: string }
+  | { kind: "FORME"; id: string };
+
+export type CadreCalcMode = "ESPACEMENT" | "NB_CADRE";
+export type ExtraCalcMode = "ESPACEMENT" | "NB";
+
+export type SemelleRelation =
+  | "ab_equal_same_if"
+  | "ab_equal_diff_if"
+  | "ab_diff_same_if"
+  | "ab_diff_diff_if";
+
+export type SlabRelation =
+  | "ab_equal_same_if"
+  | "ab_equal_diff_if"
+  | "ab_diff_same_if"
+  | "ab_diff_diff_if";
 
 export type SlabCalcMethod = "SURFACE_TOTAL" | "SURFACE_TOTAL_PER_M2";
 
-export type SlabSpacingMode = "ESPACEMENT";
+export type SlabSpacingMode = "ESPACEMENT" | "NB_CADRE";
 
 export type SlabSpacingRelation = "EA_EQ_EB" | "EA_NE_EB";
-
-export type SlabRelation = "ab_equal_diff_if" | "ab_diff_same_if" | "ab_diff_diff_if";
-
-export type ExtraFormePayload = {
-  forme: "BARRE" | "CARRE" | "CIRCULAIRE" | "RECTANGULAIRE";
-  diametreMm: number;
-  barreCategorie?: string;
-  nBarre: number | null;
-  longueur: number | null;
-  largeur: number | null;
-  rayon: number | null;
-  ancrage: number | null;
-  attenteBarre: number | null;
-  perimetre: number | null;
-  espacement: number | null;
-};
-
-export type ExtraBoxKind = "EPINGLE" | "ETRIERS";
 
 export type ExtraBoxPayload = {
   kind: ExtraBoxKind;
@@ -44,52 +38,58 @@ export type ExtraBoxPayload = {
   espacement: number | null;
 };
 
-export type TotalRowModalPayload = {
-  designation: string;
-  typeName: string;
-  nb: number | null;
-  hauteur: number | null;
-  enrobage: number | null;
-
-  forme: "BARRE" | "CARRE" | "CIRCULAIRE" | "RECTANGULAIRE";
+export type ExtraBoxState = {
+  id: string;
+  kind: ExtraBoxKind;
   diametreMm: number;
-  barreCategorie?: string;
-
-  nBarre: number | null;
-  longueur: number | null;
-  largeur: number | null;
-  rayon: number | null;
-  ancrage: number | null;
-  attenteBarre: number | null;
-  perimetre: number | null;
-  espacement: number | null;
-
-  epingle?: number | null;
-  etriers?: number | null;
-
-  slabCalcMethod?: SlabCalcMethod | null;
-  slabSpacingMode?: SlabSpacingMode | null;
-  slabSpacingRelation?: SlabSpacingRelation | null;
-  slabRelation?: SlabRelation | null;
-  slabSurface?: number | null;
-  slabPerimetre?: number | null;
-  slabAncrageLineaire?: number | null;
-  slabEspacementA?: number | null;
-  slabEspacementB?: number | null;
-  slabDiametreAMm?: number | null;
-  slabDiametreBMm?: number | null;
-  slabLongueurA?: number | null;
-  slabLongueurB?: number | null;
-
-  extraFormes?: ExtraFormePayload[];
-  extraBoxes?: ExtraBoxPayload[];
+  valueStr: string;
+  longueurStr: string;
+  ancrageStr: string;
+  perimetreStr: string;
+  espacementStr: string;
+  extraCalcMode?: ExtraCalcMode;
+  nbExtraStr?: string;
 };
 
+export type ExtraFormePayload = {
+  forme: FormeKind;
+  diametreMm: number | null;
+  barreCategorie?: string;
+  nBarre?: number | null;
+  longueur?: number | null;
+  largeur?: number | null;
+  rayon?: number | null;
+  ancrage?: number | null;
+  attenteBarre?: number | null;
+  perimetre?: number | null;
+  espacement?: number | null;
+
+  slabCalcMethod?: SlabCalcMethod;
+  slabSurface?: number | null;
+  slabQtePerM2?: number | null;
+  slabPerimetre?: number | null;
+  slabAncrageLineaire?: number | null;
+
+  slabRelation?: SlabRelation;
+  slabSpacingMode?: SlabSpacingMode;
+  slabSpacingRelation?: SlabSpacingRelation;
+
+  slabLongueurA?: number | null;
+  slabLongueurB?: number | null;
+  slabDiametreAMm?: number | null;
+  slabDiametreBMm?: number | null;
+  slabNBarreA?: number | null;
+  slabNBarreB?: number | null;
+  slabEspacementA?: number | null;
+  slabEspacementB?: number | null;
+  slabNbCadreA?: number | null;
+  slabNbCadreB?: number | null;
+};
 
 export type FormeState = {
   id: string;
-  forme: "BARRE" | "CARRE" | "CIRCULAIRE" | "RECTANGULAIRE";
-  diametreMm: number;
+  forme: FormeKind;
+  diametreMm: number | null;
   barreCategorie?: string;
 
   nBarreStr: string;
@@ -101,21 +101,84 @@ export type FormeState = {
   perimetreStr: string;
   espacementStr: string;
 
-  cadreCalcMode?: "ESPACEMENT" | "NB_CADRE";
+  cadreCalcMode?: CadreCalcMode;
   nbCadreStr?: string;
+
+  semelleRelation?: SemelleRelation;
+  semelleLongueurAStr?: string;
+  semelleLongueurBStr?: string;
+  semelleNBarreAStr?: string;
+  semelleNBarreBStr?: string;
+  semelleDiametreAMm?: number | null;
+  semelleDiametreBMm?: number | null;
+
+  slabCalcMethod?: SlabCalcMethod;
+  slabSurfaceStr?: string;
+  slabQtePerM2Str?: string;
+  slabPerimetreStr?: string;
+  slabAncrageLineaireStr?: string;
+
+  slabRelation?: SlabRelation;
+  slabSpacingMode?: SlabSpacingMode;
+  slabSpacingRelation?: SlabSpacingRelation;
+
+  slabLongueurAStr?: string;
+  slabLongueurBStr?: string;
+  slabDiametreAMm?: number | null;
+  slabDiametreBMm?: number | null;
+  slabNBarreAStr?: string;
+  slabNBarreBStr?: string;
+  slabEspacementAStr?: string;
+  slabEspacementBStr?: string;
+  slabNbCadreAStr?: string;
+  slabNbCadreBStr?: string;
 };
 
-export type ExtraBoxState = {
-  id: string;
-  kind: ExtraBoxKind;
-  diametreMm: number;
-  valueStr: string;
-  longueurStr: string;
-  ancrageStr: string;
-  perimetreStr: string;
-  espacementStr: string;
-  extraCalcMode?: "ESPACEMENT" | "NB";
-  nbExtraStr?: string;
-};
+export type TotalRowModalPayload = {
+  designation: string;
+  typeName?: string;
 
-export type Card = { kind: "FORME"; id: string } | { kind: "EXTRA"; id: string };
+  nb?: number | null;
+  hauteur?: number | null;
+  enrobage?: number | null;
+
+  forme?: FormeKind;
+  diametreMm?: number | null;
+  barreCategorie?: string;
+
+  nBarre?: number | null;
+  longueur?: number | null;
+  largeur?: number | null;
+  rayon?: number | null;
+  ancrage?: number | null;
+  attenteBarre?: number | null;
+  perimetre?: number | null;
+  espacement?: number | null;
+
+  epingle?: number | null;
+  etriers?: number | null;
+
+  extraFormes?: ExtraFormePayload[];
+  extraBoxes?: ExtraBoxPayload[];
+
+  slabCalcMethod?: SlabCalcMethod;
+  slabSurface?: number | null;
+  slabQtePerM2?: number | null;
+  slabPerimetre?: number | null;
+  slabAncrageLineaire?: number | null;
+
+  slabRelation?: SlabRelation;
+  slabSpacingMode?: SlabSpacingMode;
+  slabSpacingRelation?: SlabSpacingRelation;
+
+  slabLongueurA?: number | null;
+  slabLongueurB?: number | null;
+  slabDiametreAMm?: number | null;
+  slabDiametreBMm?: number | null;
+  slabNBarreA?: number | null;
+  slabNBarreB?: number | null;
+  slabEspacementA?: number | null;
+  slabEspacementB?: number | null;
+  slabNbCadreA?: number | null;
+  slabNbCadreB?: number | null;
+};

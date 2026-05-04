@@ -1,0 +1,40 @@
+import { parseNonNegativeInt, parseNonNegativeNumber } from "../utils";
+
+export function computeBarreNT(nbStr: string, nBarreStr: string) {
+  const NB = parseNonNegativeInt(nbStr);
+  const N = parseNonNegativeInt(nBarreStr);
+  if (NB == null && N == null) return 0;
+  return (NB ?? 0) * (N ?? 0);
+}
+
+export function computeBarreQteStandard(
+  nbStr: string,
+  nBarreStr: string,
+  hauteurStr: string,
+  attenteStr: string,
+  ancrageStr: string,
+) {
+  const NB = parseNonNegativeInt(nbStr);
+  const N = parseNonNegativeInt(nBarreStr);
+  const H = parseNonNegativeNumber(hauteurStr);
+  const AT = parseNonNegativeNumber(attenteStr);
+  const A = parseNonNegativeNumber(ancrageStr);
+
+  if (NB == null && N == null && H == null && AT == null && A == null) return 0;
+  return (NB ?? 0) * ((N ?? 0) * ((H ?? 0) + (AT ?? 0) + (A ?? 0)));
+}
+
+export function computeBarreQteLongueur(
+  nbStr: string,
+  nBarreStr: string,
+  longueurBarreStr: string,
+  ancrageStr: string,
+) {
+  const NB = parseNonNegativeInt(nbStr);
+  const N = parseNonNegativeInt(nBarreStr);
+  const L = parseNonNegativeNumber(longueurBarreStr);
+  const A = parseNonNegativeNumber(ancrageStr);
+
+  if (NB == null && N == null && L == null && A == null) return 0;
+  return (NB ?? 0) * ((N ?? 0) * ((L ?? 0) + (A ?? 0)));
+}

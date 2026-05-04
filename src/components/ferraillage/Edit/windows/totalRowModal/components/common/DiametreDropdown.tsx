@@ -1,16 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { IoIosArrowDropdown, IoIosArrowDropup } from "react-icons/io";
-import { usePortalPos } from "../usePortalPos";
-import { CheckIcon } from "../icons";
+import { usePortalPos } from "../../hooks/usePortalPos";
+import { CheckIcon } from "../../icons";
 
-export default function DesignationDropdown({
+export default function DiametreDropdown({
+  mms,
   value,
   onChange,
   label,
 }: {
-  value: string;
-  onChange: (v: string) => void;
+  mms: number[];
+  value: number;
+  onChange: (v: number) => void;
   label: string;
 }) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -19,17 +21,6 @@ export default function DesignationDropdown({
 
   const [open, setOpen] = useState(false);
   const pos = usePortalPos(open, btnRef);
-
-  const DEFAULTS = useMemo(
-    () => ["Poteaux","Longrines", "Raidisseurs", "Linteaux", "Chaînages", "Poutres", "Nervures"],
-    [],
-  );
-
-  const OPTIONS = useMemo(() => {
-    const v = (value ?? "").trim();
-    if (v && !DEFAULTS.includes(v)) return [v, ...DEFAULTS];
-    return DEFAULTS;
-  }, [DEFAULTS, value]);
 
   useEffect(() => {
     if (!open) return;
@@ -56,8 +47,6 @@ export default function DesignationDropdown({
     };
   }, [open]);
 
-  const shown = (value ?? "").trim() ? (value ?? "").trim() : "Choisir...";
-
   return (
     <div className="flex flex-col" ref={wrapRef}>
       <label className="text-sm font-semibold text-gray-700 mb-1">{label}</label>
@@ -70,7 +59,7 @@ export default function DesignationDropdown({
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="truncate">{shown}</span>
+        <span className="truncate">{`Fer ${value}`}</span>
         {open ? <IoIosArrowDropup className="shrink-0" size={18} /> : <IoIosArrowDropdown className="shrink-0" size={18} />}
       </button>
 
@@ -91,14 +80,14 @@ export default function DesignationDropdown({
                 zIndex: 9999,
               }}
             >
-              {OPTIONS.map((opt) => {
-                const selected = (opt ?? "").trim() === (value ?? "").trim();
+              {mms.map((mm) => {
+                const selected = mm === value;
                 return (
                   <button
-                    key={opt}
+                    key={mm}
                     type="button"
                     onClick={() => {
-                      onChange(opt);
+                      onChange(mm);
                       setOpen(false);
                     }}
                     className={[
@@ -117,7 +106,7 @@ export default function DesignationDropdown({
                     >
                       <CheckIcon />
                     </span>
-                    <span className="truncate">{opt}</span>
+                    <span className="truncate">{`Fer ${mm}`}</span>
                   </button>
                 );
               })}

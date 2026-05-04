@@ -65,7 +65,7 @@ export default function TablePagination({ currentPage, totalPages, onPageChange 
         disabled={prevDisabled}
         onClick={() => goTo(safeCurrent - 1)}
         className={`flex items-center gap-1 ${
-          prevDisabled ? "opacity-20 cursor-not-allowed" : "text-(--primary) hover:opacity-90"
+          prevDisabled ? "opacity-20 " : "text-(--primary) hover:opacity-90"
         }`}
       >
         <FaArrowLeft />
@@ -96,7 +96,7 @@ export default function TablePagination({ currentPage, totalPages, onPageChange 
         disabled={nextDisabled}
         onClick={() => goTo(safeCurrent + 1)}
         className={`flex items-center gap-1 ${
-          nextDisabled ? "opacity-20 cursor-not-allowed" : "text-(--primary) hover:opacity-90"
+          nextDisabled ? "opacity-20 " : "text-(--primary) hover:opacity-90"
         }`}
       >
         <span className="text-xs font-normal">suivant</span>

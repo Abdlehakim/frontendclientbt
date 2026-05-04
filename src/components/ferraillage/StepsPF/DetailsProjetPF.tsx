@@ -120,7 +120,7 @@ export default function DetailsProjetPF({ data, setData }: Props) {
     <div className="flex flex-col gap-4">
       <div className="text-sm font-semibold text-gray-800">Informations projet</div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="flex flex-col">
           <label className="text-sm font-semibold text-gray-700 mb-1">Chantier</label>
           <input
@@ -131,9 +131,19 @@ export default function DetailsProjetPF({ data, setData }: Props) {
           />
         </div>
 
+        <div className="flex flex-col">
+          <label className="text-sm font-semibold text-gray-700 mb-1">Responsable</label>
+          <input
+            className={inputClass}
+            value={data.responsable}
+            onChange={(e) => setData((p) => ({ ...p, responsable: e.target.value }))}
+            placeholder="Ex: SIOUD "
+          />
+        </div>
+
         <AcierDropdown value={data.acierType} onChange={(v) => setData((p) => ({ ...p, acierType: v }))} />
 
-        <div className="flex flex-col md:col-span-2">
+        <div className="flex flex-col md:col-span-3">
           <label className="text-sm font-semibold text-gray-700 mb-1">Note</label>
           <textarea
             className={textareaClass}

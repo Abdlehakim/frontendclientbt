@@ -3,11 +3,22 @@ import React, { useEffect, useRef, useState } from "react";
 import { FaTrashAlt } from "react-icons/fa";
 import { LuPlus } from "react-icons/lu";
 import { IoIosArrowDropdown, IoIosArrowDropup } from "react-icons/io";
-import type { NiveauRow, ProjectWizardData } from "../CreateProjetWizard";
+
+type NiveauRow = {
+  id: string;
+  name: string;
+  note: string;
+  selectedMms: number[];
+  sousTraitants: string[];
+};
+
+type ProjectNiveauxData = {
+  niveaux: NiveauRow[];
+};
 
 type Props = {
-  data: ProjectWizardData;
-  setData: React.Dispatch<React.SetStateAction<ProjectWizardData>>;
+  data: ProjectNiveauxData;
+  setData: React.Dispatch<React.SetStateAction<ProjectNiveauxData>>;
 };
 
 const STANDARD_MMS = [6, 8, 10, 12, 14, 16, 20, 25, 32, 40, 50] as const;

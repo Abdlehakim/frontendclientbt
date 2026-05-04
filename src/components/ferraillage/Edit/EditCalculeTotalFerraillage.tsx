@@ -21,7 +21,7 @@ import {
   computeSlabSurfacePerM2SpacingMetrics,
   computeSlabSurfacePerM2SplitMetrics,
 } from "./windows/totalRowModal/calculations/slabCalculations";
-import { isTotalRowModalPayload, normalizeSlabSurfacePerM2Relation } from "./windows/totalRowModal/state/guards";
+import { normalizeSlabSurfacePerM2Relation } from "./windows/totalRowModal/state/guards";
 import { safeDivide, safeNumber } from "./windows/totalRowModal/utils";
 
 type TotalRow = {
@@ -201,33 +201,30 @@ function computeSlabSpacingQtyEntriesFromPayload(
   fallbackDia: number,
   isSlabSurfacePerM2SpacingDesignation: boolean,
 ) {
-  const totalRowPayload = isTotalRowModalPayload(payload) ? payload : null;
-
   if (
     isSlabSurfacePerM2SpacingDesignation &&
-    totalRowPayload &&
-    totalRowPayload.slabCalcMethod === "SURFACE_TOTAL_PER_M2" &&
-    totalRowPayload.slabSpacingMode === "ESPACEMENT" &&
-    (totalRowPayload.slabSpacingRelation === "EA_EQ_EB" || totalRowPayload.slabSpacingRelation === "EA_NE_EB")
+    payload.slabCalcMethod === "SURFACE_TOTAL_PER_M2" &&
+    payload.slabSpacingMode === "ESPACEMENT" &&
+    (payload.slabSpacingRelation === "EA_EQ_EB" || payload.slabSpacingRelation === "EA_NE_EB")
   ) {
     const dallePleinePerM2Metrics = computeSlabSurfacePerM2SpacingMetrics({
-      surfaceStr: String(totalRowPayload.slabSurface ?? 0),
-      perimetreStr: String(totalRowPayload.slabPerimetre ?? 0),
-      ancrageLineaireStr: String(totalRowPayload.slabAncrageLineaire ?? 0),
-      spacingRelation: totalRowPayload.slabSpacingRelation,
-      spacingAStr: String(totalRowPayload.slabEspacementA ?? 0),
-      spacingBStr: String(totalRowPayload.slabEspacementB ?? 0),
+      surfaceStr: String(payload.slabSurface ?? 0),
+      perimetreStr: String(payload.slabPerimetre ?? 0),
+      ancrageLineaireStr: String(payload.slabAncrageLineaire ?? 0),
+      spacingRelation: payload.slabSpacingRelation,
+      spacingAStr: String(payload.slabEspacementA ?? 0),
+      spacingBStr: String(payload.slabEspacementB ?? 0),
     });
-    const dallePleineRelation = normalizeSlabSurfacePerM2Relation(totalRowPayload.slabRelation);
+    const dallePleineRelation = normalizeSlabSurfacePerM2Relation(payload.slabRelation);
 
     if (dallePleineRelation === "ab_equal_diff_if") {
       const diaA =
-        typeof totalRowPayload.slabDiametreAMm === "number" && Number.isFinite(totalRowPayload.slabDiametreAMm)
-          ? totalRowPayload.slabDiametreAMm
+        typeof payload.slabDiametreAMm === "number" && Number.isFinite(payload.slabDiametreAMm)
+          ? payload.slabDiametreAMm
           : fallbackDia;
       const diaB =
-        typeof totalRowPayload.slabDiametreBMm === "number" && Number.isFinite(totalRowPayload.slabDiametreBMm)
-          ? totalRowPayload.slabDiametreBMm
+        typeof payload.slabDiametreBMm === "number" && Number.isFinite(payload.slabDiametreBMm)
+          ? payload.slabDiametreBMm
           : fallbackDia;
       const splitMetrics = computeSlabSurfacePerM2SplitMetrics({
         qA: dallePleinePerM2Metrics.qA,
@@ -253,39 +250,37 @@ function computeSlabSpacingQtyEntriesFromPayload(
   }
 
   if (
-    !totalRowPayload ||
-    totalRowPayload.slabCalcMethod !== "SURFACE_TOTAL" ||
-    totalRowPayload.slabSpacingMode !== "ESPACEMENT" ||
-    (totalRowPayload.slabSpacingRelation !== "EA_EQ_EB" && totalRowPayload.slabSpacingRelation !== "EA_NE_EB")
+    payload.slabCalcMethod !== "SURFACE_TOTAL" ||
+    payload.slabSpacingMode !== "ESPACEMENT" ||
+    (payload.slabSpacingRelation !== "EA_EQ_EB" && payload.slabSpacingRelation !== "EA_NE_EB")
   ) {
     return null;
   }
 
-  const longueurA = totalRowPayload.slabLongueurA ?? 0;
-  const longueurB = totalRowPayload.slabLongueurB ?? 0;
-  const espacementA = totalRowPayload.slabEspacementA ?? 0;
+  const longueurA = payload.slabLongueurA ?? 0;
+  const longueurB = payload.slabLongueurB ?? 0;
+  const espacementA = payload.slabEspacementA ?? 0;
   const espacementB =
-    totalRowPayload.slabSpacingRelation === "EA_NE_EB" ? totalRowPayload.slabEspacementB ?? 0 : espacementA;
-  const ancrage = totalRowPayload.ancrage ?? 0;
-  const slabRelation = normalizeSlabSurfacePerM2Relation(totalRowPayload.slabRelation);
+    payload.slabSpacingRelation === "EA_NE_EB" ? payload.slabEspacementB ?? 0 : espacementA;
+  const ancrage = payload.ancrage ?? 0;
 
   const ntA = espacementA > 0 ? safeDivide(longueurA, espacementA) : 0;
   const ntB = espacementB > 0 ? safeDivide(longueurB, espacementB) : 0;
   const qtyA = safeNumber(parentNb * ntA * (longueurB + ancrage));
   const qtyB = safeNumber(parentNb * ntB * (longueurA + ancrage));
 
-  if (slabRelation === "ab_diff_same_if") {
+  if (payload.slabRelation === "ab_diff_same_if") {
     return [{ dia: fallbackDia, qtyM: safeNumber(qtyA + qtyB) }];
   }
 
-  if (slabRelation === "ab_diff_diff_if") {
+  if (payload.slabRelation === "ab_diff_diff_if") {
     const diaA =
-      typeof totalRowPayload.slabDiametreAMm === "number" && Number.isFinite(totalRowPayload.slabDiametreAMm)
-        ? totalRowPayload.slabDiametreAMm
+      typeof payload.slabDiametreAMm === "number" && Number.isFinite(payload.slabDiametreAMm)
+        ? payload.slabDiametreAMm
         : fallbackDia;
     const diaB =
-      typeof totalRowPayload.slabDiametreBMm === "number" && Number.isFinite(totalRowPayload.slabDiametreBMm)
-        ? totalRowPayload.slabDiametreBMm
+      typeof payload.slabDiametreBMm === "number" && Number.isFinite(payload.slabDiametreBMm)
+        ? payload.slabDiametreBMm
         : fallbackDia;
 
     return [
@@ -318,10 +313,6 @@ function normalizePayloadDiameters(payload: TotalRowModalPayload, mms: number[])
     forme: payload.forme ?? "BARRE",
     nb: payload.nb ?? null,
     diametreMm: pick(payload.diametreMm),
-    slabDiametreAMm:
-      typeof payload.slabDiametreAMm === "number" ? pick(payload.slabDiametreAMm) : payload.slabDiametreAMm,
-    slabDiametreBMm:
-      typeof payload.slabDiametreBMm === "number" ? pick(payload.slabDiametreBMm) : payload.slabDiametreBMm,
     extraFormes,
     extraBoxes,
   };
