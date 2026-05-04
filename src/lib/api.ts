@@ -1,4 +1,4 @@
-const API_BASE = "/api";
+import { API_BASE } from "./apiBase";
 
 export type Plan = "INDIVIDUAL" | "ENTERPRISE";
 export type BillingCycle = "MONTHLY" | "YEARLY";

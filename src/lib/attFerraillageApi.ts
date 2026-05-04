@@ -1,4 +1,4 @@
-const API_BASE = "/api";
+import { API_BASE } from "./apiBase";
 const BASE = "/ferraillage";
 
 export type FerMouvementType = "LIVRAISON" | "TRANSFERT" | "AJUSTEMENT";
