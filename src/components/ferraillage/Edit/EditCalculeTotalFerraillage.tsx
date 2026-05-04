@@ -65,7 +65,7 @@ type Totals = {
 };
 
 const STANDARD_MMS = [6, 8, 10, 12, 14, 16, 20, 25, 32, 40, 50] as const;
-const DEFAULT_MMS = [6, 8, 10, 12, 14, 16, 20];
+const DEFAULT_MMS = [6, 8, 10, 12, 14, 16];
 
 const EMPTY_TOTAL_FERRAILLAGE: TotalFerraillageData = {
   rapportId: "",

@@ -957,7 +957,6 @@ export default function TotalRowModalWindowInner({
             typeName={nomenclature}
             nbStr={nbStr}
             hauteurStr={showHauteurField ? hauteurStr : "0"}
-            enrobageStr="0"
             recap={recap}
           />
 

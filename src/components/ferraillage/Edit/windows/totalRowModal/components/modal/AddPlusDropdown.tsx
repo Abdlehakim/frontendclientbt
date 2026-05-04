@@ -47,8 +47,8 @@ export default function AddPlusDropdown({
   }, [open]);
 
   const items: { key: "CADRE" | "BARRE" | "EPINGLE" | "ETRIERS"; label: string }[] = [
-    { key: "CADRE", label: "Ajouter Cadre" },
     { key: "BARRE", label: "Ajouter Barre" },
+    { key: "CADRE", label: "Ajouter Cadre" },
     { key: "EPINGLE", label: "Ajouter Épingle" },
     { key: "ETRIERS", label: "Ajouter Étriers" },
   ];

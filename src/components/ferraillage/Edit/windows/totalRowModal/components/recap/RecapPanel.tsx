@@ -171,14 +171,12 @@ export default function RecapPanel({
   typeName,
   nbStr,
   hauteurStr,
-  enrobageStr,
   recap,
 }: {
   designation: string;
   typeName: string;
   nbStr: string;
   hauteurStr: string;
-  enrobageStr: string;
   recap: RecapData;
 }) {
   const designationLabel = useMemo(() => (designation ?? "").trim(), [designation]);
@@ -223,11 +221,6 @@ export default function RecapPanel({
           <div className="text-gray-500">{hauteurLabel}</div>
           <div className="font-semibold text-gray-900 text-right">
             {fmtNum(parsePositiveNumber(hauteurStr) ?? null)} m
-          </div>
-
-          <div className="text-gray-500">Enrobage</div>
-          <div className="font-semibold text-gray-900 text-right">
-            {fmtNum(parsePositiveNumber(enrobageStr) ?? null)} m
           </div>
         </div>
 
