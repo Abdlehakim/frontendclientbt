@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import type { FormeState } from "../types";
 import {
   computeBarreNT,
+  computeBarreNTLongueurDesignation,
   computeBarreNTStandard,
   computeBarreQteLongueur,
   computeBarreQteStandard,
@@ -153,7 +154,13 @@ export function useBarreAutoValues({
       );
     }
 
-    if (showBarreOptions) return computeBarreNT(nbStr, x.nBarreStr);
+    if (showBarreOptions) {
+      return computeBarreNTLongueurDesignation(
+        nbStr,
+        x.longueurStr,
+        effectiveAncrageStr,
+      );
+    }
 
     return computeBarreNTStandard(
       nbStr,
@@ -174,10 +181,12 @@ export function useBarreAutoValues({
     nbStr,
     hauteurStr,
     x.nBarreStr,
+    x.longueurStr,
     x.attenteStr,
     x.ancrageStr,
     x.semelleNBarreAStr,
     x.semelleNBarreBStr,
+    effectiveAncrageStr,
   ]);
 
   return { qte, nt };

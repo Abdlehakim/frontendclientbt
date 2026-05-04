@@ -22,6 +22,7 @@ import {
   FormeCard,
 } from "./components";
 import {
+  computeBarreNTLongueurDesignation,
   computeBarreNTStandard,
 } from "./calculations/barreCalculations";
 import {
@@ -829,10 +830,21 @@ export default function TotalRowModalWindowInner({
         const anc = parseNonNegativeNumber(asString(f.ancrageStr)) ?? 0;
         const att = parseNonNegativeNumber(asString(f.attenteStr)) ?? 0;
         const barLen = parseNonNegativeNumber(asString(f.longueurStr)) ?? 0;
+        const steelTypeRaw = asTrimmedString(f.barreCategorie, "");
+        const effectiveAnc =
+          usesLongueurLabel &&
+          steelTypeRaw !== "Acier infÃ©rieur" &&
+          steelTypeRaw !== "Acier supÃ©rieur"
+            ? 0
+            : anc;
 
-        const cutLenM = usesLongueurLabel ? barLen + anc : h + att + anc;
+        const cutLenM = usesLongueurLabel ? barLen + effectiveAnc : h + att + anc;
         const nt = usesLongueurLabel
-          ? nb * n
+          ? computeBarreNTLongueurDesignation(
+              nbStr,
+              asString(f.longueurStr),
+              String(effectiveAnc),
+            )
           : computeBarreNTStandard(
               nbStr,
               asString(f.nBarreStr),
@@ -840,10 +852,11 @@ export default function TotalRowModalWindowInner({
               asString(f.attenteStr),
               asString(f.ancrageStr),
             );
-        const qtyM = usesLongueurLabel ? nb * (n * (barLen + anc)) : nb * (n * (h + att + anc));
+        const qtyM = usesLongueurLabel
+          ? nb * (n * (barLen + effectiveAnc))
+          : nb * (n * (h + att + anc));
         const safeNt = nt > 0 ? nt : 0;
 
-        const steelTypeRaw = asTrimmedString(f.barreCategorie, "");
         const steelType = usesLongueurLabel && steelTypeRaw ? steelTypeRaw : undefined;
 
         const litIndex = usesLongueurLabel ? barreLitIndexById.get(f.id) : undefined;
