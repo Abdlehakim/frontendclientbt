@@ -306,6 +306,7 @@ function EditProjectInfoModal({
   }, [open, submitting, onClose]);
 
   if (!open || !project) return null;
+  const projectId = project.id;
 
   const inputClass =
     "w-full rounded-md border px-3 py-2 text-sm font-medium truncate " +
@@ -335,15 +336,20 @@ function EditProjectInfoModal({
       return;
     }
 
+    if (nextAcierType !== "F400" && nextAcierType !== "F500") {
+      setErr("Le type d'acier est obligatoire.");
+      return;
+    }
+
     setSubmitting(true);
     setErr("");
 
     try {
-      const response = await ferraillageApi.updateProject(project.id, {
+      const response = await ferraillageApi.updateProject(projectId, {
         chantierName: nextChantierName,
-        responsable: nextResponsable,
+        responsable: nextResponsable || null,
         acierType: nextAcierType,
-        note: nextNote,
+        note: nextNote || null,
       });
 
       onUpdated(response.item);

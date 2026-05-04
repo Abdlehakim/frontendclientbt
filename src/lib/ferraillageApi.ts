@@ -79,6 +79,13 @@ export type FerProjectCreatePayload = {
   }>;
 };
 
+export type FerProjectUpdatePayload = {
+  chantierName: string;
+  responsable?: string | null;
+  acierType: FerAcierType;
+  note?: string | null;
+};
+
 export type FerProjectNiveauCreatePayload = {
   nomNiveau: string;
   note?: string | null;
@@ -153,6 +160,12 @@ export const ferraillageApi = {
   createProject: (payload: FerProjectCreatePayload) =>
     request<{ item: FerRapportDTO }>(`${BASE}/projects`, {
       method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  updateProject: (projectId: string, payload: FerProjectUpdatePayload) =>
+    request<{ item: FerProjectDetailDTO }>(`${BASE}/projects/${encodeURIComponent(projectId)}`, {
+      method: "PUT",
       body: JSON.stringify(payload),
     }),
 
