@@ -46,7 +46,7 @@ export default function SelectDropdown<T extends string>({
 
   return (
     <div className="flex flex-col" ref={wrapRef}>
-      <label className="mb-1 text-sm font-semibold text-gray-700">{label}</label>
+      <label className="mb-1 text-xs font-semibold text-gray-700">{label}</label>
 
       <button
         type="button"

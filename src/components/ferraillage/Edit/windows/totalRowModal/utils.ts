@@ -77,7 +77,6 @@ export function resetFieldsForForme(
   if (next === "BARRE") {
     return {
       ...s,
-      longueurStr: "0",
       largeurStr: "0",
       rayonStr: "0",
       perimetreStr: "0",

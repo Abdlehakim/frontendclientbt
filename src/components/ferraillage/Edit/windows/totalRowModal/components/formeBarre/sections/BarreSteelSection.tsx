@@ -26,7 +26,7 @@ export default function BarreSteelSection({
         />
 
         <div className="flex flex-col">
-          <label className="mb-1 text-sm font-semibold text-gray-700">Lit</label>
+          <label className="mb-1 text-xs font-semibold text-gray-700">Lit</label>
           <input
             className={[inputClass, "font-semibold"].join(" ")}
             value={litValue}

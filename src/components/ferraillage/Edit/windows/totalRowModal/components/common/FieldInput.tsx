@@ -4,6 +4,8 @@ export default function FieldInput({
   onChange,
   inputClass,
   placeholder,
+  type = "text",
+  step,
   inputMode = "decimal",
   className = "",
 }: {
@@ -12,17 +14,21 @@ export default function FieldInput({
   onChange: (value: string) => void;
   inputClass: string;
   placeholder?: string;
+  type?: "text" | "number";
+  step?: number | string;
   inputMode?: "decimal" | "numeric" | "text";
   className?: string;
 }) {
   return (
     <div className={["flex flex-col", className].join(" ")}>
-      <label className="mb-1 text-sm font-semibold text-gray-700">{label}</label>
+      <label className="mb-1 text-xs font-semibold text-gray-700">{label}</label>
       <input
-        className={inputClass}
+        className={[inputClass, type === "number" ? "input-no-spinner" : ""].join(" ").trim()}
+        type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        step={step}
         inputMode={inputMode}
       />
     </div>

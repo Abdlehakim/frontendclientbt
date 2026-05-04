@@ -13,7 +13,7 @@ export default function AutoValueField({
 }) {
   return (
     <div className="flex flex-col">
-      <label className="mb-1 text-sm font-semibold text-gray-700">{label}</label>
+      <label className="mb-1 text-xs font-semibold text-gray-700">{label}</label>
       <input
         className={[inputClass, "font-semibold"].join(" ")}
         value={value}

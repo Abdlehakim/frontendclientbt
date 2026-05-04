@@ -41,6 +41,8 @@ export default function StandardBarreFields({
           onChange={(value) => onPatch({ longueurStr: value })}
           inputClass={inputClass}
           placeholder="Ex: 6,5"
+          type="number"
+          step="0.01"
         />
       ) : (
         <FieldInput
