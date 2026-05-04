@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CiCircleRemove } from "react-icons/ci";
 import Stepper from "@/components/Stepper";
+import type { FerRapportDTO } from "@/lib/ferraillageApi";
 
 import DetailsProjetPF from "./StepsPF/DetailsProjetPF";
 import NiveauxPF from "./StepsPF/NiveauxPF";
@@ -10,6 +11,7 @@ import NiveauxPF from "./StepsPF/NiveauxPF";
 type Props = {
   open: boolean;
   onClose: () => void;
+  onCreated?: (item: FerRapportDTO) => void | Promise<void>;
 };
 
 export type AcierType = "F400" | "F500";

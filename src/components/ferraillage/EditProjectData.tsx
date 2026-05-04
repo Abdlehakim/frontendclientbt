@@ -34,6 +34,10 @@ type Props = {
 const ACIER_OPTIONS = ["F400", "F500"] as const;
 const DEFAULT_MM_COLS = [6, 8, 10, 12, 14, 16, 20];
 
+function isAcierType(value: string): value is (typeof ACIER_OPTIONS)[number] {
+  return value === "F400" || value === "F500";
+}
+
 function CheckIcon() {
   return (
     <svg
@@ -325,6 +329,9 @@ function EditProjectInfoModal({
   }
 
   async function handleSubmit() {
+    if (!project) return;
+
+    const currentProject = project;
     const nextChantierName = chantierName.trim();
     const nextResponsable = responsable.trim();
     const nextAcierType = acierType.trim();
@@ -339,10 +346,10 @@ function EditProjectInfoModal({
     setErr("");
 
     try {
-      const response = await ferraillageApi.updateProject(project.id, {
+      const response = await ferraillageApi.updateProject(currentProject.id, {
         chantierName: nextChantierName,
         responsable: nextResponsable,
-        acierType: nextAcierType,
+        acierType: isAcierType(nextAcierType) ? nextAcierType : null,
         note: nextNote,
       });
 

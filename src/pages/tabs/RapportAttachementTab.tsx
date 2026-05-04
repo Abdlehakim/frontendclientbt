@@ -25,7 +25,12 @@ function fmtQtyFR(qty?: string | null) {
   }).format(n);
 }
 
-export default function RapportAttachementTab({ rapportId }: { rapportId: string }) {
+type RapportAttachementTabProps = {
+  rapportId: string;
+  onPrint?: () => void;
+};
+
+export default function RapportAttachementTab({ rapportId }: RapportAttachementTabProps) {
   const [etat, setEtat] = useState<FerEtatChantierFullDTO | null>(null);
   const [restant, setRestant] = useState<FerRestantNonConfectionneFullDTO | null>(null);
   const [diametres, setDiametres] = useState<FerDiametreDTO[]>([]);

@@ -10,6 +10,14 @@ export type PortalPos =
 
 export type RowForme = "BARRE" | "CARRE" | "CIRCULAIRE" | "RECTANGULAIRE";
 
+export type SlabCalcMethod = "SURFACE_TOTAL" | "SURFACE_TOTAL_PER_M2";
+
+export type SlabSpacingMode = "ESPACEMENT";
+
+export type SlabSpacingRelation = "EA_EQ_EB" | "EA_NE_EB";
+
+export type SlabRelation = "ab_equal_diff_if" | "ab_diff_same_if" | "ab_diff_diff_if";
+
 export type ExtraFormePayload = {
   forme: "BARRE" | "CARRE" | "CIRCULAIRE" | "RECTANGULAIRE";
   diametreMm: number;
@@ -58,6 +66,20 @@ export type TotalRowModalPayload = {
 
   epingle?: number | null;
   etriers?: number | null;
+
+  slabCalcMethod?: SlabCalcMethod | null;
+  slabSpacingMode?: SlabSpacingMode | null;
+  slabSpacingRelation?: SlabSpacingRelation | null;
+  slabRelation?: SlabRelation | null;
+  slabSurface?: number | null;
+  slabPerimetre?: number | null;
+  slabAncrageLineaire?: number | null;
+  slabEspacementA?: number | null;
+  slabEspacementB?: number | null;
+  slabDiametreAMm?: number | null;
+  slabDiametreBMm?: number | null;
+  slabLongueurA?: number | null;
+  slabLongueurB?: number | null;
 
   extraFormes?: ExtraFormePayload[];
   extraBoxes?: ExtraBoxPayload[];

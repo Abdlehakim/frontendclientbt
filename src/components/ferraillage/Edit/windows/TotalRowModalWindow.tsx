@@ -15,7 +15,9 @@ export default function TotalRowModalWindow(props: {
   mms: number[];
   initial?: Partial<import("./totalRowModal/types").TotalRowModalPayload>;
   onClose: () => void;
-  onSubmit: (payload: import("./totalRowModal/types").TotalRowModalPayload) => void;
+  submitting?: boolean;
+  errorMessage?: string;
+  onSubmit: (payload: import("./totalRowModal/types").TotalRowModalPayload) => void | Promise<void>;
 }) {
   if (!props.open) return null;
   return <TotalRowModalWindowInner {...props} />;

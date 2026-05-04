@@ -203,6 +203,8 @@ export default function TotalRowModalWindowInner({
   mms,
   initial,
   onClose,
+  submitting = false,
+  errorMessage,
   onSubmit,
 }: {
   open: boolean;
@@ -212,7 +214,9 @@ export default function TotalRowModalWindowInner({
   mms: number[];
   initial?: Partial<TotalRowModalPayload>;
   onClose: () => void;
-  onSubmit: (payload: TotalRowModalPayload) => void;
+  submitting?: boolean;
+  errorMessage?: string;
+  onSubmit: (payload: TotalRowModalPayload) => void | Promise<void>;
 }) {
   const panelRef = useRef<HTMLDivElement | null>(null);
 
@@ -370,7 +374,7 @@ export default function TotalRowModalWindowInner({
           ancrageStr: "0",
           perimetreStr: "0",
           espacementStr: "0",
-          extraCalcMode: "ESPACEMENT",
+          extraCalcMode: "ESPACEMENT" as const,
           nbExtraStr: "0",
         },
       ];
@@ -492,13 +496,14 @@ export default function TotalRowModalWindowInner({
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (ev: KeyboardEvent) => {
-      if (ev.key === "Escape") onClose();
+      if (ev.key === "Escape" && !submitting) onClose();
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
+  }, [open, onClose, submitting]);
 
   const closeOnBackdrop = (ev: ReactMouseEvent<HTMLDivElement>) => {
+    if (submitting) return;
     if (panelRef.current && !panelRef.current.contains(ev.target as Node)) onClose();
   };
 
@@ -743,6 +748,7 @@ export default function TotalRowModalWindowInner({
                 onClick={onClose}
                 aria-label="Fermer"
                 title="Fermer"
+                disabled={submitting}
                 className="p-1 text-gray-700 hover:cursor-pointer hover:text-red-600 hover:scale-120 transition-transform"
               >
                 <CiCircleRemove size={26} />
@@ -894,6 +900,8 @@ export default function TotalRowModalWindowInner({
               </div>
             </div>
 
+            {errorMessage ? <div className="px-5 pb-1 text-sm text-red-600">{errorMessage}</div> : null}
+
             <div
               className="
                 rounded-b-xl bg-gray-50
@@ -904,13 +912,19 @@ export default function TotalRowModalWindowInner({
               aria-label="Actions du formulaire"
             >
               <div className="flex items-center justify-start gap-2 flex-1">
-                <button type="button" className="stepper__nav" onClick={onClose}>
+                <button type="button" className="stepper__nav" onClick={onClose} disabled={submitting}>
                   Annuler
                 </button>
               </div>
 
               <div className="flex items-center justify-end gap-2 flex-1 whitespace-nowrap">
-                <button type="button" className="stepper__nav" onClick={submit} disabled={!canSubmit} aria-disabled={!canSubmit}>
+                <button
+                  type="button"
+                  className="stepper__nav"
+                  onClick={submit}
+                  disabled={submitting || !canSubmit}
+                  aria-disabled={submitting || !canSubmit}
+                >
                   {submitLabel}
                 </button>
               </div>

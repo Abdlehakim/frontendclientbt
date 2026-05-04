@@ -5,6 +5,31 @@ export function clamp(n: number, a: number, b: number) {
   return Math.min(b, Math.max(a, n));
 }
 
+function coerceNumberish(value: unknown) {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return Number.NaN;
+    return Number(trimmed.replace(/\s+/g, "").replace(",", "."));
+  }
+  if (typeof value === "bigint") return Number(value);
+  if (typeof value === "boolean") return value ? 1 : 0;
+  return Number.NaN;
+}
+
+export function safeNumber(value: unknown, fallback = 0) {
+  const n = coerceNumberish(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+export function safeDivide(numerator: unknown, denominator: unknown, fallback = 0) {
+  const n = safeNumber(numerator, Number.NaN);
+  const d = safeNumber(denominator, Number.NaN);
+  if (!Number.isFinite(n) || !Number.isFinite(d) || d === 0) return fallback;
+  const result = n / d;
+  return Number.isFinite(result) ? result : fallback;
+}
+
 export type PortalPos =
   | null
   | {
