@@ -33,7 +33,7 @@ Vite runs on `http://localhost:5173` by default and proxies `/api` to the backen
 
 ## Backend URL Configuration
 
-The dev proxy target is configurable with `VITE_BACKEND_URL`.
+The frontend API origin is configurable with `VITE_API_URL`.
 
 1. Create `.env` from `.env.example`:
 ```bash
@@ -47,7 +47,7 @@ Copy-Item .env.example .env
 
 2. Adjust if needed:
 ```dotenv
-VITE_BACKEND_URL=http://localhost:4000
+VITE_API_URL=http://localhost:4000
 ```
 
 ## Build
