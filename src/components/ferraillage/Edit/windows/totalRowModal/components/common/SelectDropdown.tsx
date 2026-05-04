@@ -50,12 +50,12 @@ export default function SelectDropdown<T extends string>({
 
       <button
         type="button"
-        className="inline-flex w-full cursor-pointer items-center justify-between gap-2 truncate rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+        className="inline-flex w-full cursor-pointer items-center justify-between gap-2 truncate rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800 hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-400"
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="truncate">{shown}</span>
+        <span className="truncate text-xs">{shown}</span>
         {open ? <IoIosArrowDropup className="shrink-0" size={18} /> : <IoIosArrowDropdown className="shrink-0" size={18} />}
       </button>
 
@@ -79,7 +79,7 @@ export default function SelectDropdown<T extends string>({
                     setOpen(false);
                   }}
                   className={[
-                    "flex w-full items-center gap-2 px-3 py-2 text-left text-sm",
+                    "flex w-full items-center gap-2 px-3 py-2 text-left text-xs",
                     selected ? "bg-emerald-50 text-emerald-700" : "text-slate-700",
                     "hover:bg-emerald-100 hover:text-emerald-800",
                   ].join(" ")}
@@ -94,7 +94,7 @@ export default function SelectDropdown<T extends string>({
                   >
                     <CheckIcon />
                   </span>
-                  <span className="truncate">{labelText}</span>
+                  <span className=" text-xs">{labelText}</span>
                 </button>
               );
             })}

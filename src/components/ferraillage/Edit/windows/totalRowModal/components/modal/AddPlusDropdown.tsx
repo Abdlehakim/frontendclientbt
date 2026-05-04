@@ -8,11 +8,19 @@ export default function AddPlusDropdown({
   onAddBarre,
   onAddEpingle,
   onAddEtriers,
+  showCadreOption = true,
+  showBarreOption = true,
+  showEpingleOption = true,
+  showEtriersOption = true,
 }: {
   onAddCadre: () => void;
   onAddBarre: () => void;
   onAddEpingle: () => void;
   onAddEtriers: () => void;
+  showCadreOption?: boolean;
+  showBarreOption?: boolean;
+  showEpingleOption?: boolean;
+  showEtriersOption?: boolean;
 }) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const btnRef = useRef<HTMLButtonElement | null>(null);
@@ -46,12 +54,11 @@ export default function AddPlusDropdown({
     };
   }, [open]);
 
-  const items: { key: "CADRE" | "BARRE" | "EPINGLE" | "ETRIERS"; label: string }[] = [
-    { key: "BARRE", label: "Ajouter Barre" },
-    { key: "CADRE", label: "Ajouter Cadre" },
-    { key: "EPINGLE", label: "Ajouter Épingle" },
-    { key: "ETRIERS", label: "Ajouter Étriers" },
-  ];
+  const items: { key: "CADRE" | "BARRE" | "EPINGLE" | "ETRIERS"; label: string }[] = [];
+  if (showBarreOption) items.push({ key: "BARRE", label: "Ajouter Barre" });
+  if (showCadreOption) items.push({ key: "CADRE", label: "Ajouter Cadre" });
+  if (showEpingleOption) items.push({ key: "EPINGLE", label: "Ajouter Épingle" });
+  if (showEtriersOption) items.push({ key: "ETRIERS", label: "Ajouter Étriers" });
 
   return (
     <div className="relative flex items-center justify-end" ref={wrapRef}>
@@ -97,7 +104,7 @@ export default function AddPlusDropdown({
                     if (it.key === "ETRIERS") onAddEtriers();
                     setOpen(false);
                   }}
-                  className="w-full px-3 py-2 text-sm text-left flex items-center justify-between gap-2 text-slate-700 hover:bg-emerald-100 hover:text-emerald-800"
+                  className="w-full px-3 py-2 text-sm text-left flex items-center justify-between gap-2 text-slate-700 hover:bg-emerald-100 hover:text-emerald-800 cursor-pointer"
                 >
                   <span className="truncate">{it.label}</span>
                 </button>

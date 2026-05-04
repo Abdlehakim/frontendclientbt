@@ -206,6 +206,8 @@ export default function TotalRowModalWindowInner({
   const isSemellesDesignation = normalizedDesignation === "semelles";
   const isSlabDesignation = isSlabDesignationValue(designation);
   const showHauteurField = !isSlabDesignation;
+  const showTopHauteurField = showHauteurField && !isSemellesDesignation;
+  const expandNomenclatureField = isSemellesDesignation;
 
   const extraMap = useMemo(() => new Map(extraBoxes.map((b) => [b.id, b] as const)), [extraBoxes]);
   const formesMap = useMemo(() => new Map(formes.map((f) => [f.id, f] as const)), [formes]);
@@ -1012,7 +1014,8 @@ export default function TotalRowModalWindowInner({
                 setNbStr={setNbStr}
                 hauteurStr={hauteurStr}
                 setHauteurStr={setHauteurStr}
-                showHauteurField={showHauteurField}
+                showHauteurField={showTopHauteurField}
+                expandNomenclatureField={expandNomenclatureField}
                 hauteurLabel={hauteurLabel}
                 hauteurPlaceholder={hauteurPlaceholder}
                 inputClass={inputClass}
@@ -1023,6 +1026,9 @@ export default function TotalRowModalWindowInner({
                 onAddBarre={addBarre}
                 onAddEpingle={() => addExtraBox("EPINGLE")}
                 onAddEtriers={() => addExtraBox("ETRIERS")}
+                showCadreAddOption={!isSemellesDesignation}
+                showEpingleAddOption={!isSemellesDesignation}
+                showEtriersAddOption={!isSemellesDesignation}
               />
 
               <div className="mt-4 flex-1 min-h-0 overflow-y-auto overflow-x-hidden">

@@ -13,6 +13,7 @@ export default function ModalTopFields({
   hauteurStr,
   setHauteurStr,
   showHauteurField,
+  expandNomenclatureField,
   hauteurLabel,
   hauteurPlaceholder,
   inputClass,
@@ -23,6 +24,9 @@ export default function ModalTopFields({
   onAddBarre,
   onAddEpingle,
   onAddEtriers,
+  showCadreAddOption,
+  showEpingleAddOption,
+  showEtriersAddOption,
 }: {
   designation: string;
   setDesignation: Dispatch<SetStateAction<string>>;
@@ -33,6 +37,7 @@ export default function ModalTopFields({
   hauteurStr: string;
   setHauteurStr: Dispatch<SetStateAction<string>>;
   showHauteurField: boolean;
+  expandNomenclatureField: boolean;
   hauteurLabel: string;
   hauteurPlaceholder: string;
   inputClass: string;
@@ -43,6 +48,9 @@ export default function ModalTopFields({
   onAddBarre: () => void;
   onAddEpingle: () => void;
   onAddEtriers: () => void;
+  showCadreAddOption: boolean;
+  showEpingleAddOption: boolean;
+  showEtriersAddOption: boolean;
 }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 shrink-0">
@@ -50,7 +58,7 @@ export default function ModalTopFields({
         <DesignationDropdown label="Designations" value={designation} onChange={setDesignation} />
       </div>
 
-      <div className="flex flex-col md:col-span-3">
+      <div className={`flex flex-col ${expandNomenclatureField ? "md:col-span-5" : "md:col-span-3"}`}>
         <label className="text-xs font-semibold text-gray-700 mb-1">Nomenclature</label>
         <input
           className={inputClass}
@@ -60,7 +68,11 @@ export default function ModalTopFields({
         />
       </div>
 
-      <div className={`flex flex-col ${showHauteurField ? "md:col-span-2" : "md:col-span-5"}`}>
+      <div
+        className={`flex flex-col ${
+          showHauteurField ? "md:col-span-2" : expandNomenclatureField ? "md:col-span-3" : "md:col-span-5"
+        }`}
+      >
         <label className="text-xs font-semibold text-gray-700 mb-1">NB</label>
         <input
           className={inputClass}
@@ -91,9 +103,12 @@ export default function ModalTopFields({
           onAddBarre={onAddBarre}
           onAddEpingle={onAddEpingle}
           onAddEtriers={onAddEtriers}
+          showCadreOption={showCadreAddOption}
+          showBarreOption
+          showEpingleOption={showEpingleAddOption}
+          showEtriersOption={showEtriersAddOption}
         />
       </div>
     </div>
   );
 }
-
