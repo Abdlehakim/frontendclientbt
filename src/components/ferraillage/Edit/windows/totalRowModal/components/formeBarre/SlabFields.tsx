@@ -39,8 +39,20 @@ export default function SlabFields({
         inputClass={inputClass}
         onPatch={onPatch}
       />
-      <SlabSpacingFields x={x} slab={slab} inputClass={inputClass} onPatch={onPatch} />
-      <SlabCountFields x={x} slab={slab} inputClass={inputClass} onPatch={onPatch} />
+      <SlabSpacingFields
+        x={x}
+        slab={slab}
+        normalizedDesignation={base.normalizedDesignation}
+        inputClass={inputClass}
+        onPatch={onPatch}
+      />
+      <SlabCountFields
+        x={x}
+        slab={slab}
+        normalizedDesignation={base.normalizedDesignation}
+        inputClass={inputClass}
+        onPatch={onPatch}
+      />
     </>
   );
 }

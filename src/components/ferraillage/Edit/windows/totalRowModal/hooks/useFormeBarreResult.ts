@@ -114,7 +114,11 @@ export function useFormeBarreResult({
 
   const slabDiamLabelA = formatDiametreLabel(slab.slabDiametreAValue);
   const slabDiamLabelB = formatDiametreLabel(slab.slabDiametreBValue);
-  const slabDualLabels = getDualDiameterResultLabels(slabDiamLabelA, slabDiamLabelB);
+  const slabDualLabels = getDualDiameterResultLabels(
+    slabDiamLabelA,
+    slabDiamLabelB,
+    base.normalizedDesignation,
+  );
 
   if (slabSurfacePerM2DualMetrics) {
     return {

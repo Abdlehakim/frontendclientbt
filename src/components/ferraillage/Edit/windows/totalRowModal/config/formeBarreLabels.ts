@@ -12,6 +12,37 @@ export function fmt(n: number) {
   return String(r).replace(".", ",");
 }
 
+export function isVoileDesignation(value: string | null | undefined) {
+  return (value ?? "").trim().toLowerCase() === "voile";
+}
+
+export function getSlabAxisLabels(designation?: string | null) {
+  const axisA = isVoileDesignation(designation) ? "L" : "a";
+  const axisB = isVoileDesignation(designation) ? "H" : "b";
+
+  return {
+    axisA,
+    axisB,
+    relationFieldLabel: `Re. entre ${axisA} et ${axisB}`,
+    lengthSharedLabel: `L. Barre ${axisA} ou ${axisB} (m)`,
+    lengthALabel: `L. Barre ${axisA} (m)`,
+    lengthBLabel: `L. Barre ${axisB} (m)`,
+    diameterSharedLabel: `Di. ${axisA} et ${axisB}`,
+    diameterALabel: `Di. Fer ${axisA}`,
+    diameterBLabel: `Di. Fer ${axisB}`,
+    spacingSharedLabel: `Es. ${axisA} et ${axisB}`,
+    spacingALabel: `Es. ${axisA}`,
+    spacingBLabel: `Es. ${axisB}`,
+    countSharedLabel: `Nb. Barres ${axisA} et ${axisB}`,
+    countALabel: `Nb. Barres ${axisA}`,
+    countBLabel: `Nb. Barres ${axisB}`,
+    ntParallelALabel: `N.T.B façonnées ∥ ${axisA}`,
+    ntParallelBLabel: `N.T.B façonnées ∥ ${axisB}`,
+    pairTitleA: `(${axisA})`,
+    pairTitleB: `(${axisB})`,
+  };
+}
+
 export function getNappeLabel(value: SemelleNappe | SlabNappe) {
   switch (value) {
     case "Nappe inférieur":
@@ -42,16 +73,18 @@ export function getSemelleRelationLabel(v: SemelleRelation) {
   }
 }
 
-export function getSlabRelationLabel(v: SlabRelation) {
+export function getSlabRelationLabel(v: SlabRelation, designation?: string | null) {
+  const { axisA, axisB } = getSlabAxisLabels(designation);
+
   switch (v) {
     case "ab_equal_same_if":
-      return "a = b et if.a = if.b";
+      return `${axisA} = ${axisB} et if.${axisA} = if.${axisB}`;
     case "ab_equal_diff_if":
-      return "a = b et if.a ≠ if.b";
+      return `${axisA} = ${axisB} et if.${axisA} ≠ if.${axisB}`;
     case "ab_diff_same_if":
-      return "a ≠ b et if.a = if.b";
+      return `${axisA} ≠ ${axisB} et if.${axisA} = if.${axisB}`;
     case "ab_diff_diff_if":
-      return "a ≠ b et if.a ≠ if.b";
+      return `${axisA} ≠ ${axisB} et if.${axisA} ≠ if.${axisB}`;
     default:
       return v;
   }
@@ -79,12 +112,14 @@ export function getSlabSpacingModeLabel(v: SlabSpacingMode) {
   }
 }
 
-export function getSlabSpacingRelationLabel(v: SlabSpacingRelation) {
+export function getSlabSpacingRelationLabel(v: SlabSpacingRelation, designation?: string | null) {
+  const { axisA, axisB } = getSlabAxisLabels(designation);
+
   switch (v) {
     case "EA_EQ_EB":
-      return "E a = E b";
+      return `E ${axisA} = E ${axisB}`;
     case "EA_NE_EB":
-      return "E a ≠ E b";
+      return `E ${axisA} ≠ E ${axisB}`;
     default:
       return v;
   }
@@ -95,22 +130,27 @@ export function formatDiametreLabel(mm: number | null | undefined) {
   return String(mm).replace(".", ",");
 }
 
-export function getDualDiameterResultLabels(diaLabelA: string, diaLabelB: string) {
+export function getDualDiameterResultLabels(
+  diaLabelA: string,
+  diaLabelB: string,
+  designation?: string | null,
+) {
+  const { axisA, axisB } = getSlabAxisLabels(designation);
   const sameDiameter = !!diaLabelA && !!diaLabelB && diaLabelA === diaLabelB;
 
   if (sameDiameter) {
     return {
-      qteLabelA: `Q. Fer a - Fer ${diaLabelA} (m)`,
-      qteLabelB: `Q. Fer b - Fer ${diaLabelB} (m)`,
-      ntLabelA: `N.T.B façonnées a - Fer ${diaLabelA}`,
-      ntLabelB: `N.T.B façonnées b - Fer ${diaLabelB}`,
+      qteLabelA: `Q. Fer ${axisA} - Fer ${diaLabelA} (m)`,
+      qteLabelB: `Q. Fer ${axisB} - Fer ${diaLabelB} (m)`,
+      ntLabelA: `N.T.B façonnées ${axisA} - Fer ${diaLabelA}`,
+      ntLabelB: `N.T.B façonnées ${axisB} - Fer ${diaLabelB}`,
     };
   }
 
   return {
-    qteLabelA: diaLabelA ? `Q. Fer ${diaLabelA} (m)` : "Q. Fer a (m)",
-    qteLabelB: diaLabelB ? `Q. Fer ${diaLabelB} (m)` : "Q. Fer b (m)",
-    ntLabelA: diaLabelA ? `N.T.B façonnées ${diaLabelA}` : "N.T.B façonnées a",
-    ntLabelB: diaLabelB ? `N.T.B façonnées ${diaLabelB}` : "N.T.B façonnées b",
+    qteLabelA: diaLabelA ? `Q. Fer ${diaLabelA} (m)` : `Q. Fer ${axisA} (m)`,
+    qteLabelB: diaLabelB ? `Q. Fer ${diaLabelB} (m)` : `Q. Fer ${axisB} (m)`,
+    ntLabelA: diaLabelA ? `N.T.B façonnées ${diaLabelA}` : `N.T.B façonnées ${axisA}`,
+    ntLabelB: diaLabelB ? `N.T.B façonnées ${diaLabelB}` : `N.T.B façonnées ${axisB}`,
   };
 }

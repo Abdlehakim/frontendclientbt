@@ -1,16 +1,20 @@
 import AutoValueField from "../../common/AutoValueField";
+import { getSlabAxisLabels } from "../../../config/formeBarreLabels";
 
 export default function ResultSingleQteDualNtSection({
   inputClass,
+  normalizedDesignation,
   qteValue,
   ntA,
   ntB,
 }: {
   inputClass: string;
+  normalizedDesignation: string;
   qteValue: string;
   ntA: string;
   ntB: string;
 }) {
+  const slabAxisLabels = getSlabAxisLabels(normalizedDesignation);
   const blueAutoStyle = {
     backgroundColor: "#EFF6FF",
     borderColor: "#3B82F6",
@@ -26,13 +30,13 @@ export default function ResultSingleQteDualNtSection({
         style={blueAutoStyle}
       />
       <AutoValueField
-        label="N.T.B façonnées ∥ a"
+        label={slabAxisLabels.ntParallelALabel}
         value={ntA}
         inputClass={inputClass}
         style={blueAutoStyle}
       />
       <AutoValueField
-        label="N.T.B façonnées ∥ b"
+        label={slabAxisLabels.ntParallelBLabel}
         value={ntB}
         inputClass={inputClass}
         style={blueAutoStyle}

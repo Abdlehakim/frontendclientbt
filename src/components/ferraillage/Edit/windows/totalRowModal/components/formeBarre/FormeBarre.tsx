@@ -191,7 +191,11 @@ export default function FormeBarre({
         />
       ) : null}
 
-      <FormeBarreResults inputClass={inputClass} result={result} />
+      <FormeBarreResults
+        inputClass={inputClass}
+        normalizedDesignation={base.normalizedDesignation}
+        result={result}
+      />
     </div>
   );
 }

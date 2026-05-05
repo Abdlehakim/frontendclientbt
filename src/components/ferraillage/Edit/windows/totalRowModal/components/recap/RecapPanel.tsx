@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { CiCircleRemove } from "react-icons/ci";
+import { getSlabAxisLabels } from "../../config/formeBarreLabels";
 import { parsePositiveInt, parsePositiveNumber, safeNumber } from "../../utils";
 
 export type RecapLine = {
@@ -24,6 +25,15 @@ export type RecapData = {
 type GroupedBarreEntry =
   | { type: "single"; line: RecapLine }
   | { type: "pair"; left: RecapLine; right: RecapLine };
+
+const defaultSlabPairALabels = [
+  getSlabAxisLabels().ntParallelALabel,
+  getSlabAxisLabels("voile").ntParallelALabel,
+];
+const defaultSlabPairBLabels = [
+  getSlabAxisLabels().ntParallelBLabel,
+  getSlabAxisLabels("voile").ntParallelBLabel,
+];
 
 function fmtNum(n: number | null | undefined, digits = 2) {
   if (n == null || !Number.isFinite(n)) return "0";
@@ -57,11 +67,11 @@ function isSemellePairBLabel(label: string) {
 }
 
 function isDallePleinePairALabel(label: string) {
-  return label === "N.T.B façonnées ∥ a" || label.startsWith("N.T.B façonnées ∥ a ");
+  return defaultSlabPairALabels.some((prefix) => label === prefix || label.startsWith(`${prefix} `));
 }
 
 function isDallePleinePairBLabel(label: string) {
-  return label === "N.T.B façonnées ∥ b" || label.startsWith("N.T.B façonnées ∥ b ");
+  return defaultSlabPairBLabels.some((prefix) => label === prefix || label.startsWith(`${prefix} `));
 }
 
 function isExplicitDallePleinePair(left: RecapLine, right: RecapLine) {
@@ -205,11 +215,15 @@ function BarrePairCard({
   left,
   right,
   isDallePleineDesignation = false,
+  pairTitleA = "(a)",
+  pairTitleB = "(b)",
 }: {
   title: string;
   left: RecapLine;
   right: RecapLine;
   isDallePleineDesignation?: boolean;
+  pairTitleA?: string;
+  pairTitleB?: string;
 }) {
   const steelTypeLabel = isDallePleineDesignation ? "Type de nappe" : "Type d'acier";
   const litLabel = isDallePleineDesignation ? "Méthode de calcul" : "Lit";
@@ -272,8 +286,8 @@ function BarrePairCard({
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-2">
-          <BarrePairColumn title="(a)" line={left} isDallePleineDesignation={isDallePleineDesignation} />
-          <BarrePairColumn title="(b)" line={right} isDallePleineDesignation={isDallePleineDesignation} />
+          <BarrePairColumn title={pairTitleA} line={left} isDallePleineDesignation={isDallePleineDesignation} />
+          <BarrePairColumn title={pairTitleB} line={right} isDallePleineDesignation={isDallePleineDesignation} />
         </div>
       )}
     </div>
@@ -302,6 +316,7 @@ export default function RecapPanel({
   const isSemellesDesignation = normalizedDesignation === "semelles";
   const isDallePleineDesignation =
     normalizedDesignation === "dalle pleine" || normalizedDesignation === "semelles";
+  const slabAxisLabels = useMemo(() => getSlabAxisLabels(normalizedDesignation), [normalizedDesignation]);
 
   const usesLongueurLabel = useMemo(() => {
     const v = normalizedDesignation;
@@ -424,6 +439,8 @@ export default function RecapPanel({
                     left={entry.left}
                     right={entry.right}
                     isDallePleineDesignation={isDallePleineDesignation}
+                    pairTitleA={slabAxisLabels.pairTitleA}
+                    pairTitleB={slabAxisLabels.pairTitleB}
                   />
                 );
               }

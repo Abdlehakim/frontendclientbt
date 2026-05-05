@@ -46,6 +46,7 @@ import {
   computeExtraSpacingNt,
   computeExtraPerimetre,
 } from "./calculations/shapeCalculations";
+import { getSlabAxisLabels } from "./config/formeBarreLabels";
 import RecapPanel, { type RecapData } from "./components/recap/RecapPanel";
 import FormeBarreAbbreviationsModal from "./components/formeBarre/FormeBarreAbbreviationsModal";
 import BarreCard from "./components/modal/BarreCard";
@@ -213,6 +214,7 @@ export default function TotalRowModalWindowInner({
   const cards = st.cardOrder;
 
   const normalizedDesignation = normalizeDesignation(designation);
+  const slabAxisLabels = getSlabAxisLabels(normalizedDesignation);
   const isSemellesDesignation = normalizedDesignation === "semelles";
   const isSlabDesignation = isSlabDesignationValue(designation);
   const restrictAddElementsToBarreOnly = [
@@ -557,7 +559,7 @@ export default function TotalRowModalWindowInner({
 
               linesBarres.push({
                 key: `${f.id}:a`,
-                label: "N.T.B façonnées ∥ a",
+                label: slabAxisLabels.ntParallelALabel,
                 dia: diaA,
                 qtyM: splitMetrics.qtyA > 0 ? splitMetrics.qtyA : 0,
                 nt: splitMetrics.ntA > 0 ? splitMetrics.ntA : 0,
@@ -569,7 +571,7 @@ export default function TotalRowModalWindowInner({
 
               linesBarres.push({
                 key: `${f.id}:b`,
-                label: "N.T.B façonnées ∥ b",
+                label: slabAxisLabels.ntParallelBLabel,
                 dia: diaB,
                 qtyM: splitMetrics.qtyB > 0 ? splitMetrics.qtyB : 0,
                 nt: splitMetrics.ntB > 0 ? splitMetrics.ntB : 0,
@@ -625,7 +627,7 @@ export default function TotalRowModalWindowInner({
 
             linesBarres.push({
               key: `${f.id}:a`,
-              label: "N.T.B façonnées ∥ a",
+              label: slabAxisLabels.ntParallelALabel,
               dia: diaA,
               qtyM: safeQtyA,
               nt: equalDualSpacingMetrics.ntA > 0 ? equalDualSpacingMetrics.ntA : 0,
@@ -637,7 +639,7 @@ export default function TotalRowModalWindowInner({
 
             linesBarres.push({
               key: `${f.id}:b`,
-              label: "N.T.B façonnées ∥ b",
+              label: slabAxisLabels.ntParallelBLabel,
               dia: diaB,
               qtyM: safeQtyB,
               nt: equalDualSpacingMetrics.ntB > 0 ? equalDualSpacingMetrics.ntB : 0,
@@ -677,7 +679,7 @@ export default function TotalRowModalWindowInner({
 
             linesBarres.push({
               key: `${f.id}:a`,
-              label: "N.T.B façonnées ∥ a",
+              label: slabAxisLabels.ntParallelALabel,
               dia: diaA,
               qtyM: safeQtyA,
               nt: equalDualCountMetrics.ntA > 0 ? equalDualCountMetrics.ntA : 0,
@@ -689,7 +691,7 @@ export default function TotalRowModalWindowInner({
 
             linesBarres.push({
               key: `${f.id}:b`,
-              label: "N.T.B façonnées ∥ b",
+              label: slabAxisLabels.ntParallelBLabel,
               dia: diaB,
               qtyM: safeQtyB,
               nt: equalDualCountMetrics.ntB > 0 ? equalDualCountMetrics.ntB : 0,
@@ -731,7 +733,7 @@ export default function TotalRowModalWindowInner({
 
             linesBarres.push({
               key: `${f.id}:a`,
-              label: "N.T.B façonnées ∥ a",
+              label: slabAxisLabels.ntParallelALabel,
               dia: diaA,
               qtyM: safeQtyA,
               nt: diffDualSpacingMetrics.ntA > 0 ? diffDualSpacingMetrics.ntA : 0,
@@ -743,7 +745,7 @@ export default function TotalRowModalWindowInner({
 
             linesBarres.push({
               key: `${f.id}:b`,
-              label: "N.T.B façonnées ∥ b",
+              label: slabAxisLabels.ntParallelBLabel,
               dia: diaB,
               qtyM: safeQtyB,
               nt: diffDualSpacingMetrics.ntB > 0 ? diffDualSpacingMetrics.ntB : 0,
@@ -797,7 +799,7 @@ export default function TotalRowModalWindowInner({
 
             linesBarres.push({
               key: `${f.id}:a`,
-              label: "N.T.B façonnées ∥ a",
+              label: slabAxisLabels.ntParallelALabel,
               dia: diaA,
               qtyM: safeQtyA,
               nt: splitCountMetrics.ntA > 0 ? splitCountMetrics.ntA : 0,
@@ -809,7 +811,7 @@ export default function TotalRowModalWindowInner({
 
             linesBarres.push({
               key: `${f.id}:b`,
-              label: "N.T.B façonnées ∥ b",
+              label: slabAxisLabels.ntParallelBLabel,
               dia: diaB,
               qtyM: safeQtyB,
               nt: splitCountMetrics.ntB > 0 ? splitCountMetrics.ntB : 0,
@@ -845,7 +847,7 @@ export default function TotalRowModalWindowInner({
 
             linesBarres.push({
               key: `${f.id}:a`,
-              label: "N.T.B façonnées ∥ a",
+              label: slabAxisLabels.ntParallelALabel,
               dia,
               qtyM: safeQtyA,
               nt: ntA > 0 ? ntA : 0,
@@ -856,7 +858,7 @@ export default function TotalRowModalWindowInner({
 
             linesBarres.push({
               key: `${f.id}:b`,
-              label: "N.T.B façonnées ∥ b",
+              label: slabAxisLabels.ntParallelBLabel,
               dia,
               qtyM: safeQtyB,
               nt: ntB > 0 ? ntB : 0,
@@ -876,7 +878,7 @@ export default function TotalRowModalWindowInner({
 
             linesBarres.push({
               key: `${f.id}:a`,
-              label: "N.T.B façonnées ∥ a",
+              label: slabAxisLabels.ntParallelALabel,
               dia,
               qtyM: safeQtyA,
               nt: diffSharedSpacingMetrics.ntA > 0 ? diffSharedSpacingMetrics.ntA : 0,
@@ -887,7 +889,7 @@ export default function TotalRowModalWindowInner({
 
             linesBarres.push({
               key: `${f.id}:b`,
-              label: "N.T.B façonnées ∥ b",
+              label: slabAxisLabels.ntParallelBLabel,
               dia,
               qtyM: safeQtyB,
               nt: diffSharedSpacingMetrics.ntB > 0 ? diffSharedSpacingMetrics.ntB : 0,

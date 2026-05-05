@@ -5,6 +5,7 @@ import {
   SLAB_RELATIONS,
 } from "../../config/formeBarreOptions";
 import {
+  getSlabAxisLabels,
   getNappeLabel,
   getSlabCalcMethodLabel,
   getSlabRelationLabel,
@@ -30,6 +31,7 @@ export default function SlabHeaderFields({
     slabSpacingMode: "ESPACEMENT",
     slabSpacingRelation: "EA_EQ_EB",
   } as const;
+  const slabAxisLabels = getSlabAxisLabels(base.normalizedDesignation);
   const slabCalcMethodOptions = base.isSlabSurfacePerM2SpacingDesignation
     ? SLAB_CALC_METHODS
     : (["SURFACE_TOTAL"] as const);
@@ -63,7 +65,7 @@ export default function SlabHeaderFields({
         <>
           <div className="flex flex-col">
             <SelectDropdown
-              label="Re. entre a et b"
+              label={slabAxisLabels.relationFieldLabel}
               value={slab.slabRelationValue}
               onChange={(v) =>
                 onPatch({
@@ -72,12 +74,12 @@ export default function SlabHeaderFields({
                 })
               }
               options={slabRelationOptions}
-              getOptionLabel={getSlabRelationLabel}
+              getOptionLabel={(value) => getSlabRelationLabel(value, base.normalizedDesignation)}
             />
           </div>
 
           <FieldInput
-            label="L. Barre a ou b (m)"
+            label={slabAxisLabels.lengthSharedLabel}
             value={x.slabLongueurAStr ?? "0"}
             onChange={(value) =>
               onPatch({
@@ -92,7 +94,7 @@ export default function SlabHeaderFields({
       ) : slab.showSlabRelationField ? (
         <div className="flex flex-col sm:col-span-2">
           <SelectDropdown
-            label="Re. entre a et b"
+            label={slabAxisLabels.relationFieldLabel}
             value={slab.slabRelationValue}
             onChange={(v) =>
               onPatch({
@@ -101,7 +103,7 @@ export default function SlabHeaderFields({
               })
             }
             options={slabRelationOptions}
-            getOptionLabel={getSlabRelationLabel}
+            getOptionLabel={(value) => getSlabRelationLabel(value, base.normalizedDesignation)}
           />
         </div>
       ) : null}
@@ -109,14 +111,14 @@ export default function SlabHeaderFields({
       {slab.showSlabSeparateLengthRow ? (
         <>
           <FieldInput
-            label="L. Barre a (m)"
+            label={slabAxisLabels.lengthALabel}
             value={x.slabLongueurAStr ?? "0"}
             onChange={(value) => onPatch({ slabLongueurAStr: value })}
             inputClass={inputClass}
             placeholder="Ex: 2,4"
           />
           <FieldInput
-            label="L. Barre b (m)"
+            label={slabAxisLabels.lengthBLabel}
             value={x.slabLongueurBStr ?? "0"}
             onChange={(value) => onPatch({ slabLongueurBStr: value })}
             inputClass={inputClass}

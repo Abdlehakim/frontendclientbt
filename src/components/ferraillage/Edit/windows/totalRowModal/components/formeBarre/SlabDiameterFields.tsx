@@ -1,4 +1,5 @@
 import type { FormeState } from "../../types";
+import { getSlabAxisLabels } from "../../config/formeBarreLabels";
 import DiametreField from "../common/DiametreField";
 import FieldInput from "../common/FieldInput";
 import type {
@@ -26,6 +27,7 @@ export default function SlabDiameterFields({
   inputClass: string;
   onPatch: FormeBarrePatch;
 }) {
+  const slabAxisLabels = getSlabAxisLabels(base.normalizedDesignation);
   const linearMetricInputs = (
     <SlabLinearMetricInputs
       x={x}
@@ -42,7 +44,7 @@ export default function SlabDiameterFields({
         <>
           {linearMetricInputs}
           <DiametreField
-            label="Di. a et b"
+            label={slabAxisLabels.diameterSharedLabel}
             mms={safeMms}
             value={base.diametreValue}
             onChange={(v) => onPatch({ diametreMm: v })}
@@ -54,13 +56,13 @@ export default function SlabDiameterFields({
         <div className="sm:col-span-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
           {linearMetricInputs}
           <DiametreField
-            label="Di. Fer a"
+            label={slabAxisLabels.diameterALabel}
             mms={safeMms}
             value={slab.slabDiametreAValue}
             onChange={(v) => onPatch({ slabDiametreAMm: v })}
           />
           <DiametreField
-            label="Di. Fer b"
+            label={slabAxisLabels.diameterBLabel}
             mms={safeMms}
             value={slab.slabDiametreBValue}
             onChange={(v) => onPatch({ slabDiametreBMm: v })}
@@ -72,7 +74,7 @@ export default function SlabDiameterFields({
         <>
           {linearMetricInputs}
           <DiametreField
-            label="Di. a et b"
+            label={slabAxisLabels.diameterSharedLabel}
             mms={safeMms}
             value={base.diametreValue}
             onChange={(v) => onPatch({ diametreMm: v })}
@@ -84,13 +86,13 @@ export default function SlabDiameterFields({
         <div className="sm:col-span-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
           {linearMetricInputs}
           <DiametreField
-            label="Di. Fer a"
+            label={slabAxisLabels.diameterALabel}
             mms={safeMms}
             value={slab.slabDiametreAValue}
             onChange={(v) => onPatch({ slabDiametreAMm: v })}
           />
           <DiametreField
-            label="Di. Fer b"
+            label={slabAxisLabels.diameterBLabel}
             mms={safeMms}
             value={slab.slabDiametreBValue}
             onChange={(v) => onPatch({ slabDiametreBMm: v })}
@@ -110,14 +112,14 @@ export default function SlabDiameterFields({
       !slab.showSlabSeparateLengthAnchorSharedDiaRow ? (
         <>
           <DiametreField
-            label="Di. a et b"
+            label={slabAxisLabels.diameterSharedLabel}
             mms={safeMms}
             value={base.diametreValue}
             onChange={(v) => onPatch({ diametreMm: v })}
           />
           {!slab.hideEarlySlabCountFieldsForSurfacePerM2 ? (
             <FieldInput
-              label="Nb. Barres a et b"
+              label={slabAxisLabels.countSharedLabel}
               value={x.nBarreStr}
               onChange={(value) => onPatch({ nBarreStr: value })}
               inputClass={inputClass}
@@ -133,14 +135,14 @@ export default function SlabDiameterFields({
       !slab.showSlabSeparateLengthAnchorDualDiaRow ? (
         <>
           <DiametreField
-            label="Di. Fer a"
+            label={slabAxisLabels.diameterALabel}
             mms={safeMms}
             value={slab.slabDiametreAValue}
             onChange={(v) => onPatch({ slabDiametreAMm: v })}
           />
           {!slab.hideEarlySlabCountFieldsForSurfacePerM2 ? (
             <FieldInput
-              label="Nb. Barres a"
+              label={slabAxisLabels.countALabel}
               value={x.slabNBarreAStr ?? "0"}
               onChange={(value) => onPatch({ slabNBarreAStr: value })}
               inputClass={inputClass}
@@ -149,14 +151,14 @@ export default function SlabDiameterFields({
             />
           ) : null}
           <DiametreField
-            label="Di. Fer b"
+            label={slabAxisLabels.diameterBLabel}
             mms={safeMms}
             value={slab.slabDiametreBValue}
             onChange={(v) => onPatch({ slabDiametreBMm: v })}
           />
           {!slab.hideEarlySlabCountFieldsForSurfacePerM2 ? (
             <FieldInput
-              label="Nb. Barres b"
+              label={slabAxisLabels.countBLabel}
               value={x.slabNBarreBStr ?? "0"}
               onChange={(value) => onPatch({ slabNBarreBStr: value })}
               inputClass={inputClass}

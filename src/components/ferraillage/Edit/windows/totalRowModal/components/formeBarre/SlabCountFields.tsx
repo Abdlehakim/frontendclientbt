@@ -1,6 +1,6 @@
 import type { FormeState } from "../../types";
 import { SLAB_SPACING_MODES } from "../../config/formeBarreOptions";
-import { getSlabSpacingModeLabel } from "../../config/formeBarreLabels";
+import { getSlabAxisLabels, getSlabSpacingModeLabel } from "../../config/formeBarreLabels";
 import FieldInput from "../common/FieldInput";
 import SelectDropdown from "../common/SelectDropdown";
 import type { FormeBarrePatch, SlabView } from "./FormeBarreFields.types";
@@ -8,14 +8,17 @@ import type { FormeBarrePatch, SlabView } from "./FormeBarreFields.types";
 export default function SlabCountFields({
   x,
   slab,
+  normalizedDesignation,
   inputClass,
   onPatch,
 }: {
   x: FormeState;
   slab: SlabView;
+  normalizedDesignation: string;
   inputClass: string;
   onPatch: FormeBarrePatch;
 }) {
+  const slabAxisLabels = getSlabAxisLabels(normalizedDesignation);
   const spacingModeOptions = slab.isSlabSurfacePerM2SpacingMode
     ? (["ESPACEMENT"] as const)
     : SLAB_SPACING_MODES;
@@ -45,7 +48,7 @@ export default function SlabCountFields({
           </div>
 
           <FieldInput
-            label="Nb. Barres a et b"
+            label={slabAxisLabels.countSharedLabel}
             value={x.slabNbCadreAStr ?? "0"}
             onChange={(value) =>
               onPatch({
@@ -73,7 +76,7 @@ export default function SlabCountFields({
           </div>
 
           <FieldInput
-            label="Nb. Barres a"
+            label={slabAxisLabels.countALabel}
             value={x.slabNbCadreAStr ?? "0"}
             onChange={(value) => onPatch({ slabNbCadreAStr: value })}
             inputClass={inputClass}
@@ -81,7 +84,7 @@ export default function SlabCountFields({
             inputMode="numeric"
           />
           <FieldInput
-            label="Nb. Barres b"
+            label={slabAxisLabels.countBLabel}
             value={x.slabNbCadreBStr ?? "0"}
             onChange={(value) => onPatch({ slabNbCadreBStr: value })}
             inputClass={inputClass}
@@ -93,4 +96,3 @@ export default function SlabCountFields({
     </>
   );
 }
-

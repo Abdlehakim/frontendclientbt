@@ -5,9 +5,11 @@ import ResultSingleSection from "./sections/ResultSingleSection";
 
 export default function FormeBarreResults({
   inputClass,
+  normalizedDesignation,
   result,
 }: {
   inputClass: string;
+  normalizedDesignation: string;
   result: FormeBarreResult;
 }) {
   if (result.kind === "dual") {
@@ -33,6 +35,7 @@ export default function FormeBarreResults({
       <div className="sm:col-span-2">
         <ResultSingleQteDualNtSection
           inputClass={inputClass}
+          normalizedDesignation={normalizedDesignation}
           qteValue={result.qteValue}
           ntA={result.ntA}
           ntB={result.ntB}

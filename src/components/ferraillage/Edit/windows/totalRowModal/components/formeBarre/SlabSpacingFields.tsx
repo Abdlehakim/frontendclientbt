@@ -4,6 +4,7 @@ import {
   SLAB_SPACING_RELATIONS,
 } from "../../config/formeBarreOptions";
 import {
+  getSlabAxisLabels,
   getSlabSpacingModeLabel,
   getSlabSpacingRelationLabel,
 } from "../../config/formeBarreLabels";
@@ -14,14 +15,17 @@ import type { FormeBarrePatch, SlabView } from "./FormeBarreFields.types";
 export default function SlabSpacingFields({
   x,
   slab,
+  normalizedDesignation,
   inputClass,
   onPatch,
 }: {
   x: FormeState;
   slab: SlabView;
+  normalizedDesignation: string;
   inputClass: string;
   onPatch: FormeBarrePatch;
 }) {
+  const slabAxisLabels = getSlabAxisLabels(normalizedDesignation);
   const spacingModeOptions = slab.isSlabSurfacePerM2SpacingMode
     ? (["ESPACEMENT"] as const)
     : SLAB_SPACING_MODES;
@@ -46,12 +50,12 @@ export default function SlabSpacingFields({
             value={slab.slabSpacingRelationValue}
             onChange={(v) => onPatch({ slabSpacingRelation: v })}
             options={SLAB_SPACING_RELATIONS}
-            getOptionLabel={getSlabSpacingRelationLabel}
+            getOptionLabel={(value) => getSlabSpacingRelationLabel(value, normalizedDesignation)}
           />
         </div>
 
         <FieldInput
-          label="Es. a et b"
+          label={slabAxisLabels.spacingSharedLabel}
           value={x.slabEspacementAStr ?? "0"}
           onChange={(value) =>
             onPatch({
@@ -86,21 +90,21 @@ export default function SlabSpacingFields({
                 value={slab.slabSpacingRelationValue}
                 onChange={(v) => onPatch({ slabSpacingRelation: v })}
                 options={SLAB_SPACING_RELATIONS}
-                getOptionLabel={getSlabSpacingRelationLabel}
+                getOptionLabel={(value) => getSlabSpacingRelationLabel(value, normalizedDesignation)}
               />
             </div>
           </>
         ) : null}
 
         <FieldInput
-          label="Es. a"
+          label={slabAxisLabels.spacingALabel}
           value={x.slabEspacementAStr ?? "0"}
           onChange={(value) => onPatch({ slabEspacementAStr: value })}
           inputClass={inputClass}
           placeholder="Ex: 0,2"
         />
         <FieldInput
-          label="Es. b"
+          label={slabAxisLabels.spacingBLabel}
           value={x.slabEspacementBStr ?? "0"}
           onChange={(value) => onPatch({ slabEspacementBStr: value })}
           inputClass={inputClass}
@@ -128,7 +132,7 @@ export default function SlabSpacingFields({
             value={slab.slabSpacingRelationValue}
             onChange={(v) => onPatch({ slabSpacingRelation: v })}
             options={SLAB_SPACING_RELATIONS}
-            getOptionLabel={getSlabSpacingRelationLabel}
+            getOptionLabel={(value) => getSlabSpacingRelationLabel(value, normalizedDesignation)}
           />
         </div>
       </>
