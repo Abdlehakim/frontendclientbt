@@ -78,10 +78,10 @@ export default function AddPlusDropdown({
         ref={btnRef}
         type="button"
         className={[
-          "form-control form-control--select inline-flex items-center gap-2 rounded-md border text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400",
+          "stepper__nav inline-flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-emerald-400",
           disabled
-            ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
-            : "cursor-pointer border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100",
+            ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
+            : "",
         ].join(" ")}
         aria-haspopup="menu"
         aria-expanded={open}

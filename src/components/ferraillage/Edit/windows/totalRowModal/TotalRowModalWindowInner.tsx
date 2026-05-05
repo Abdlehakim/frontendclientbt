@@ -24,7 +24,6 @@ import {
 import {
   computeBarreNT,
   computeBarreNTLongueurDesignation,
-  computeBarreQteLongueur,
   computeBarreNTStandard,
 } from "./calculations/barreCalculations";
 import { computeSemelleNTSharedSpacing } from "./calculations/semelleCalculations";
@@ -52,7 +51,6 @@ import {
 import RecapPanel, { type RecapData } from "./components/recap/RecapPanel";
 import FormeBarreAbbreviationsModal from "./components/formeBarre/FormeBarreAbbreviationsModal";
 import BarreCard from "./components/modal/BarreCard";
-import ModalFooter from "./components/modal/ModalFooter";
 import ModalHeader from "./components/modal/ModalHeader";
 import ModalTopFields from "./components/modal/ModalTopFields";
 import { buildInitialOrder, insertCardAtEndOfCurrentPage } from "./state/cardOrder";
@@ -902,7 +900,7 @@ export default function TotalRowModalWindowInner({
             : anc;
 
         const cutLenM = isLongrinesDesignationInner
-          ? barLen + 1
+          ? barLen + anc
           : usesLongueurLabel
             ? barLen + effectiveAnc
             : h + att + anc;
@@ -930,12 +928,7 @@ export default function TotalRowModalWindowInner({
               asString(f.ancrageStr),
             );
         const qtyM = isLongrinesDesignationInner
-          ? computeBarreQteLongueur(
-              nbStr,
-              asString(f.nBarreStr),
-              asString(f.longueurStr),
-              String(effectiveAnc),
-            )
+          ? nb * (n * (barLen + anc))
           : usesLongueurLabel
             ? nb * (n * (barLen + effectiveAnc))
             : nb * (n * (h + att + anc));
@@ -1087,6 +1080,7 @@ export default function TotalRowModalWindowInner({
               <ModalTopFields
                 designation={designation}
                 onDesignationChange={handleDesignationChange}
+                submitLabel={submitLabel}
                 nomenclature={nomenclature}
                 setNomenclature={setNomenclature}
                 nbStr={nbStr}
@@ -1110,6 +1104,9 @@ export default function TotalRowModalWindowInner({
                 addDropdownCloseKey={normalizedDesignation}
                 isRecapOpen={isRecapOpen}
                 onToggleRecap={() => setIsRecapOpen((prev) => !prev)}
+                canSubmit={canSubmit}
+                onSubmit={submit}
+                submitting={submitting}
               />
 
               <div className="mt-4 flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
@@ -1202,14 +1199,6 @@ export default function TotalRowModalWindowInner({
 
               {errorMessage ? <div className="mt-3 text-sm text-red-600">{errorMessage}</div> : null}
             </div>
-
-            <ModalFooter
-              submitLabel={submitLabel}
-              canSubmit={canSubmit}
-              onClose={onClose}
-              onSubmit={submit}
-              submitting={submitting}
-            />
           </div>
 
           {isRecapOpen ? (

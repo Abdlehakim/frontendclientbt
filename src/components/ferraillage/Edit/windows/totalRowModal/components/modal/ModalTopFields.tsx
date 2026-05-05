@@ -3,9 +3,12 @@ import DotsPagination from "@/components/DotsPagination";
 import AddPlusDropdown from "./AddPlusDropdown";
 import DesignationDropdown from "./DesignationDropdown";
 
+const actionButtonClass = "stepper__nav inline-flex items-center justify-center gap-2";
+
 export default function ModalTopFields({
   designation,
   onDesignationChange,
+  submitLabel,
   nomenclature,
   setNomenclature,
   nbStr,
@@ -29,9 +32,13 @@ export default function ModalTopFields({
   addDropdownCloseKey,
   isRecapOpen,
   onToggleRecap,
+  canSubmit,
+  onSubmit,
+  submitting = false,
 }: {
   designation: string;
   onDesignationChange: (value: string) => void;
+  submitLabel: string;
   nomenclature: string;
   setNomenclature: Dispatch<SetStateAction<string>>;
   nbStr: string;
@@ -55,6 +62,9 @@ export default function ModalTopFields({
   addDropdownCloseKey: string;
   isRecapOpen: boolean;
   onToggleRecap: () => void;
+  canSubmit: boolean;
+  onSubmit: () => void;
+  submitting?: boolean;
 }) {
   const topFieldsClass = showHauteurField
     ? "grid grid-cols-1 gap-4 md:grid-cols-[minmax(14rem,20rem)_minmax(0,1fr)_120px_minmax(9rem,12rem)] md:items-end"
@@ -106,23 +116,8 @@ export default function ModalTopFields({
 
       <div className="flex flex-col gap-3 border-t border-gray-200 pt-3 sm:flex-row sm:items-center sm:justify-between">
         <DotsPagination currentPage={safePage} totalPages={totalPages} onPageChange={onPageChange} />
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <button
-            type="button"
-            className={[
-              "form-control form-control--select inline-flex items-center gap-2 rounded-md border text-sm font-semibold cursor-pointer transition-colors",
-              isRecapOpen
-                ? "border-emerald-300 bg-emerald-100 text-emerald-900 hover:bg-emerald-200"
-                : "border-gray-300 bg-white text-slate-700 hover:bg-gray-50",
-              "focus:outline-none focus:ring-2 focus:ring-emerald-400",
-            ].join(" ")}
-            onClick={onToggleRecap}
-            aria-pressed={isRecapOpen}
-            title="Récapitulatif"
-          >
-            <span>Récapitulatif</span>
-          </button>
 
+        <div className="flex items-center justify-end gap-2">
           <AddPlusDropdown
             onAddCadre={onAddCadre}
             onAddBarre={onAddBarre}
@@ -135,6 +130,26 @@ export default function ModalTopFields({
             closeOnChangeKey={addDropdownCloseKey}
             disabled={!hasValidDesignation}
           />
+
+          <button
+            type="button"
+            className={actionButtonClass}
+            onClick={onToggleRecap}
+            aria-pressed={isRecapOpen}
+            title="Récapitulatif"
+          >
+            <span>Récapitulatif</span>
+          </button>
+
+          <button
+            type="button"
+            className={actionButtonClass}
+            onClick={onSubmit}
+            disabled={!canSubmit || submitting}
+            aria-disabled={!canSubmit || submitting}
+          >
+            {submitting ? "Enregistrement..." : submitLabel}
+          </button>
         </div>
       </div>
     </div>
