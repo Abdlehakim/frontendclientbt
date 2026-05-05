@@ -523,6 +523,8 @@ export default function TotalRowModalWindowInner({
           const spacingRelation = asSlabSpacingRelation(f.slabSpacingRelation);
           const normalizedSpacingRelation = normalizeSlabSpacingRelationValue(spacingRelation);
           const steelType = asTrimmedString(f.barreCategorie, "") || undefined;
+          const methodLabel =
+            calcMethod === "SURFACE_TOTAL_PER_M2" ? "Surface totale / m²" : "Surface totale";
 
           if (
             isSlabSurfacePerM2SpacingDesignationInner &&
@@ -700,7 +702,7 @@ export default function TotalRowModalWindowInner({
               nt: ntA > 0 ? ntA : 0,
               cutLenM: cutLenA > 0 ? cutLenA : 0,
               steelType,
-              litLabel: calcMethod === "SURFACE_TOTAL_PER_M2" ? "Surface totale / m²" : "Surface totale",
+              litLabel: methodLabel,
             });
 
             linesBarres.push({
@@ -711,7 +713,7 @@ export default function TotalRowModalWindowInner({
               nt: ntB > 0 ? ntB : 0,
               cutLenM: cutLenB > 0 ? cutLenB : 0,
               steelType,
-              litLabel: calcMethod === "SURFACE_TOTAL_PER_M2" ? "Surface totale / m²" : "Surface totale",
+              litLabel: methodLabel,
             });
 
             addQty(dia, safeQtyA);
@@ -787,9 +789,6 @@ export default function TotalRowModalWindowInner({
             asString(f.slabSurfaceStr),
             asString(f.slabQtePerM2Str),
           );
-          const methodLabel =
-            calcMethod === "SURFACE_TOTAL_PER_M2" ? "Surface totale / m²" : "Surface totale";
-
           linesBarres.push({
             key: f.id,
             label: "Q. Fer",
