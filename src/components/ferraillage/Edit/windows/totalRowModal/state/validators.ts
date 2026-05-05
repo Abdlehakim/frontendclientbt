@@ -2,6 +2,8 @@ import type { FormeState } from "../types";
 import { parseNonNegativeNumber, parsePositiveInt, parsePositiveNumber } from "../utils";
 import {
   asSemelleRelation,
+  asSlabRelation,
+  asSlabSpacingMode,
   asString,
   asTrimmedString,
   normalizeSlabSpacingRelationValue,
@@ -77,5 +79,31 @@ export function isSlabBarreValid(
     );
   }
 
-  return parsePositiveNumber(asString(source.slabSurfaceStr)) != null;
+  const relation = asSlabRelation(source.slabRelation);
+  const spacingMode = asSlabSpacingMode(source.slabSpacingMode);
+  const spacingRelation = normalizeSlabSpacingRelationValue(source.slabSpacingRelation);
+
+  if (parsePositiveNumber(asString(source.slabLongueurAStr)) == null) return false;
+
+  const needsLengthB = relation === "ab_diff_same_if" || relation === "ab_diff_diff_if";
+  if (needsLengthB && parsePositiveNumber(asString(source.slabLongueurBStr)) == null) return false;
+
+  if (spacingMode === "ESPACEMENT") {
+    if (parsePositiveNumber(asString(source.slabEspacementAStr)) == null) return false;
+
+    if (spacingRelation === "EA_NE_EB") {
+      return parsePositiveNumber(asString(source.slabEspacementBStr)) != null;
+    }
+
+    return true;
+  }
+
+  if (relation === "ab_equal_same_if") {
+    return parsePositiveInt(asString(source.slabNbCadreAStr)) != null;
+  }
+
+  return (
+    parsePositiveInt(asString(source.slabNbCadreAStr)) != null &&
+    parsePositiveInt(asString(source.slabNbCadreBStr)) != null
+  );
 }
