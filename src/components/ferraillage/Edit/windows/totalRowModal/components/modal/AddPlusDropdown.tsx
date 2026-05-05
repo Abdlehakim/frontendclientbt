@@ -13,6 +13,7 @@ export default function AddPlusDropdown({
   showEpingleOption = true,
   showEtriersOption = true,
   closeOnChangeKey,
+  disabled = false,
 }: {
   onAddCadre: () => void;
   onAddBarre: () => void;
@@ -23,6 +24,7 @@ export default function AddPlusDropdown({
   showEpingleOption?: boolean;
   showEtriersOption?: boolean;
   closeOnChangeKey?: string;
+  disabled?: boolean;
 }) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const btnRef = useRef<HTMLButtonElement | null>(null);
@@ -60,6 +62,10 @@ export default function AddPlusDropdown({
     setOpen(false);
   }, [closeOnChangeKey]);
 
+  useEffect(() => {
+    if (disabled) setOpen(false);
+  }, [disabled]);
+
   const items: { key: "CADRE" | "BARRE" | "EPINGLE" | "ETRIERS"; label: string }[] = [];
   if (showBarreOption) items.push({ key: "BARRE", label: "Ajouter Barre" });
   if (showCadreOption) items.push({ key: "CADRE", label: "Ajouter Cadre" });
@@ -71,10 +77,20 @@ export default function AddPlusDropdown({
       <button
         ref={btnRef}
         type="button"
-        className="form-control form-control--select inline-flex items-center gap-2 rounded-md border text-sm font-semibold cursor-pointer bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+        className={[
+          "form-control form-control--select inline-flex items-center gap-2 rounded-md border text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400",
+          disabled
+            ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
+            : "cursor-pointer border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100",
+        ].join(" ")}
         aria-haspopup="menu"
         aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
+        aria-disabled={disabled}
+        disabled={disabled}
+        onClick={() => {
+          if (disabled) return;
+          setOpen((v) => !v);
+        }}
         title="Ajouter"
       >
         <span>Ajouter Elements</span>

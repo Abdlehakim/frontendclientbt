@@ -22,6 +22,7 @@ import {
   FormeCard,
 } from "./components";
 import {
+  computeBarreNT,
   computeBarreNTLongueurDesignation,
   computeBarreNTStandard,
 } from "./calculations/barreCalculations";
@@ -493,6 +494,7 @@ export default function TotalRowModalWindowInner({
     const nb = parsePositiveInt(nbStr) ?? 0;
     const h = showHauteurField ? parsePositiveNumber(hauteurStr) ?? 0 : 0;
     const isSemellesDesignationInner = normalizeDesignation(designation) === "semelles";
+    const isPoteauxDesignationInner = normalizeDesignation(designation) === "poteaux";
     const isSlabDesignationInner = isSlabDesignationValue(designation);
     const isSlabSurfacePerM2SpacingDesignationInner =
       isSlabSurfacePerM2SpacingDesignationValue(designation);
@@ -589,7 +591,7 @@ export default function TotalRowModalWindowInner({
 
             linesBarres.push({
               key: f.id,
-              label: "N.T.Barre façonnées",
+              label: "N.T.Barres façonnées",
               dia,
               qtyM: safeTotalQtyM,
               nt: totalNt,
@@ -677,7 +679,7 @@ export default function TotalRowModalWindowInner({
 
             linesBarres.push({
               key: `${f.id}:a`,
-              label: "N.T.Barre façonnées / a",
+              label: "N.T.Barres façonnées / a",
               dia,
               qtyM: safeQtyA,
               nt: diffSharedSpacingMetrics.ntA > 0 ? diffSharedSpacingMetrics.ntA : 0,
@@ -688,7 +690,7 @@ export default function TotalRowModalWindowInner({
 
             linesBarres.push({
               key: `${f.id}:b`,
-              label: "N.T.Barre façonnées / b",
+              label: "N.T.Barres façonnées / b",
               dia,
               qtyM: safeQtyB,
               nt: diffSharedSpacingMetrics.ntB > 0 ? diffSharedSpacingMetrics.ntB : 0,
@@ -721,7 +723,7 @@ export default function TotalRowModalWindowInner({
 
             linesBarres.push({
               key: f.id,
-              label: "N.T.Barre façonnées",
+              label: "N.T.Barres façonnées",
               dia,
               qtyM: qtyM > 0 ? qtyM : 0,
               nt: nt > 0 ? nt : 0,
@@ -777,8 +779,8 @@ export default function TotalRowModalWindowInner({
               key: `${f.id}:${suffix}`,
               label:
                 suffix === "a"
-                  ? "N.T.Barre façonnées (a)"
-                  : "N.T.Barre façonnées (b)",
+                  ? "N.T.Barres façonnées (a)"
+                  : "N.T.Barres façonnées (b)",
               dia: lineDia,
               qtyM: safeQty,
               nt: safeNt,
@@ -796,7 +798,7 @@ export default function TotalRowModalWindowInner({
 
             linesBarres.push({
               key: `${f.id}:a`,
-              label: "N.T.Barre façonnées (a)",
+              label: "N.T.Barres façonnées (a)",
               dia,
               qtyM: qtyM > 0 ? qtyM : 0,
               nt: nt > 0 ? nt : 0,
@@ -874,7 +876,7 @@ export default function TotalRowModalWindowInner({
 
           linesBarres.push({
             key: `${f.id}:ab`,
-            label: "N.T.Barre façonnées (a et b)",
+            label: "N.T.Barres façonnées (a et b)",
             dia,
             qtyM: qtyM > 0 ? qtyM : 0,
             nt: nt > 0 ? nt : 0,
@@ -904,6 +906,11 @@ export default function TotalRowModalWindowInner({
               asString(f.longueurStr),
               String(effectiveAnc),
             )
+          : isPoteauxDesignationInner
+            ? computeBarreNT(
+                nbStr,
+                asString(f.nBarreStr),
+              )
           : computeBarreNTStandard(
               nbStr,
               asString(f.nBarreStr),
@@ -923,7 +930,7 @@ export default function TotalRowModalWindowInner({
 
         linesBarres.push({
           key: f.id,
-          label: "N.T.Barre façonnées",
+          label: "N.T.Barres façonnées",
           dia,
           qtyM: qtyM > 0 ? qtyM : 0,
           nt: safeNt,

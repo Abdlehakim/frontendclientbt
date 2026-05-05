@@ -59,6 +59,8 @@ export default function ModalTopFields({
   const topFieldsClass = showHauteurField
     ? "grid grid-cols-1 gap-4 md:grid-cols-[minmax(14rem,20rem)_minmax(0,1fr)_120px_minmax(9rem,12rem)] md:items-end"
     : "grid grid-cols-1 gap-4 md:grid-cols-[minmax(14rem,20rem)_minmax(0,1fr)_120px] md:items-end";
+  const designationValue = (designation ?? "").trim();
+  const hasValidDesignation = designationValue !== "" && designationValue !== "Choisir...";
 
   return (
     <div className="grid grid-cols-1 gap-4 shrink-0">
@@ -131,6 +133,7 @@ export default function ModalTopFields({
             showEpingleOption={showEpingleAddOption}
             showEtriersOption={showEtriersAddOption}
             closeOnChangeKey={addDropdownCloseKey}
+            disabled={!hasValidDesignation}
           />
         </div>
       </div>

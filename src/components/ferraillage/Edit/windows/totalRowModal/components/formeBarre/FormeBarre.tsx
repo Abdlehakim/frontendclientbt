@@ -106,6 +106,7 @@ export default function FormeBarre({
     x,
     nbStr,
     hauteurStr,
+    normalizedDesignation: base.normalizedDesignation,
     isSlab: base.isSlab,
     slabQte: slabAutoValues.auto.qte,
     slabNt: slabAutoValues.auto.nt,

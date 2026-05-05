@@ -22,6 +22,7 @@ export function useBarreAutoValues({
   x,
   nbStr,
   hauteurStr,
+  normalizedDesignation,
   isSlab,
   slabQte,
   slabNt,
@@ -38,6 +39,7 @@ export function useBarreAutoValues({
   x: FormeState;
   nbStr: string;
   hauteurStr: string;
+  normalizedDesignation: string;
   isSlab: boolean;
   slabQte: number;
   slabNt: number;
@@ -187,6 +189,10 @@ export function useBarreAutoValues({
       );
     }
 
+    if (normalizedDesignation === "poteaux") {
+      return computeBarreNT(nbStr, x.nBarreStr);
+    }
+
     return computeBarreNTStandard(
       nbStr,
       x.nBarreStr,
@@ -203,6 +209,7 @@ export function useBarreAutoValues({
     semelleEqualDualActive,
     semelleDiffDualActive,
     showBarreOptions,
+    normalizedDesignation,
     nbStr,
     hauteurStr,
     x.nBarreStr,

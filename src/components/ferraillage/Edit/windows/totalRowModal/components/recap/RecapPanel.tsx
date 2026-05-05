@@ -39,11 +39,11 @@ function getRecapBaseKey(key: string) {
 }
 
 function isSemellePairALabel(label: string) {
-  return label === "N.T.Barre façonnées (a)";
+  return label === "N.T.Barres façonnées (a)";
 }
 
 function isSemellePairBLabel(label: string) {
-  return label === "N.T.Barre façonnées (b)";
+  return label === "N.T.Barres façonnées (b)";
 }
 
 function groupBarreLines(lines: RecapLine[]): GroupedBarreEntry[] {
@@ -83,7 +83,7 @@ function BarreSingleCard({ l }: { l: RecapLine }) {
     <div className="rounded-md border border-gray-200 bg-white px-3 py-2">
       <div className="flex items-center justify-between text-xs">
         <div className="font-semibold text-gray-900">
-          {l.label || "N.T.Barre façonnées"}
+          {l.label || "N.T.Barres façonnées"}
         </div>
         <div className="text-gray-600">{l.dia != null ? ferLabel(l.dia) : "-"}</div>
       </div>
@@ -107,11 +107,11 @@ function BarreSingleCard({ l }: { l: RecapLine }) {
       ) : null}
 
       <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-        <div className="text-gray-500">N.T.</div>
-        <div className="text-right font-semibold text-gray-900">{fmtNum(l.nt)}</div>
-
         <div className="text-gray-500">Quantités</div>
         <div className="text-right font-semibold text-gray-900">{fmtNum(l.qtyM)} m</div>
+
+        <div className="text-gray-500">N.T.</div>
+        <div className="text-right font-semibold text-gray-900">{fmtNum(l.nt)}</div>
 
         <div className="text-gray-500">Longueur tige à couper</div>
         <div className="text-right font-semibold text-gray-900">{fmtNum(l.cutLenM)} m</div>
@@ -135,11 +135,11 @@ function BarrePairColumn({
       </div>
 
       <div className="mt-2 grid grid-cols-2 gap-x-2 gap-y-1.5 text-xs">
-        <div className="text-gray-500">N.T.</div>
-        <div className="text-right font-semibold text-gray-900">{fmtNum(line.nt)}</div>
-
         <div className="text-gray-500">Quantités</div>
         <div className="text-right font-semibold text-gray-900">{fmtNum(line.qtyM)} m</div>
+
+        <div className="text-gray-500">N.T.</div>
+        <div className="text-right font-semibold text-gray-900">{fmtNum(line.nt)}</div>
 
         <div className="text-gray-500">L. à couper</div>
         <div className="text-right font-semibold text-gray-900">{fmtNum(line.cutLenM)} m</div>
@@ -158,7 +158,7 @@ function BarrePairCard({
   return (
     <div className="rounded-md border border-gray-200 bg-white px-3 py-2">
       <div className="mb-2 text-xs font-semibold text-gray-900">
-        N.T.Barre façonnées
+        N.T.Barres façonnées
       </div>
 
       <div className="grid grid-cols-1 gap-2">
@@ -277,26 +277,6 @@ export default function RecapPanel({
           <div className="mb-2 text-xs font-semibold text-gray-800">Détails rapides</div>
 
           <div className="space-y-2">
-            {recap.linesCadres.map((l) => (
-              <div key={l.key} className="rounded-md border border-gray-200 bg-white px-3 py-2">
-                <div className="flex items-center justify-between text-xs">
-                  <div className="font-semibold text-gray-900">{l.label}</div>
-                  <div className="text-gray-600">{l.dia != null ? ferLabel(l.dia) : "-"}</div>
-                </div>
-
-                <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-                  <div className="text-gray-500">N.T.</div>
-                  <div className="text-right font-semibold text-gray-900">{fmtNum(l.nt)}</div>
-
-                  <div className="text-gray-500">Quantités</div>
-                  <div className="text-right font-semibold text-gray-900">{fmtNum(l.qtyM)} m</div>
-
-                  <div className="text-gray-500">Longueur tige à couper</div>
-                  <div className="text-right font-semibold text-gray-900">{fmtNum(l.cutLenM)} m</div>
-                </div>
-              </div>
-            ))}
-
             {groupedBarreLines.map((entry, index) => {
               if (entry.type === "pair") {
                 return (
@@ -311,6 +291,26 @@ export default function RecapPanel({
               return <BarreSingleCard key={`${entry.line.key}__${index}`} l={entry.line} />;
             })}
 
+            {recap.linesCadres.map((l) => (
+              <div key={l.key} className="rounded-md border border-gray-200 bg-white px-3 py-2">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="font-semibold text-gray-900">{l.label}</div>
+                  <div className="text-gray-600">{l.dia != null ? ferLabel(l.dia) : "-"}</div>
+                </div>
+
+                <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                  <div className="text-gray-500">Quantités</div>
+                  <div className="text-right font-semibold text-gray-900">{fmtNum(l.qtyM)} m</div>
+
+                  <div className="text-gray-500">N.T.</div>
+                  <div className="text-right font-semibold text-gray-900">{fmtNum(l.nt)}</div>
+
+                  <div className="text-gray-500">Longueur tige à couper</div>
+                  <div className="text-right font-semibold text-gray-900">{fmtNum(l.cutLenM)} m</div>
+                </div>
+              </div>
+            ))}
+
             {recap.linesExtras.map((l) => (
               <div key={l.key} className="rounded-md border border-gray-200 bg-white px-3 py-2">
                 <div className="flex items-center justify-between text-xs">
@@ -319,11 +319,11 @@ export default function RecapPanel({
                 </div>
 
                 <div className="mt-1 grid grid-cols-2 gap-2 text-xs">
-                  <div className="text-gray-500">N.T.</div>
-                  <div className="text-right font-semibold text-gray-900">{fmtNum(l.nt)}</div>
-
                   <div className="text-gray-500">Quantités</div>
                   <div className="text-right font-semibold text-gray-900">{fmtNum(l.qtyM)} m</div>
+
+                  <div className="text-gray-500">N.T.</div>
+                  <div className="text-right font-semibold text-gray-900">{fmtNum(l.nt)}</div>
 
                   <div className="text-gray-500">Longueur tige à couper</div>
                   <div className="text-right font-semibold text-gray-900">{fmtNum(l.cutLenM)} m</div>

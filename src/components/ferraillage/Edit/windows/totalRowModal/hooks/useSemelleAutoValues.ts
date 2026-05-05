@@ -47,12 +47,12 @@ export function useSemelleAutoValues({
     : "Q. Fer b (m)";
 
   const ntLabelA = semelleDiamLabelA
-    ? `N.T.Barre façonnées ${semelleDiamLabelA}`
-    : "N.T.Barre façonnées a";
+    ? `N.T.Barres façonnées ${semelleDiamLabelA}`
+    : "N.T.Barres façonnées a";
 
   const ntLabelB = semelleDiamLabelB
-    ? `N.T.Barre façonnées ${semelleDiamLabelB}`
-    : "N.T.Barre façonnées b";
+    ? `N.T.Barres façonnées ${semelleDiamLabelB}`
+    : "N.T.Barres façonnées b";
 
   return {
     dual,
