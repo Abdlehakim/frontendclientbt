@@ -59,7 +59,7 @@ export default function DiametreDropdown({
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="truncate">{`Fer ${value}`}</span>
+        <span className="truncate text-xs">{`Fer ${value}`}</span>
         {open ? <IoIosArrowDropup className="shrink-0" size={18} /> : <IoIosArrowDropdown className="shrink-0" size={18} />}
       </button>
 
@@ -67,7 +67,7 @@ export default function DiametreDropdown({
         ? createPortal(
             <div
               ref={listRef}
-              className="rounded-md border bg-white shadow-lg border-emerald-200"
+              className="rounded-md border bg-white shadow-lg border-emerald-200 text-xs"
               role="listbox"
               style={{
                 position: "fixed",

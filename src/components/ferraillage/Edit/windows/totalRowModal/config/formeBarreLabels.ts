@@ -30,13 +30,13 @@ export function getNappeLabel(value: SemelleNappe | SlabNappe) {
 export function getSemelleRelationLabel(v: SemelleRelation) {
   switch (v) {
     case "ab_equal_same_if":
-      return "a = b et if/a = if/b";
+      return "a = b et if.a = if.b";
     case "ab_equal_diff_if":
-      return "a = b et if/a ≠ if/b";
+      return "a = b et if.a ≠ if.b";
     case "ab_diff_same_if":
-      return "a ≠ b et if/a = if/b";
+      return "a ≠ b et if.a = if.b";
     case "ab_diff_diff_if":
-      return "a ≠ b et if/a ≠ if/b";
+      return "a ≠ b et if.a ≠ if.b";
     default:
       return v;
   }
@@ -45,13 +45,13 @@ export function getSemelleRelationLabel(v: SemelleRelation) {
 export function getSlabRelationLabel(v: SlabRelation) {
   switch (v) {
     case "ab_equal_same_if":
-      return "a = b et if/a = if/b";
+      return "a = b et if.a = if.b";
     case "ab_equal_diff_if":
-      return "a = b et if/a ≠ if/b";
+      return "a = b et if.a ≠ if.b";
     case "ab_diff_same_if":
-      return "a ≠ b et if/a = if/b";
+      return "a ≠ b et if.a = if.b";
     case "ab_diff_diff_if":
-      return "a ≠ b et if/a ≠ if/b";
+      return "a ≠ b et if.a ≠ if.b";
     default:
       return v;
   }

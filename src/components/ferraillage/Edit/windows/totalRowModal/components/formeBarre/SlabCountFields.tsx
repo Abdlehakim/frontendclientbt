@@ -13,9 +13,20 @@ export default function SlabCountFields({
   inputClass: string;
   onPatch: FormeBarrePatch;
 }) {
+  const showDiffNbBarSplitInputs =
+    slab.slabEffectiveSpacingModeValue === "NB_CADRE" &&
+    (slab.slabDiffSharedActive || slab.slabDiffDualActive);
+  const showSharedNbBarInput =
+    !showDiffNbBarSplitInputs &&
+    (slab.showSlabSharedNbCadreInput || slab.showSlabModeAndSharedNbBarRow);
+  const showDualNbBarInputs =
+    showDiffNbBarSplitInputs ||
+    slab.showSlabDualNbCadreInputs ||
+    slab.showSlabModeAndDualNbBarRow;
+
   return (
     <>
-      {slab.showSlabSharedNbCadreInput || slab.showSlabModeAndSharedNbBarRow ? (
+      {showSharedNbBarInput ? (
         <FieldInput
           label="Nb. Barres a et b"
           value={x.slabNbCadreAStr ?? "0"}
@@ -32,7 +43,7 @@ export default function SlabCountFields({
         />
       ) : null}
 
-      {slab.showSlabDualNbCadreInputs || slab.showSlabModeAndDualNbBarRow ? (
+      {showDualNbBarInputs ? (
         <>
           <FieldInput
             label="Nb. Barres a"
