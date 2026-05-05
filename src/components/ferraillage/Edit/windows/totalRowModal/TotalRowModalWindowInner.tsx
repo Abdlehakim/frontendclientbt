@@ -24,6 +24,7 @@ import {
 import {
   computeBarreNT,
   computeBarreNTLongueurDesignation,
+  computeBarreQteLongueur,
   computeBarreNTStandard,
 } from "./calculations/barreCalculations";
 import { computeSemelleNTSharedSpacing } from "./calculations/semelleCalculations";
@@ -494,6 +495,7 @@ export default function TotalRowModalWindowInner({
     const nb = parsePositiveInt(nbStr) ?? 0;
     const h = showHauteurField ? parsePositiveNumber(hauteurStr) ?? 0 : 0;
     const isSemellesDesignationInner = normalizeDesignation(designation) === "semelles";
+    const isLongrinesDesignationInner = normalizeDesignation(designation) === "longrines";
     const isPoteauxDesignationInner = normalizeDesignation(designation) === "poteaux";
     const isSlabDesignationInner = isSlabDesignationValue(designation);
     const isSlabSurfacePerM2SpacingDesignationInner =
@@ -899,8 +901,17 @@ export default function TotalRowModalWindowInner({
             ? 0
             : anc;
 
-        const cutLenM = usesLongueurLabel ? barLen + effectiveAnc : h + att + anc;
-        const nt = usesLongueurLabel
+        const cutLenM = isLongrinesDesignationInner
+          ? barLen + 1
+          : usesLongueurLabel
+            ? barLen + effectiveAnc
+            : h + att + anc;
+        const nt = isLongrinesDesignationInner
+          ? computeBarreNT(
+              nbStr,
+              asString(f.nBarreStr),
+            )
+          : usesLongueurLabel
           ? computeBarreNTLongueurDesignation(
               nbStr,
               asString(f.longueurStr),
@@ -918,9 +929,16 @@ export default function TotalRowModalWindowInner({
               asString(f.attenteStr),
               asString(f.ancrageStr),
             );
-        const qtyM = usesLongueurLabel
-          ? nb * (n * (barLen + effectiveAnc))
-          : nb * (n * (h + att + anc));
+        const qtyM = isLongrinesDesignationInner
+          ? computeBarreQteLongueur(
+              nbStr,
+              asString(f.nBarreStr),
+              asString(f.longueurStr),
+              String(effectiveAnc),
+            )
+          : usesLongueurLabel
+            ? nb * (n * (barLen + effectiveAnc))
+            : nb * (n * (h + att + anc));
         const safeNt = nt > 0 ? nt : 0;
 
         const steelType = usesLongueurLabel && steelTypeRaw ? steelTypeRaw : undefined;

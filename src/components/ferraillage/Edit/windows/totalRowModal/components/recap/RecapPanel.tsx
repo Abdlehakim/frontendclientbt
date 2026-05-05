@@ -78,13 +78,21 @@ function groupBarreLines(lines: RecapLine[]): GroupedBarreEntry[] {
   return out;
 }
 
-function BarreSingleCard({ l }: { l: RecapLine }) {
+function getExtraInstanceBaseName(label: string) {
+  return label.includes("Épingle") ? "Épingle" : "Étriers";
+}
+
+function BarreSingleCard({
+  title,
+  l,
+}: {
+  title: string;
+  l: RecapLine;
+}) {
   return (
     <div className="rounded-md border border-gray-200 bg-white px-3 py-2">
       <div className="flex items-center justify-between text-xs">
-        <div className="font-semibold text-gray-900">
-          {l.label || "N.T.Barres façonnées"}
-        </div>
+        <div className="font-semibold text-gray-900">{title}</div>
         <div className="text-gray-600">{l.dia != null ? ferLabel(l.dia) : "-"}</div>
       </div>
 
@@ -110,7 +118,7 @@ function BarreSingleCard({ l }: { l: RecapLine }) {
         <div className="text-gray-500">Quantités</div>
         <div className="text-right font-semibold text-gray-900">{fmtNum(l.qtyM)} m</div>
 
-        <div className="text-gray-500">N.T.</div>
+        <div className="text-gray-500">{l.label || "N.T.Barres façonnées"}</div>
         <div className="text-right font-semibold text-gray-900">{fmtNum(l.nt)}</div>
 
         <div className="text-gray-500">Longueur tige à couper</div>
@@ -138,7 +146,7 @@ function BarrePairColumn({
         <div className="text-gray-500">Quantités</div>
         <div className="text-right font-semibold text-gray-900">{fmtNum(line.qtyM)} m</div>
 
-        <div className="text-gray-500">N.T.</div>
+        <div className="text-gray-500">{line.label || "N.T.Barres façonnées"}</div>
         <div className="text-right font-semibold text-gray-900">{fmtNum(line.nt)}</div>
 
         <div className="text-gray-500">L. à couper</div>
@@ -149,17 +157,17 @@ function BarrePairColumn({
 }
 
 function BarrePairCard({
+  title,
   left,
   right,
 }: {
+  title: string;
   left: RecapLine;
   right: RecapLine;
 }) {
   return (
     <div className="rounded-md border border-gray-200 bg-white px-3 py-2">
-      <div className="mb-2 text-xs font-semibold text-gray-900">
-        N.T.Barres façonnées
-      </div>
+      <div className="mb-2 text-xs font-semibold text-gray-900">{title}</div>
 
       <div className="grid grid-cols-1 gap-2">
         <BarrePairColumn title="(a)" line={left} />
@@ -204,6 +212,23 @@ export default function RecapPanel({
   const groupedBarreLines = useMemo(() => {
     return groupBarreLines(recap.linesBarres);
   }, [recap.linesBarres]);
+
+  const titledExtraLines = useMemo(() => {
+    const counts = { epingle: 0, etriers: 0 };
+
+    return recap.linesExtras.map((line) => {
+      const baseName = getExtraInstanceBaseName(line.label);
+      const index =
+        baseName === "Épingle"
+          ? ++counts.epingle
+          : ++counts.etriers;
+
+      return {
+        line,
+        title: `${baseName} ${index}`,
+      };
+    });
+  }, [recap.linesExtras]);
 
   const hauteurLabel = usesLongueurLabel ? "Longueur" : "Hauteur";
   const headTitle = designationLabel || "-";
@@ -278,23 +303,32 @@ export default function RecapPanel({
 
           <div className="space-y-2">
             {groupedBarreLines.map((entry, index) => {
+              const title = `Barre ${index + 1}`;
+
               if (entry.type === "pair") {
                 return (
                   <BarrePairCard
                     key={`${entry.left.key}__${entry.right.key}__${index}`}
+                    title={title}
                     left={entry.left}
                     right={entry.right}
                   />
                 );
               }
 
-              return <BarreSingleCard key={`${entry.line.key}__${index}`} l={entry.line} />;
+              return (
+                <BarreSingleCard
+                  key={`${entry.line.key}__${index}`}
+                  title={title}
+                  l={entry.line}
+                />
+              );
             })}
 
-            {recap.linesCadres.map((l) => (
+            {recap.linesCadres.map((l, index) => (
               <div key={l.key} className="rounded-md border border-gray-200 bg-white px-3 py-2">
                 <div className="flex items-center justify-between text-xs">
-                  <div className="font-semibold text-gray-900">{l.label}</div>
+                  <div className="font-semibold text-gray-900">{`Cadre ${index + 1}`}</div>
                   <div className="text-gray-600">{l.dia != null ? ferLabel(l.dia) : "-"}</div>
                 </div>
 
@@ -302,7 +336,7 @@ export default function RecapPanel({
                   <div className="text-gray-500">Quantités</div>
                   <div className="text-right font-semibold text-gray-900">{fmtNum(l.qtyM)} m</div>
 
-                  <div className="text-gray-500">N.T.</div>
+                  <div className="text-gray-500">{l.label}</div>
                   <div className="text-right font-semibold text-gray-900">{fmtNum(l.nt)}</div>
 
                   <div className="text-gray-500">Longueur tige à couper</div>
@@ -311,22 +345,22 @@ export default function RecapPanel({
               </div>
             ))}
 
-            {recap.linesExtras.map((l) => (
-              <div key={l.key} className="rounded-md border border-gray-200 bg-white px-3 py-2">
+            {titledExtraLines.map(({ line, title }) => (
+              <div key={line.key} className="rounded-md border border-gray-200 bg-white px-3 py-2">
                 <div className="flex items-center justify-between text-xs">
-                  <div className="font-semibold text-gray-900">{l.label}</div>
-                  <div className="text-gray-600">{l.dia != null ? ferLabel(l.dia) : "-"}</div>
+                  <div className="font-semibold text-gray-900">{title}</div>
+                  <div className="text-gray-600">{line.dia != null ? ferLabel(line.dia) : "-"}</div>
                 </div>
 
                 <div className="mt-1 grid grid-cols-2 gap-2 text-xs">
                   <div className="text-gray-500">Quantités</div>
-                  <div className="text-right font-semibold text-gray-900">{fmtNum(l.qtyM)} m</div>
+                  <div className="text-right font-semibold text-gray-900">{fmtNum(line.qtyM)} m</div>
 
-                  <div className="text-gray-500">N.T.</div>
-                  <div className="text-right font-semibold text-gray-900">{fmtNum(l.nt)}</div>
+                  <div className="text-gray-500">{line.label}</div>
+                  <div className="text-right font-semibold text-gray-900">{fmtNum(line.nt)}</div>
 
                   <div className="text-gray-500">Longueur tige à couper</div>
-                  <div className="text-right font-semibold text-gray-900">{fmtNum(l.cutLenM)} m</div>
+                  <div className="text-right font-semibold text-gray-900">{fmtNum(line.cutLenM)} m</div>
                 </div>
               </div>
             ))}

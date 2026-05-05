@@ -181,6 +181,10 @@ export function useBarreAutoValues({
       );
     }
 
+    if (normalizedDesignation === "longrines") {
+      return computeBarreNT(nbStr, x.nBarreStr);
+    }
+
     if (showBarreOptions) {
       return computeBarreNTLongueurDesignation(
         nbStr,
