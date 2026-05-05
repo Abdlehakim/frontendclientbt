@@ -11,6 +11,7 @@ export type RecapLine = {
   cutLenM: number;
   steelType?: string;
   litLabel?: string;
+  splitQtyInPair?: boolean;
 };
 
 export type RecapData = {
@@ -33,6 +34,15 @@ function ferLabel(mm: number) {
   return `Fer de ${mm}`;
 }
 
+function quantiteFerLabel(mm: number | null) {
+  return mm != null ? `Quantités Fer ${mm} (m)` : "Quantités (m)";
+}
+
+function formatDallePleineNtLabel(line: RecapLine, fallbackLabel: string) {
+  const baseLabel = line.label || fallbackLabel;
+  return line.dia != null ? `${baseLabel} Fer ${line.dia}` : baseLabel;
+}
+
 function getRecapBaseKey(key: string) {
   const idx = key.lastIndexOf(":");
   return idx >= 0 ? key.slice(0, idx) : key;
@@ -47,11 +57,19 @@ function isSemellePairBLabel(label: string) {
 }
 
 function isDallePleinePairALabel(label: string) {
-  return label === "N.T.B façonnées ∥ a";
+  return label === "N.T.B façonnées ∥ a" || label.startsWith("N.T.B façonnées ∥ a ");
 }
 
 function isDallePleinePairBLabel(label: string) {
-  return label === "N.T.B façonnées ∥ b";
+  return label === "N.T.B façonnées ∥ b" || label.startsWith("N.T.B façonnées ∥ b ");
+}
+
+function isExplicitDallePleinePair(left: RecapLine, right: RecapLine) {
+  return (
+    left.splitQtyInPair === true &&
+    right.splitQtyInPair === true &&
+    getRecapBaseKey(left.key) === getRecapBaseKey(right.key)
+  );
 }
 
 function groupBarreLines(lines: RecapLine[]): GroupedBarreEntry[] {
@@ -69,6 +87,7 @@ function groupBarreLines(lines: RecapLine[]): GroupedBarreEntry[] {
           isSemellePairALabel(current.label) &&
           isSemellePairBLabel(next.label)
         ) ||
+        isExplicitDallePleinePair(current, next) ||
         (
           isDallePleinePairALabel(current.label) &&
           isDallePleinePairBLabel(next.label)
@@ -195,6 +214,10 @@ function BarrePairCard({
   const steelTypeLabel = isDallePleineDesignation ? "Type de nappe" : "Type d'acier";
   const litLabel = isDallePleineDesignation ? "Méthode de calcul" : "Lit";
   const totalQtyM = left.qtyM + right.qtyM;
+  const showSplitQtyForDallePleine =
+    isDallePleineDesignation &&
+    left.splitQtyInPair === true &&
+    right.splitQtyInPair === true;
 
   return (
     <div className="rounded-md border border-gray-200 bg-white px-3 py-2">
@@ -220,13 +243,25 @@ function BarrePairCard({
 
       {isDallePleineDesignation ? (
         <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="text-gray-500">Quantités</div>
-          <div className="text-right font-semibold text-gray-900">{fmtNum(totalQtyM)} m</div>
+          {showSplitQtyForDallePleine ? (
+            <>
+              <div className="text-gray-500">{quantiteFerLabel(left.dia)}</div>
+              <div className="text-right font-semibold text-gray-900">{fmtNum(left.qtyM)} m</div>
 
-          <div className="text-gray-500">{left.label || "N.T.B façonnées ∥ a"}</div>
+              <div className="text-gray-500">{quantiteFerLabel(right.dia)}</div>
+              <div className="text-right font-semibold text-gray-900">{fmtNum(right.qtyM)} m</div>
+            </>
+          ) : (
+            <>
+              <div className="text-gray-500">Quantités</div>
+              <div className="text-right font-semibold text-gray-900">{fmtNum(totalQtyM)} m</div>
+            </>
+          )}
+
+          <div className="text-gray-500">{formatDallePleineNtLabel(left, "N.T.B façonnées ∥ a")}</div>
           <div className="text-right font-semibold text-gray-900">{fmtNum(left.nt)}</div>
 
-          <div className="text-gray-500">{right.label || "N.T.B façonnées ∥ b"}</div>
+          <div className="text-gray-500">{formatDallePleineNtLabel(right, "N.T.B façonnées ∥ b")}</div>
           <div className="text-right font-semibold text-gray-900">{fmtNum(right.nt)}</div>
 
           <div className="text-gray-500">Longueur tige à couper ∥ a</div>

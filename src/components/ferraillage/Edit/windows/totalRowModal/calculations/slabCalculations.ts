@@ -434,6 +434,81 @@ export function computeSlabQuantityFromSplitCounts(
   return (NB ?? 0) * ((countA * lengthAWithAnchor) + (countB * lengthBWithAnchor));
 }
 
+export function computeSlabSplitCountPartMetrics(
+  nbStr: string,
+  countA: number,
+  countB: number,
+  longueurAStr: string,
+  longueurBStr: string,
+  ancrageStr: string,
+) {
+  const ntA = computeSlabNTFromSharedCount(nbStr, countA);
+  const ntB = computeSlabNTFromSharedCount(nbStr, countB);
+  const cutLenA = computeSlabLengthWithAnchor(longueurAStr, ancrageStr);
+  const cutLenB = computeSlabLengthWithAnchor(longueurBStr, ancrageStr);
+  const qteA = computeSlabQuantityFromSharedCount(nbStr, countA, longueurAStr, ancrageStr);
+  const qteB = computeSlabQuantityFromSharedCount(nbStr, countB, longueurBStr, ancrageStr);
+
+  return {
+    ntA,
+    ntB,
+    qteA,
+    qteB,
+    cutLenA,
+    cutLenB,
+  };
+}
+
+export function computeSlabEqualDualSpacingPartMetrics(
+  nbStr: string,
+  longueurBarreStr: string,
+  spacingAStr: string,
+  spacingBStr: string,
+  ancrageStr: string,
+  spacingRelation: unknown,
+) {
+  const longueur = parseNonNegativeNumber(longueurBarreStr) ?? 0;
+  const normalizedSpacingRelation = normalizeSlabSpacingRelationValue(spacingRelation);
+  const spacingA = parseNonNegativeNumber(spacingAStr) ?? 0;
+  const spacingB =
+    normalizedSpacingRelation === "EA_NE_EB"
+      ? parseNonNegativeNumber(spacingBStr) ?? 0
+      : spacingA;
+  const countA = safeDivide(longueur, spacingA);
+  const countB = safeDivide(longueur, spacingB);
+  const ntA = computeSlabNTFromSharedCount(nbStr, countA);
+  const ntB = computeSlabNTFromSharedCount(nbStr, countB);
+  const cutLen = computeSlabLengthWithAnchor(longueurBarreStr, ancrageStr);
+  const qteA = computeSlabQuantityFromSharedCount(nbStr, countA, longueurBarreStr, ancrageStr);
+  const qteB = computeSlabQuantityFromSharedCount(nbStr, countB, longueurBarreStr, ancrageStr);
+
+  return {
+    ntA,
+    ntB,
+    qteA,
+    qteB,
+    cutLenA: cutLen,
+    cutLenB: cutLen,
+  };
+}
+
+export function computeSlabEqualDualCountPartMetrics(
+  nbStr: string,
+  countA: number,
+  countB: number,
+  longueurBarreStr: string,
+  ancrageStr: string,
+) {
+  return computeSlabSplitCountPartMetrics(
+    nbStr,
+    countA,
+    countB,
+    longueurBarreStr,
+    longueurBarreStr,
+    ancrageStr,
+  );
+}
+
 export function computeSlabNTFromSharedCount(nbStr: string, sharedCount: number) {
   const NB = parseNonNegativeInt(nbStr);
   if (NB == null && sharedCount <= 0) return 0;

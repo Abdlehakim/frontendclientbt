@@ -36,6 +36,9 @@ import {
 import {
   SLAB_COMMERCIAL_BAR_LENGTH_M,
   computeCommercialBarCount,
+  computeSlabEqualDualCountPartMetrics,
+  computeSlabEqualDualSpacingPartMetrics,
+  computeSlabSplitCountPartMetrics,
   computeSlabSurfacePerM2SpacingMetrics,
   computeSlabSurfacePerM2SplitMetrics,
 } from "./calculations/slabCalculations";
@@ -44,10 +47,6 @@ import {
   computeExtraSpacingNt,
   computeExtraPerimetre,
 } from "./calculations/shapeCalculations";
-import {
-  formatDiametreLabel,
-  getDualDiameterResultLabels,
-} from "./config/formeBarreLabels";
 import RecapPanel, { type RecapData } from "./components/recap/RecapPanel";
 import FormeBarreAbbreviationsModal from "./components/formeBarre/FormeBarreAbbreviationsModal";
 import BarreCard from "./components/modal/BarreCard";
@@ -552,10 +551,6 @@ export default function TotalRowModalWindowInner({
                 typeof f.slabDiametreBMm === "number" && Number.isFinite(f.slabDiametreBMm)
                   ? f.slabDiametreBMm
                   : dia;
-              const dualNtLabels = getDualDiameterResultLabels(
-                formatDiametreLabel(diaA),
-                formatDiametreLabel(diaB),
-              );
               const splitMetrics = computeSlabSurfacePerM2SplitMetrics({
                 qA: dallePleinePerM2Metrics.qA,
                 qB: dallePleinePerM2Metrics.qB,
@@ -566,24 +561,26 @@ export default function TotalRowModalWindowInner({
 
               linesBarres.push({
                 key: `${f.id}:a`,
-                label: dualNtLabels.ntLabelA,
+                label: "N.T.B façonnées ∥ a",
                 dia: diaA,
                 qtyM: splitMetrics.qtyA > 0 ? splitMetrics.qtyA : 0,
                 nt: splitMetrics.ntA > 0 ? splitMetrics.ntA : 0,
                 cutLenM: splitMetrics.cutLenM,
                 steelType,
-              litLabel: "Surface totale / m²",
+                litLabel: "Surface totale / m²",
+                splitQtyInPair: true,
               });
 
               linesBarres.push({
                 key: `${f.id}:b`,
-                label: dualNtLabels.ntLabelB,
+                label: "N.T.B façonnées ∥ b",
                 dia: diaB,
                 qtyM: splitMetrics.qtyB > 0 ? splitMetrics.qtyB : 0,
                 nt: splitMetrics.ntB > 0 ? splitMetrics.ntB : 0,
                 cutLenM: splitMetrics.cutLenM,
                 steelType,
                 litLabel: "Surface totale / m²",
+                splitQtyInPair: true,
               });
 
               addQty(diaA, splitMetrics.qtyA > 0 ? splitMetrics.qtyA : 0);
@@ -603,6 +600,111 @@ export default function TotalRowModalWindowInner({
             });
 
             addQty(dia, safeTotalQtyM);
+            continue;
+          }
+
+          if (
+            calcMethod === "SURFACE_TOTAL" &&
+            relation === "ab_equal_diff_if" &&
+            spacingMode === "ESPACEMENT"
+          ) {
+            const diaA =
+              typeof f.slabDiametreAMm === "number" && Number.isFinite(f.slabDiametreAMm)
+                ? f.slabDiametreAMm
+                : dia;
+            const diaB =
+              typeof f.slabDiametreBMm === "number" && Number.isFinite(f.slabDiametreBMm)
+                ? f.slabDiametreBMm
+                : dia;
+            const equalDualSpacingMetrics = computeSlabEqualDualSpacingPartMetrics(
+              nbStr,
+              asString(f.slabLongueurAStr),
+              asString(f.slabEspacementAStr),
+              asString(f.slabEspacementBStr),
+              asString(f.ancrageStr),
+              normalizedSpacingRelation,
+            );
+            const safeQtyA = equalDualSpacingMetrics.qteA > 0 ? equalDualSpacingMetrics.qteA : 0;
+            const safeQtyB = equalDualSpacingMetrics.qteB > 0 ? equalDualSpacingMetrics.qteB : 0;
+
+            linesBarres.push({
+              key: `${f.id}:a`,
+              label: "N.T.B façonnées ∥ a",
+              dia: diaA,
+              qtyM: safeQtyA,
+              nt: equalDualSpacingMetrics.ntA > 0 ? equalDualSpacingMetrics.ntA : 0,
+              cutLenM: equalDualSpacingMetrics.cutLenA > 0 ? equalDualSpacingMetrics.cutLenA : 0,
+              steelType,
+              litLabel: methodLabel,
+              splitQtyInPair: true,
+            });
+
+            linesBarres.push({
+              key: `${f.id}:b`,
+              label: "N.T.B façonnées ∥ b",
+              dia: diaB,
+              qtyM: safeQtyB,
+              nt: equalDualSpacingMetrics.ntB > 0 ? equalDualSpacingMetrics.ntB : 0,
+              cutLenM: equalDualSpacingMetrics.cutLenB > 0 ? equalDualSpacingMetrics.cutLenB : 0,
+              steelType,
+              litLabel: methodLabel,
+              splitQtyInPair: true,
+            });
+
+            addQty(diaA, safeQtyA);
+            addQty(diaB, safeQtyB);
+            continue;
+          }
+
+          if (
+            calcMethod === "SURFACE_TOTAL" &&
+            relation === "ab_equal_diff_if" &&
+            spacingMode === "NB_CADRE"
+          ) {
+            const diaA =
+              typeof f.slabDiametreAMm === "number" && Number.isFinite(f.slabDiametreAMm)
+                ? f.slabDiametreAMm
+                : dia;
+            const diaB =
+              typeof f.slabDiametreBMm === "number" && Number.isFinite(f.slabDiametreBMm)
+                ? f.slabDiametreBMm
+                : dia;
+            const equalDualCountMetrics = computeSlabEqualDualCountPartMetrics(
+              nbStr,
+              parseNonNegativeInt(asString(f.slabNbCadreAStr)) ?? 0,
+              parseNonNegativeInt(asString(f.slabNbCadreBStr)) ?? 0,
+              asString(f.slabLongueurAStr),
+              asString(f.ancrageStr),
+            );
+            const safeQtyA = equalDualCountMetrics.qteA > 0 ? equalDualCountMetrics.qteA : 0;
+            const safeQtyB = equalDualCountMetrics.qteB > 0 ? equalDualCountMetrics.qteB : 0;
+
+            linesBarres.push({
+              key: `${f.id}:a`,
+              label: "N.T.B façonnées ∥ a",
+              dia: diaA,
+              qtyM: safeQtyA,
+              nt: equalDualCountMetrics.ntA > 0 ? equalDualCountMetrics.ntA : 0,
+              cutLenM: equalDualCountMetrics.cutLenA > 0 ? equalDualCountMetrics.cutLenA : 0,
+              steelType,
+              litLabel: methodLabel,
+              splitQtyInPair: true,
+            });
+
+            linesBarres.push({
+              key: `${f.id}:b`,
+              label: "N.T.B façonnées ∥ b",
+              dia: diaB,
+              qtyM: safeQtyB,
+              nt: equalDualCountMetrics.ntB > 0 ? equalDualCountMetrics.ntB : 0,
+              cutLenM: equalDualCountMetrics.cutLenB > 0 ? equalDualCountMetrics.cutLenB : 0,
+              steelType,
+              litLabel: methodLabel,
+              splitQtyInPair: true,
+            });
+
+            addQty(diaA, safeQtyA);
+            addQty(diaB, safeQtyB);
             continue;
           }
 
@@ -640,6 +742,7 @@ export default function TotalRowModalWindowInner({
               cutLenM: diffDualSpacingMetrics.cutLenA > 0 ? diffDualSpacingMetrics.cutLenA : 0,
               steelType,
               litLabel: "Surface totale",
+              splitQtyInPair: true,
             });
 
             linesBarres.push({
@@ -651,6 +754,7 @@ export default function TotalRowModalWindowInner({
               cutLenM: diffDualSpacingMetrics.cutLenB > 0 ? diffDualSpacingMetrics.cutLenB : 0,
               steelType,
               litLabel: "Surface totale",
+              splitQtyInPair: true,
             });
 
             addQty(diaA, safeQtyA);
@@ -670,6 +774,59 @@ export default function TotalRowModalWindowInner({
             spacingAStr: asString(f.slabEspacementAStr),
             spacingBStr: asString(f.slabEspacementBStr),
           });
+
+          if (
+            calcMethod === "SURFACE_TOTAL" &&
+            relation === "ab_diff_diff_if" &&
+            spacingMode === "NB_CADRE"
+          ) {
+            const diaA =
+              typeof f.slabDiametreAMm === "number" && Number.isFinite(f.slabDiametreAMm)
+                ? f.slabDiametreAMm
+                : dia;
+            const diaB =
+              typeof f.slabDiametreBMm === "number" && Number.isFinite(f.slabDiametreBMm)
+                ? f.slabDiametreBMm
+                : dia;
+            const splitCountMetrics = computeSlabSplitCountPartMetrics(
+              nbStr,
+              parseNonNegativeInt(asString(f.slabNbCadreAStr)) ?? 0,
+              parseNonNegativeInt(asString(f.slabNbCadreBStr)) ?? 0,
+              asString(f.slabLongueurAStr),
+              asString(f.slabLongueurBStr),
+              asString(f.ancrageStr),
+            );
+            const safeQtyA = splitCountMetrics.qteA > 0 ? splitCountMetrics.qteA : 0;
+            const safeQtyB = splitCountMetrics.qteB > 0 ? splitCountMetrics.qteB : 0;
+
+            linesBarres.push({
+              key: `${f.id}:a`,
+              label: "N.T.B façonnées ∥ a",
+              dia: diaA,
+              qtyM: safeQtyA,
+              nt: splitCountMetrics.ntA > 0 ? splitCountMetrics.ntA : 0,
+              cutLenM: splitCountMetrics.cutLenA > 0 ? splitCountMetrics.cutLenA : 0,
+              steelType,
+              litLabel: methodLabel,
+              splitQtyInPair: true,
+            });
+
+            linesBarres.push({
+              key: `${f.id}:b`,
+              label: "N.T.B façonnées ∥ b",
+              dia: diaB,
+              qtyM: safeQtyB,
+              nt: splitCountMetrics.ntB > 0 ? splitCountMetrics.ntB : 0,
+              cutLenM: splitCountMetrics.cutLenB > 0 ? splitCountMetrics.cutLenB : 0,
+              steelType,
+              litLabel: methodLabel,
+              splitQtyInPair: true,
+            });
+
+            addQty(diaA, safeQtyA);
+            addQty(diaB, safeQtyB);
+            continue;
+          }
 
           if (
             calcMethod === "SURFACE_TOTAL" &&

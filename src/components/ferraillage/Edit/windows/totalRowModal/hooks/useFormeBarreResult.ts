@@ -15,10 +15,13 @@ import {
   computeSlabCrossSpacingParts,
   computeSlabDiffSharedSpacingNTA,
   computeSlabDiffSharedSpacingNTB,
+  computeSlabEqualDualCountPartMetrics,
+  computeSlabEqualDualSpacingPartMetrics,
+  computeSlabSplitCountPartMetrics,
   computeSlabNTFromSharedCount,
   computeSlabQuantityFromSplitCounts,
 } from "../calculations/slabCalculations";
-import { safeDivide, safeNumber } from "../utils";
+import { safeNumber } from "../utils";
 
 export type FormeBarreResult =
   | {
@@ -189,15 +192,34 @@ export function useFormeBarreResult({
     };
   }
 
-  const equalDualSharedSpacingPerSide =
+  const equalDualSpacingPerSide =
     base.isSlab &&
     slab.slabEqualDualActive &&
-    slab.slabSpacingRelationValue === "EA_EQ_EB";
+    slab.slabEffectiveSpacingModeValue === "ESPACEMENT";
 
-  const equalDualSeparateSpacingPerSide =
+  const equalDualParts = equalDualSpacingPerSide
+    ? computeSlabEqualDualSpacingPartMetrics(
+        nbStr,
+        x.slabLongueurAStr ?? "0",
+        x.slabEspacementAStr ?? "0",
+        x.slabEspacementBStr ?? "0",
+        x.ancrageStr ?? "0",
+        slab.slabSpacingRelationValue,
+      )
+    : null;
+
+  const equalDualCountParts =
     base.isSlab &&
     slab.slabEqualDualActive &&
-    slab.slabSpacingRelationValue === "EA_NE_EB";
+    slab.slabEffectiveSpacingModeValue === "NB_CADRE"
+      ? computeSlabEqualDualCountPartMetrics(
+          nbStr,
+          parseNum(x.slabNbCadreAStr),
+          parseNum(x.slabNbCadreBStr),
+          x.slabLongueurAStr ?? "0",
+          x.ancrageStr ?? "0",
+        )
+      : null;
 
   const diffDualSpacingPerSide =
     base.isSlab &&
@@ -219,34 +241,19 @@ export function useFormeBarreResult({
       )
     : null;
 
-  const sharedNtEachBase = equalDualSharedSpacingPerSide
-    ? safeDivide(parseNum(x.slabLongueurAStr), parseNum(x.slabEspacementAStr))
-    : 0;
-
-  const sharedNtEach = safeNumber(sharedNtEachBase * nbMultiplier);
-
-  const sharedQteEach = equalDualSharedSpacingPerSide
-    ? safeNumber(sharedNtEach * (parseNum(x.slabLongueurAStr) + parseNum(x.ancrageStr)))
-    : 0;
-
-  const separateNtABase = equalDualSeparateSpacingPerSide
-    ? safeDivide(parseNum(x.slabLongueurAStr), parseNum(x.slabEspacementAStr))
-    : 0;
-
-  const separateNtBBase = equalDualSeparateSpacingPerSide
-    ? safeDivide(parseNum(x.slabLongueurAStr), parseNum(x.slabEspacementBStr))
-    : 0;
-
-  const separateNtA = safeNumber(separateNtABase * nbMultiplier);
-  const separateNtB = safeNumber(separateNtBBase * nbMultiplier);
-
-  const separateQteA = equalDualSeparateSpacingPerSide
-    ? safeNumber(separateNtA * (parseNum(x.slabLongueurAStr) + parseNum(x.ancrageStr)))
-    : 0;
-
-  const separateQteB = equalDualSeparateSpacingPerSide
-    ? safeNumber(separateNtB * (parseNum(x.slabLongueurAStr) + parseNum(x.ancrageStr)))
-    : 0;
+  const diffDualCountParts =
+    base.isSlab &&
+    slab.slabDiffDualActive &&
+    slab.slabEffectiveSpacingModeValue === "NB_CADRE"
+      ? computeSlabSplitCountPartMetrics(
+          nbStr,
+          parseNum(x.slabNbCadreAStr),
+          parseNum(x.slabNbCadreBStr),
+          x.slabLongueurAStr ?? "0",
+          x.slabLongueurBStr ?? "0",
+          x.ancrageStr ?? "0",
+        )
+      : null;
 
   return {
     kind: "dual",
@@ -255,40 +262,48 @@ export function useFormeBarreResult({
     ntLabelA: slabDualLabels.ntLabelA,
     ntLabelB: slabDualLabels.ntLabelB,
     qteA: fmt(
-      diffDualParts
+      equalDualCountParts
+        ? equalDualCountParts.qteA
+        : equalDualParts
+        ? equalDualParts.qteA
+        : diffDualCountParts
+        ? diffDualCountParts.qteA
+        : diffDualParts
         ? diffDualParts.qteA
-        : equalDualSharedSpacingPerSide
-        ? sharedQteEach
-        : equalDualSeparateSpacingPerSide
-          ? separateQteA
-          : barreAuto.qte,
+        : barreAuto.qte,
     ),
     qteB: fmt(
-      diffDualParts
+      equalDualCountParts
+        ? equalDualCountParts.qteB
+        : equalDualParts
+        ? equalDualParts.qteB
+        : diffDualCountParts
+        ? diffDualCountParts.qteB
+        : diffDualParts
         ? diffDualParts.qteB
-        : equalDualSharedSpacingPerSide
-        ? sharedQteEach
-        : equalDualSeparateSpacingPerSide
-          ? separateQteB
-          : barreAuto.qte,
+        : barreAuto.qte,
     ),
     ntA: fmt(
-      diffDualParts
+      equalDualCountParts
+        ? equalDualCountParts.ntA
+        : equalDualParts
+        ? equalDualParts.ntA
+        : diffDualCountParts
+        ? diffDualCountParts.ntA
+        : diffDualParts
         ? diffDualParts.ntA
-        : equalDualSharedSpacingPerSide
-        ? sharedNtEach
-        : equalDualSeparateSpacingPerSide
-          ? separateNtA
-          : barreAuto.nt,
+        : barreAuto.nt,
     ),
     ntB: fmt(
-      diffDualParts
+      equalDualCountParts
+        ? equalDualCountParts.ntB
+        : equalDualParts
+        ? equalDualParts.ntB
+        : diffDualCountParts
+        ? diffDualCountParts.ntB
+        : diffDualParts
         ? diffDualParts.ntB
-        : equalDualSharedSpacingPerSide
-        ? sharedNtEach
-        : equalDualSeparateSpacingPerSide
-          ? separateNtB
-          : barreAuto.nt,
+        : barreAuto.nt,
     ),
   };
 }
