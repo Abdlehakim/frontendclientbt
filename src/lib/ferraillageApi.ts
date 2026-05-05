@@ -82,8 +82,10 @@ export type FerProjectCreatePayload = {
 
 export type FerProjectUpdatePayload = {
   chantierName: string;
+  chantier?: string;
   responsable?: string | null;
   acierType: FerAcierType;
+  typeAcier?: FerAcierType;
   note?: string | null;
 };
 
@@ -170,9 +172,27 @@ export const ferraillageApi = {
       throw new ApiError(400, "Invalid projectId");
     }
 
-    return request<{ item: FerProjectDetailDTO }>(`${BASE}/projects/${encodeURIComponent(normalizedProjectId)}`, {
+    const normalizedPayload: FerProjectUpdatePayload = {
+      chantierName: payload.chantierName,
+      chantier: payload.chantierName,
+      responsable: payload.responsable ?? null,
+      acierType: payload.acierType,
+      typeAcier: payload.acierType,
+      note: payload.note ?? null,
+    };
+    const requestOptions: RequestInit = {
       method: "PUT",
-      body: JSON.stringify(payload),
+      body: JSON.stringify(normalizedPayload),
+    };
+    const projectPath = `${BASE}/projects/${encodeURIComponent(normalizedProjectId)}`;
+    const rapportPath = `${BASE}/rapports/${encodeURIComponent(normalizedProjectId)}`;
+
+    return request<{ item: FerProjectDetailDTO }>(projectPath, requestOptions).catch((error: unknown) => {
+      if (!isApiError(error) || error.status !== 404) {
+        throw error;
+      }
+
+      return request<{ item: FerProjectDetailDTO }>(rapportPath, requestOptions);
     });
   },
 
