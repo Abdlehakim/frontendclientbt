@@ -36,8 +36,12 @@ export function getSlabAxisLabels(designation?: string | null) {
     countSharedLabel: `Nb. Barres ${axisA} et ${axisB}`,
     countALabel: `Nb. Barres ${axisA}`,
     countBLabel: `Nb. Barres ${axisB}`,
+    ntParallelSharedLabel: `N.T.B façonnées ∥ ${axisA}/${axisB}`,
     ntParallelALabel: `N.T.B façonnées ∥ ${axisA}`,
     ntParallelBLabel: `N.T.B façonnées ∥ ${axisB}`,
+    cutLengthSharedLabel: `Longueur tige à couper ∥ ${axisA}/${axisB}`,
+    cutLengthALabel: `Longueur tige à couper ∥ ${axisA}`,
+    cutLengthBLabel: `Longueur tige à couper ∥ ${axisB}`,
     pairTitleA: `(${axisA})`,
     pairTitleB: `(${axisB})`,
   };

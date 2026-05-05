@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { CiCircleRemove } from "react-icons/ci";
-import { getSlabAxisLabels } from "../../config/formeBarreLabels";
+import { getSlabAxisLabels, isVoileDesignation } from "../../config/formeBarreLabels";
 import { parsePositiveInt, parsePositiveNumber, safeNumber } from "../../utils";
 
 export type RecapLine = {
@@ -131,13 +131,23 @@ function BarreSingleCard({
   title,
   l,
   isDallePleineDesignation = false,
+  isVoileRecap = false,
+  ntFallbackLabel = "N.T.B façonnées",
+  cutLengthLabel = "Longueur tige à couper",
 }: {
   title: string;
   l: RecapLine;
   isDallePleineDesignation?: boolean;
+  isVoileRecap?: boolean;
+  ntFallbackLabel?: string;
+  cutLengthLabel?: string;
 }) {
   const steelTypeLabel = isDallePleineDesignation ? "Type de nappe" : "Type d'acier";
-  const litLabel = isDallePleineDesignation ? "Méthode de calcul" : "Lit";
+  const litLabel = isDallePleineDesignation || isVoileRecap ? "Méthode de calcul" : "Lit";
+  const ntLabel =
+    isVoileRecap && l.label === "N.T.B façonnées"
+      ? ntFallbackLabel
+      : l.label || ntFallbackLabel;
 
   return (
     <div className="rounded-md border border-gray-200 bg-white px-3 py-2">
@@ -168,10 +178,10 @@ function BarreSingleCard({
         <div className="text-gray-500">Quantités</div>
         <div className="text-right font-semibold text-gray-900">{fmtNum(l.qtyM)} m</div>
 
-        <div className="text-gray-500">{l.label || "N.T.B façonnées"}</div>
+        <div className="text-gray-500">{ntLabel}</div>
         <div className="text-right font-semibold text-gray-900">{fmtNum(l.nt)}</div>
 
-        <div className="text-gray-500">Longueur tige à couper</div>
+        <div className="text-gray-500">{cutLengthLabel}</div>
         <div className="text-right font-semibold text-gray-900">{fmtNum(l.cutLenM)} m</div>
       </div>
     </div>
@@ -215,6 +225,8 @@ function BarrePairCard({
   left,
   right,
   isDallePleineDesignation = false,
+  isVoileRecap = false,
+  slabAxisLabels = getSlabAxisLabels(),
   pairTitleA = "(a)",
   pairTitleB = "(b)",
 }: {
@@ -222,16 +234,25 @@ function BarrePairCard({
   left: RecapLine;
   right: RecapLine;
   isDallePleineDesignation?: boolean;
+  isVoileRecap?: boolean;
+  slabAxisLabels?: ReturnType<typeof getSlabAxisLabels>;
   pairTitleA?: string;
   pairTitleB?: string;
 }) {
   const steelTypeLabel = isDallePleineDesignation ? "Type de nappe" : "Type d'acier";
-  const litLabel = isDallePleineDesignation ? "Méthode de calcul" : "Lit";
+  const litLabel = isDallePleineDesignation || isVoileRecap ? "Méthode de calcul" : "Lit";
   const totalQtyM = left.qtyM + right.qtyM;
   const showSplitQtyForDallePleine =
     isDallePleineDesignation &&
     left.splitQtyInPair === true &&
     right.splitQtyInPair === true;
+  const showPerDiameterQuantities =
+    isVoileRecap
+      ? showSplitQtyForDallePleine &&
+        left.dia != null &&
+        right.dia != null &&
+        left.dia !== right.dia
+      : showSplitQtyForDallePleine;
 
   return (
     <div className="rounded-md border border-gray-200 bg-white px-3 py-2">
@@ -257,7 +278,7 @@ function BarrePairCard({
 
       {isDallePleineDesignation ? (
         <div className="grid grid-cols-2 gap-2 text-xs">
-          {showSplitQtyForDallePleine ? (
+          {showPerDiameterQuantities ? (
             <>
               <div className="text-gray-500">{quantiteFerLabel(left.dia)}</div>
               <div className="text-right font-semibold text-gray-900">{fmtNum(left.qtyM)} m</div>
@@ -272,16 +293,20 @@ function BarrePairCard({
             </>
           )}
 
-          <div className="text-gray-500">{formatDallePleineNtLabel(left, "N.T.B façonnées ∥ a")}</div>
+          <div className="text-gray-500">
+            {formatDallePleineNtLabel(left, slabAxisLabels.ntParallelALabel)}
+          </div>
           <div className="text-right font-semibold text-gray-900">{fmtNum(left.nt)}</div>
 
-          <div className="text-gray-500">{formatDallePleineNtLabel(right, "N.T.B façonnées ∥ b")}</div>
+          <div className="text-gray-500">
+            {formatDallePleineNtLabel(right, slabAxisLabels.ntParallelBLabel)}
+          </div>
           <div className="text-right font-semibold text-gray-900">{fmtNum(right.nt)}</div>
 
-          <div className="text-gray-500">Longueur tige à couper ∥ a</div>
+          <div className="text-gray-500">{slabAxisLabels.cutLengthALabel}</div>
           <div className="text-right font-semibold text-gray-900">{fmtNum(left.cutLenM)} m</div>
 
-          <div className="text-gray-500">Longueur tige à couper ∥ b</div>
+          <div className="text-gray-500">{slabAxisLabels.cutLengthBLabel}</div>
           <div className="text-right font-semibold text-gray-900">{fmtNum(right.cutLenM)} m</div>
         </div>
       ) : (
@@ -313,9 +338,13 @@ export default function RecapPanel({
 }) {
   const designationLabel = useMemo(() => (designation ?? "").trim(), [designation]);
   const normalizedDesignation = useMemo(() => designationLabel.toLowerCase(), [designationLabel]);
+  const isVoileRecap = useMemo(() => isVoileDesignation(normalizedDesignation), [normalizedDesignation]);
   const isSemellesDesignation = normalizedDesignation === "semelles";
+  const slabRecapDesignations = ["dalle pleine", "chape", "radier"];
   const isDallePleineDesignation =
-    normalizedDesignation === "dalle pleine" || normalizedDesignation === "semelles";
+    slabRecapDesignations.includes(normalizedDesignation) ||
+    normalizedDesignation === "semelles" ||
+    isVoileRecap;
   const slabAxisLabels = useMemo(() => getSlabAxisLabels(normalizedDesignation), [normalizedDesignation]);
 
   const usesLongueurLabel = useMemo(() => {
@@ -439,6 +468,8 @@ export default function RecapPanel({
                     left={entry.left}
                     right={entry.right}
                     isDallePleineDesignation={isDallePleineDesignation}
+                    isVoileRecap={isVoileRecap}
+                    slabAxisLabels={slabAxisLabels}
                     pairTitleA={slabAxisLabels.pairTitleA}
                     pairTitleB={slabAxisLabels.pairTitleB}
                   />
@@ -451,6 +482,9 @@ export default function RecapPanel({
                   title={title}
                   l={entry.line}
                   isDallePleineDesignation={isDallePleineDesignation}
+                  isVoileRecap={isVoileRecap}
+                  ntFallbackLabel={isVoileRecap ? slabAxisLabels.ntParallelSharedLabel : "N.T.B façonnées"}
+                  cutLengthLabel={isVoileRecap ? slabAxisLabels.cutLengthSharedLabel : "Longueur tige à couper"}
                 />
               );
             })}
