@@ -9,6 +9,7 @@ import type {
   SlabSpacingRelation,
 } from "../types";
 import {
+  BARRE_DESIGNATIONS,
   SEMELLE_DESIGNATION,
   SEMELLE_RELATIONS,
   SLAB_DESIGNATIONS,
@@ -110,6 +111,14 @@ export function normalizeSlabSpacingRelationValue(value: unknown): SlabSpacingRe
 
 export function normalizeDesignation(value: unknown) {
   return asTrimmedString(value, "").toLowerCase();
+}
+
+export function isCountBasedBarreNTDesignationValue(value: unknown) {
+  const normalized = normalizeDesignation(value);
+  return (
+    normalized === "poteaux" ||
+    BARRE_DESIGNATIONS.includes(normalized as (typeof BARRE_DESIGNATIONS)[number])
+  );
 }
 
 export function isSlabDesignationValue(value: unknown) {

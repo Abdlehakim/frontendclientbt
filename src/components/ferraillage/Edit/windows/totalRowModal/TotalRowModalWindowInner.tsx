@@ -23,7 +23,6 @@ import {
 } from "./components";
 import {
   computeBarreNT,
-  computeBarreNTLongueurDesignation,
   computeBarreNTStandard,
 } from "./calculations/barreCalculations";
 import { computeSemelleNTSharedCount, computeSemelleNTSharedSpacing } from "./calculations/semelleCalculations";
@@ -73,6 +72,7 @@ import {
   asString,
   asTrimmedString,
   hasAnyValue,
+  isCountBasedBarreNTDesignationValue,
   isFormeKind,
   isSlabDesignationValue,
   isSlabSurfacePerM2SpacingDesignationValue,
@@ -489,7 +489,7 @@ export default function TotalRowModalWindowInner({
     const h = showHauteurField ? parsePositiveNumber(hauteurStr) ?? 0 : 0;
     const isSemellesDesignationInner = normalizeDesignation(designation) === "semelles";
     const isLongrinesDesignationInner = normalizeDesignation(designation) === "longrines";
-    const isPoteauxDesignationInner = normalizeDesignation(designation) === "poteaux";
+    const usesCountBasedBarreNT = isCountBasedBarreNTDesignationValue(designation);
     const isSlabDesignationInner = isSlabDesignationValue(designation);
     const isSlabSurfacePerM2SpacingDesignationInner =
       isSlabSurfacePerM2SpacingDesignationValue(designation);
@@ -1101,22 +1101,11 @@ export default function TotalRowModalWindowInner({
           : usesLongueurLabel
             ? barLen + effectiveAnc
             : h + att + anc;
-        const nt = isLongrinesDesignationInner
+        const nt = usesCountBasedBarreNT
           ? computeBarreNT(
               nbStr,
               asString(f.nBarreStr),
             )
-          : usesLongueurLabel
-          ? computeBarreNTLongueurDesignation(
-              nbStr,
-              asString(f.longueurStr),
-              String(effectiveAnc),
-            )
-          : isPoteauxDesignationInner
-            ? computeBarreNT(
-                nbStr,
-                asString(f.nBarreStr),
-              )
           : computeBarreNTStandard(
               nbStr,
               asString(f.nBarreStr),

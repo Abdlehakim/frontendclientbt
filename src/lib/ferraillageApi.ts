@@ -170,7 +170,7 @@ export const ferraillageApi = {
       throw new ApiError(400, "Invalid projectId");
     }
 
-    return request<{ item: FerProjectDetailDTO }>(`${BASE}/projects/${encodeURIComponent(normalizedProjectId)}`, {
+    return request<{ item: FerProjectDetailDTO }>(`${BASE}/rapports/${encodeURIComponent(normalizedProjectId)}`, {
       method: "PUT",
       body: JSON.stringify(payload),
     });

@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import type { FormeState } from "../types";
 import {
   computeBarreNT,
-  computeBarreNTLongueurDesignation,
   computeBarreNTStandard,
   computeBarreQteLongueur,
   computeBarreQteStandard,
@@ -18,6 +17,7 @@ import {
   computeSemelleQteEqualDual,
   computeSemelleQteEqualShared,
 } from "../calculations/semelleCalculations";
+import { isCountBasedBarreNTDesignationValue } from "../state/guards";
 
 export function useBarreAutoValues({
   x,
@@ -54,6 +54,8 @@ export function useBarreAutoValues({
   effectiveAncrageStr: string;
   semelleAncrage: string;
 }) {
+  const usesCountBasedBarreNT = isCountBasedBarreNTDesignationValue(normalizedDesignation);
+
   const qte = useMemo(() => {
     if (isSlab) return slabQte;
 
@@ -177,19 +179,7 @@ export function useBarreAutoValues({
       );
     }
 
-    if (normalizedDesignation === "longrines") {
-      return computeBarreNT(nbStr, x.nBarreStr);
-    }
-
-    if (showBarreOptions) {
-      return computeBarreNTLongueurDesignation(
-        nbStr,
-        x.longueurStr,
-        effectiveAncrageStr,
-      );
-    }
-
-    if (normalizedDesignation === "poteaux") {
+    if (usesCountBasedBarreNT) {
       return computeBarreNT(nbStr, x.nBarreStr);
     }
 
@@ -208,12 +198,10 @@ export function useBarreAutoValues({
     semelleDiffSharedActive,
     semelleEqualDualActive,
     semelleDiffDualActive,
-    showBarreOptions,
-    normalizedDesignation,
+    usesCountBasedBarreNT,
     nbStr,
     hauteurStr,
     x.nBarreStr,
-    x.longueurStr,
     x.attenteStr,
     x.ancrageStr,
     x.semelleLongueurAStr,
@@ -223,7 +211,6 @@ export function useBarreAutoValues({
     x.slabSpacingRelation,
     x.slabEspacementAStr,
     x.slabEspacementBStr,
-    effectiveAncrageStr,
     semelleAncrage,
   ]);
 
