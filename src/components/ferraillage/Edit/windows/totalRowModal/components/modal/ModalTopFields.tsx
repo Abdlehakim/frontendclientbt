@@ -73,7 +73,7 @@ export default function ModalTopFields({
   const hasValidDesignation = designationValue !== "" && designationValue !== "Choisir...";
 
   return (
-    <div className="grid grid-cols-1 gap-4 shrink-0">
+    <div className="grid grid-cols-1 gap-2 shrink-0">
       <div className={topFieldsClass}>
         <div className="flex flex-col">
           <DesignationDropdown label="Designations" value={designation} onChange={onDesignationChange} />
@@ -89,7 +89,7 @@ export default function ModalTopFields({
           />
         </div>
 
-        <div className="flex w-full flex-col md:w-[120px]">
+        <div className="flex w-full flex-col md:w-120px">
           <label className="text-xs font-semibold text-gray-700 mb-1">NB</label>
           <input
             className={inputClass}
@@ -114,7 +114,7 @@ export default function ModalTopFields({
         ) : null}
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-gray-200 pt-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 border-t border-gray-200 pt-2 sm:flex-row sm:items-center sm:justify-between">
         <DotsPagination currentPage={safePage} totalPages={totalPages} onPageChange={onPageChange} />
 
         <div className="flex items-center justify-end gap-2">
