@@ -19,6 +19,15 @@ import TotalRowModalWindow, {
 } from "./windows/TotalRowModalWindow";
 import {
   computeSlabCrossSpacingParts,
+  computeSlabDiffSharedDualSpacingQte,
+  computeSlabDiffSharedSpacingQte,
+  computeSlabDualSpacingQte,
+  computeSlabEqualDualCountPartMetrics,
+  computeSlabEqualDualSpacingPartMetrics,
+  computeSlabQuantityFromSharedCount,
+  computeSlabQuantityFromSharedCountWithAverageLength,
+  computeSlabSharedSpacingQte,
+  computeSlabSplitCountPartMetrics,
   computeSlabSurfacePerM2SpacingMetrics,
   computeSlabSurfacePerM2SplitMetrics,
 } from "./windows/totalRowModal/calculations/slabCalculations";
@@ -179,6 +188,7 @@ function computeCadrePerimetreNum(forme: Exclude<RowForme, "BARRE">, longueur: n
 function isSlabDesignationName(value: string) {
   const normalized = value.trim().toLowerCase();
   return (
+    normalized === "semelles" ||
     normalized === "dalle pleine" ||
     normalized === "chape" ||
     normalized === "radier" ||
@@ -250,47 +260,170 @@ function computeSlabSpacingQtyEntriesFromPayload(
     return [{ dia: fallbackDia, qtyM: parentNb > 0 ? parentNb * dallePleinePerM2Metrics.qtyM : 0 }];
   }
 
-  if (
-    payload.slabCalcMethod !== "SURFACE_TOTAL" ||
-    payload.slabSpacingMode !== "ESPACEMENT" ||
-    (payload.slabSpacingRelation !== "EA_EQ_EB" && payload.slabSpacingRelation !== "EA_NE_EB")
-  ) {
+  if (payload.slabCalcMethod !== "SURFACE_TOTAL") {
     return null;
   }
 
+  const relation = payload.slabRelation ?? "ab_equal_same_if";
+  const spacingMode = payload.slabSpacingMode ?? "ESPACEMENT";
+  const spacingRelation = payload.slabSpacingRelation ?? "EA_EQ_EB";
   const longueurA = payload.slabLongueurA ?? 0;
   const longueurB = payload.slabLongueurB ?? 0;
-  const espacementA = payload.slabEspacementA ?? 0;
-  const espacementB =
-    payload.slabSpacingRelation === "EA_NE_EB" ? payload.slabEspacementB ?? 0 : espacementA;
   const ancrage = payload.ancrage ?? 0;
-  const crossSpacingParts = computeSlabCrossSpacingParts(
-    String(parentNb),
-    String(longueurA),
-    String(longueurB),
-    String(espacementA),
-    String(espacementB),
-    String(ancrage),
-  );
+  const diaA =
+    typeof payload.slabDiametreAMm === "number" && Number.isFinite(payload.slabDiametreAMm)
+      ? payload.slabDiametreAMm
+      : fallbackDia;
+  const diaB =
+    typeof payload.slabDiametreBMm === "number" && Number.isFinite(payload.slabDiametreBMm)
+      ? payload.slabDiametreBMm
+      : fallbackDia;
 
-  if (payload.slabRelation === "ab_diff_same_if") {
-    return [{ dia: fallbackDia, qtyM: safeNumber(crossSpacingParts.qteA + crossSpacingParts.qteB) }];
+  if (spacingMode === "ESPACEMENT") {
+    if (spacingRelation !== "EA_EQ_EB" && spacingRelation !== "EA_NE_EB") {
+      return null;
+    }
+
+    const espacementA = payload.slabEspacementA ?? 0;
+    const espacementB = spacingRelation === "EA_NE_EB" ? payload.slabEspacementB ?? 0 : espacementA;
+
+    if (relation === "ab_equal_same_if") {
+      const qtyM =
+        spacingRelation === "EA_NE_EB"
+          ? computeSlabDualSpacingQte(
+              String(parentNb),
+              String(longueurA),
+              String(longueurA),
+              String(espacementA),
+              String(espacementB),
+              String(ancrage),
+            )
+          : computeSlabSharedSpacingQte(
+              String(parentNb),
+              String(longueurA),
+              String(espacementA),
+              String(ancrage),
+            );
+
+      return [{ dia: fallbackDia, qtyM }];
+    }
+
+    if (relation === "ab_equal_diff_if") {
+      const equalDualSpacingParts = computeSlabEqualDualSpacingPartMetrics(
+        String(parentNb),
+        String(longueurA),
+        String(espacementA),
+        String(espacementB),
+        String(ancrage),
+        spacingRelation,
+      );
+
+      return [
+        { dia: diaA, qtyM: equalDualSpacingParts.qteA },
+        { dia: diaB, qtyM: equalDualSpacingParts.qteB },
+      ];
+    }
+
+    if (relation === "ab_diff_same_if") {
+      const qtyM =
+        spacingRelation === "EA_NE_EB"
+          ? computeSlabDiffSharedDualSpacingQte(
+              String(longueurA),
+              String(longueurB),
+              String(espacementA),
+              String(espacementB),
+              String(ancrage),
+            ) * parentNb
+          : computeSlabDiffSharedSpacingQte(
+              String(longueurA),
+              String(longueurB),
+              String(espacementA),
+              String(ancrage),
+            ) * parentNb;
+
+      return [{ dia: fallbackDia, qtyM }];
+    }
+
+    if (relation === "ab_diff_diff_if") {
+      const crossSpacingParts = computeSlabCrossSpacingParts(
+        String(parentNb),
+        String(longueurA),
+        String(longueurB),
+        String(espacementA),
+        String(espacementB),
+        String(ancrage),
+      );
+
+      return [
+        { dia: diaA, qtyM: crossSpacingParts.qteA },
+        { dia: diaB, qtyM: crossSpacingParts.qteB },
+      ];
+    }
   }
 
-  if (payload.slabRelation === "ab_diff_diff_if") {
-    const diaA =
-      typeof payload.slabDiametreAMm === "number" && Number.isFinite(payload.slabDiametreAMm)
-        ? payload.slabDiametreAMm
-        : fallbackDia;
-    const diaB =
-      typeof payload.slabDiametreBMm === "number" && Number.isFinite(payload.slabDiametreBMm)
-        ? payload.slabDiametreBMm
-        : fallbackDia;
+  if (spacingMode === "NB_CADRE") {
+    const countA = payload.slabNbCadreA ?? 0;
+    const countB = payload.slabNbCadreB ?? countA;
 
-    return [
-      { dia: diaA, qtyM: crossSpacingParts.qteA },
-      { dia: diaB, qtyM: crossSpacingParts.qteB },
-    ];
+    if (relation === "ab_equal_same_if") {
+      return [
+        {
+          dia: fallbackDia,
+          qtyM: computeSlabQuantityFromSharedCount(
+            String(parentNb),
+            countA,
+            String(longueurA),
+            String(ancrage),
+          ),
+        },
+      ];
+    }
+
+    if (relation === "ab_equal_diff_if") {
+      const equalDualCountParts = computeSlabEqualDualCountPartMetrics(
+        String(parentNb),
+        countA,
+        countB,
+        String(longueurA),
+        String(ancrage),
+      );
+
+      return [
+        { dia: diaA, qtyM: equalDualCountParts.qteA },
+        { dia: diaB, qtyM: equalDualCountParts.qteB },
+      ];
+    }
+
+    if (relation === "ab_diff_same_if") {
+      return [
+        {
+          dia: fallbackDia,
+          qtyM: computeSlabQuantityFromSharedCountWithAverageLength(
+            String(parentNb),
+            countA,
+            String(longueurA),
+            String(longueurB),
+            String(ancrage),
+          ),
+        },
+      ];
+    }
+
+    if (relation === "ab_diff_diff_if") {
+      const splitCountParts = computeSlabSplitCountPartMetrics(
+        String(parentNb),
+        countA,
+        countB,
+        String(longueurA),
+        String(longueurB),
+        String(ancrage),
+      );
+
+      return [
+        { dia: diaA, qtyM: splitCountParts.qteA },
+        { dia: diaB, qtyM: splitCountParts.qteB },
+      ];
+    }
   }
 
   return null;

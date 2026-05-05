@@ -80,7 +80,7 @@ import {
   normalizeDesignation,
   normalizeSlabSpacingRelationValue,
 } from "./state/guards";
-import { isSemelleBarreValid, isSlabBarreValid } from "./state/validators";
+import { isSlabBarreValid } from "./state/validators";
 import { buildTotalRowModalPayload } from "./state/payloadMapper";
 
 type ModalState = {
@@ -465,10 +465,6 @@ export default function TotalRowModalWindowInner({
     formes.length > 0 &&
     formes.every((x) => {
       const forme = isFormeKind(x.forme) ? x.forme : "BARRE";
-
-      if (forme === "BARRE" && isSemellesDesignation) {
-        return isSemelleBarreValid(x);
-      }
 
       if (forme === "BARRE" && isSlabDesignation) {
         return isSlabBarreValid(x, {

@@ -11,15 +11,17 @@ import {
 } from "../../config/formeBarreLabels";
 import FieldInput from "../common/FieldInput";
 import SelectDropdown from "../common/SelectDropdown";
-import type { FormeBarrePatch, SlabView } from "./FormeBarreFields.types";
+import type { FormeBarreBaseView, FormeBarrePatch, SlabView } from "./FormeBarreFields.types";
 
 export default function SlabHeaderFields({
   x,
+  base,
   slab,
   inputClass,
   onPatch,
 }: {
   x: FormeState;
+  base: FormeBarreBaseView;
   slab: SlabView;
   inputClass: string;
   onPatch: FormeBarrePatch;
@@ -28,6 +30,9 @@ export default function SlabHeaderFields({
     slabSpacingMode: "ESPACEMENT",
     slabSpacingRelation: "EA_EQ_EB",
   } as const;
+  const slabCalcMethodOptions = base.isSlabSurfacePerM2SpacingDesignation
+    ? SLAB_CALC_METHODS
+    : (["SURFACE_TOTAL"] as const);
   const slabRelationOptions = slab.isSlabSurfacePerM2SpacingMode
     ? (["ab_equal_same_if", "ab_equal_diff_if"] as const)
     : SLAB_RELATIONS;
@@ -49,7 +54,7 @@ export default function SlabHeaderFields({
           label="Méthode de calcul"
           value={slab.slabCalcMethodValue}
           onChange={(v) => onPatch({ slabCalcMethod: v })}
-          options={SLAB_CALC_METHODS}
+          options={slabCalcMethodOptions}
           getOptionLabel={getSlabCalcMethodLabel}
         />
       </div>

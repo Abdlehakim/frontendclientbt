@@ -29,7 +29,7 @@ export default function SlabFields({
 }) {
   return (
     <>
-      <SlabHeaderFields x={x} slab={slab} inputClass={inputClass} onPatch={onPatch} />
+      <SlabHeaderFields x={x} base={base} slab={slab} inputClass={inputClass} onPatch={onPatch} />
       <SlabDiameterFields
         x={x}
         base={base}

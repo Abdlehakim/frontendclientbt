@@ -106,7 +106,13 @@ export function useFormeBarreDefaults({
       isSlabSurfacePerM2SpacingDesignation &&
       (x.slabCalcMethod ?? "SURFACE_TOTAL") === "SURFACE_TOTAL_PER_M2";
 
-    if (!(x.slabCalcMethod ?? "").trim()) patch.slabCalcMethod = "SURFACE_TOTAL";
+    if (!(x.slabCalcMethod ?? "").trim() || !isSlabSurfacePerM2SpacingDesignation) {
+      if ((x.slabCalcMethod ?? "SURFACE_TOTAL") !== "SURFACE_TOTAL") {
+        patch.slabCalcMethod = "SURFACE_TOTAL";
+      } else if (!(x.slabCalcMethod ?? "").trim()) {
+        patch.slabCalcMethod = "SURFACE_TOTAL";
+      }
+    }
     if (isSlabSurfacePerM2SpacingMode) {
       const nextRelation = normalizeSlabSurfacePerM2Relation(x.slabRelation);
       if (x.slabRelation !== nextRelation) patch.slabRelation = nextRelation;

@@ -3,11 +3,11 @@ import {
   BARRE_DESIGNATIONS,
   LIT_CATEGORIES,
   SEMELLE_DESIGNATION,
-  SLAB_DESIGNATIONS,
   SLAB_SURFACE_PER_M2_SPACING_DESIGNATIONS,
   type BarreCategorie,
   isBarreCategorie,
 } from "../config/formeBarreOptions";
+import { isSlabDesignationValue } from "../state/guards";
 
 export function useFormeBarreBaseState({
   designation,
@@ -26,10 +26,9 @@ export function useFormeBarreBaseState({
     normalizedDesignation as (typeof BARRE_DESIGNATIONS)[number],
   );
 
-  const isSemelle = normalizedDesignation === SEMELLE_DESIGNATION;
-  const isSlab = SLAB_DESIGNATIONS.includes(
-    normalizedDesignation as (typeof SLAB_DESIGNATIONS)[number],
-  );
+  const isSemelleDesignation = normalizedDesignation === SEMELLE_DESIGNATION;
+  const isSlab = isSlabDesignationValue(normalizedDesignation);
+  const isSemelle = isSemelleDesignation && !isSlab;
   const isDallePleine = normalizedDesignation === "dalle pleine";
   const isSlabSurfacePerM2SpacingDesignation = SLAB_SURFACE_PER_M2_SPACING_DESIGNATIONS.includes(
     normalizedDesignation as (typeof SLAB_SURFACE_PER_M2_SPACING_DESIGNATIONS)[number],

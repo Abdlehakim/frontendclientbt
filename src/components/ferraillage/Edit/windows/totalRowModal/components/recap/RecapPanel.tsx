@@ -300,7 +300,8 @@ export default function RecapPanel({
   const designationLabel = useMemo(() => (designation ?? "").trim(), [designation]);
   const normalizedDesignation = useMemo(() => designationLabel.toLowerCase(), [designationLabel]);
   const isSemellesDesignation = normalizedDesignation === "semelles";
-  const isDallePleineDesignation = normalizedDesignation === "dalle pleine";
+  const isDallePleineDesignation =
+    normalizedDesignation === "dalle pleine" || normalizedDesignation === "semelles";
 
   const usesLongueurLabel = useMemo(() => {
     const v = normalizedDesignation;

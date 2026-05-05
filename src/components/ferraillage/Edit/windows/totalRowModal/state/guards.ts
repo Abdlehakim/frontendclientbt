@@ -9,6 +9,7 @@ import type {
   SlabSpacingRelation,
 } from "../types";
 import {
+  SEMELLE_DESIGNATION,
   SEMELLE_RELATIONS,
   SLAB_DESIGNATIONS,
   SLAB_RELATIONS,
@@ -113,7 +114,10 @@ export function normalizeDesignation(value: unknown) {
 
 export function isSlabDesignationValue(value: unknown) {
   const normalized = normalizeDesignation(value);
-  return SLAB_DESIGNATIONS.includes(normalized as (typeof SLAB_DESIGNATIONS)[number]);
+  return (
+    normalized === SEMELLE_DESIGNATION ||
+    SLAB_DESIGNATIONS.includes(normalized as (typeof SLAB_DESIGNATIONS)[number])
+  );
 }
 
 export function isSlabSurfacePerM2SpacingDesignationValue(value: unknown) {
