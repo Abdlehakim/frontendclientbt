@@ -140,7 +140,7 @@ export default function SlabDiameterFields({
           />
           {!slab.hideEarlySlabCountFieldsForSurfacePerM2 ? (
             <FieldInput
-              label="Nb. Barres /a"
+              label="Nb. Barres a"
               value={x.slabNBarreAStr ?? "0"}
               onChange={(value) => onPatch({ slabNBarreAStr: value })}
               inputClass={inputClass}
@@ -156,7 +156,7 @@ export default function SlabDiameterFields({
           />
           {!slab.hideEarlySlabCountFieldsForSurfacePerM2 ? (
             <FieldInput
-              label="Nb. Barres /b"
+              label="Nb. Barres b"
               value={x.slabNBarreBStr ?? "0"}
               onChange={(value) => onPatch({ slabNBarreBStr: value })}
               inputClass={inputClass}

@@ -26,13 +26,13 @@ export default function ResultSingleQteDualNtSection({
         style={blueAutoStyle}
       />
       <AutoValueField
-        label="N.T.B façonnées / a"
+        label="N.T.B façonnées ∥ a"
         value={ntA}
         inputClass={inputClass}
         style={blueAutoStyle}
       />
       <AutoValueField
-        label="N.T.B façonnées / b"
+        label="N.T.B façonnées ∥ b"
         value={ntB}
         inputClass={inputClass}
         style={blueAutoStyle}

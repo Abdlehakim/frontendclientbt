@@ -46,6 +46,14 @@ function isSemellePairBLabel(label: string) {
   return label === "N.T.B façonnées (b)";
 }
 
+function isDallePleinePairALabel(label: string) {
+  return label === "N.T.B façonnées ∥ a";
+}
+
+function isDallePleinePairBLabel(label: string) {
+  return label === "N.T.B façonnées ∥ b";
+}
+
 function groupBarreLines(lines: RecapLine[]): GroupedBarreEntry[] {
   const out: GroupedBarreEntry[] = [];
 
@@ -56,8 +64,16 @@ function groupBarreLines(lines: RecapLine[]): GroupedBarreEntry[] {
     if (
       current &&
       next &&
-      isSemellePairALabel(current.label) &&
-      isSemellePairBLabel(next.label) &&
+      (
+        (
+          isSemellePairALabel(current.label) &&
+          isSemellePairBLabel(next.label)
+        ) ||
+        (
+          isDallePleinePairALabel(current.label) &&
+          isDallePleinePairBLabel(next.label)
+        )
+      ) &&
       getRecapBaseKey(current.key) === getRecapBaseKey(next.key)
     ) {
       out.push({
@@ -85,10 +101,15 @@ function getExtraInstanceBaseName(label: string) {
 function BarreSingleCard({
   title,
   l,
+  isDallePleineDesignation = false,
 }: {
   title: string;
   l: RecapLine;
+  isDallePleineDesignation?: boolean;
 }) {
+  const steelTypeLabel = isDallePleineDesignation ? "Type de nappe" : "Type d'acier";
+  const litLabel = isDallePleineDesignation ? "Méthode de calcul" : "Lit";
+
   return (
     <div className="rounded-md border border-gray-200 bg-white px-3 py-2">
       <div className="flex items-center justify-between text-xs">
@@ -100,14 +121,14 @@ function BarreSingleCard({
         <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
           {l.steelType ? (
             <>
-              <div className="text-gray-500">Type d'acier</div>
+              <div className="text-gray-500">{steelTypeLabel}</div>
               <div className="text-right font-semibold text-gray-900">{l.steelType}</div>
             </>
           ) : null}
 
           {l.litLabel ? (
             <>
-              <div className="text-gray-500">Lit</div>
+              <div className="text-gray-500">{litLabel}</div>
               <div className="text-right font-semibold text-gray-900">{l.litLabel}</div>
             </>
           ) : null}
@@ -131,10 +152,14 @@ function BarreSingleCard({
 function BarrePairColumn({
   title,
   line,
+  isDallePleineDesignation = false,
 }: {
   title: string;
   line: RecapLine;
+  isDallePleineDesignation?: boolean;
 }) {
+  const cutLengthLabel = isDallePleineDesignation ? "Longueur tige à couper" : "L. à couper";
+
   return (
     <>
       <div className="flex items-center justify-between gap-2 text-xs">
@@ -149,7 +174,7 @@ function BarrePairColumn({
         <div className="text-gray-500">{line.label || "N.T.B façonnées"}</div>
         <div className="text-right font-semibold text-gray-900">{fmtNum(line.nt)}</div>
 
-        <div className="text-gray-500">L. à couper</div>
+        <div className="text-gray-500">{cutLengthLabel}</div>
         <div className="text-right font-semibold text-gray-900">{fmtNum(line.cutLenM)} m</div>
       </div>
     </>
@@ -160,19 +185,62 @@ function BarrePairCard({
   title,
   left,
   right,
+  isDallePleineDesignation = false,
 }: {
   title: string;
   left: RecapLine;
   right: RecapLine;
+  isDallePleineDesignation?: boolean;
 }) {
+  const steelTypeLabel = isDallePleineDesignation ? "Type de nappe" : "Type d'acier";
+  const litLabel = isDallePleineDesignation ? "Méthode de calcul" : "Lit";
+  const totalQtyM = left.qtyM + right.qtyM;
+
   return (
     <div className="rounded-md border border-gray-200 bg-white px-3 py-2">
       <div className="mb-2 text-xs font-semibold text-gray-900">{title}</div>
 
-      <div className="grid grid-cols-1 gap-2">
-        <BarrePairColumn title="(a)" line={left} />
-        <BarrePairColumn title="(b)" line={right} />
-      </div>
+      {left.steelType || left.litLabel ? (
+        <div className="mb-2 grid grid-cols-2 gap-2 text-xs">
+          {left.steelType ? (
+            <>
+              <div className="text-gray-500">{steelTypeLabel}</div>
+              <div className="text-right font-semibold text-gray-900">{left.steelType}</div>
+            </>
+          ) : null}
+
+          {left.litLabel ? (
+            <>
+              <div className="text-gray-500">{litLabel}</div>
+              <div className="text-right font-semibold text-gray-900">{left.litLabel}</div>
+            </>
+          ) : null}
+        </div>
+      ) : null}
+
+      {isDallePleineDesignation ? (
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="text-gray-500">Quantités</div>
+          <div className="text-right font-semibold text-gray-900">{fmtNum(totalQtyM)} m</div>
+
+          <div className="text-gray-500">{left.label || "N.T.B façonnées ∥ a"}</div>
+          <div className="text-right font-semibold text-gray-900">{fmtNum(left.nt)}</div>
+
+          <div className="text-gray-500">{right.label || "N.T.B façonnées ∥ b"}</div>
+          <div className="text-right font-semibold text-gray-900">{fmtNum(right.nt)}</div>
+
+          <div className="text-gray-500">Longueur tige à couper / a</div>
+          <div className="text-right font-semibold text-gray-900">{fmtNum(left.cutLenM)} m</div>
+
+          <div className="text-gray-500">Longueur tige à couper / b</div>
+          <div className="text-right font-semibold text-gray-900">{fmtNum(right.cutLenM)} m</div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-2">
+          <BarrePairColumn title="(a)" line={left} isDallePleineDesignation={isDallePleineDesignation} />
+          <BarrePairColumn title="(b)" line={right} isDallePleineDesignation={isDallePleineDesignation} />
+        </div>
+      )}
     </div>
   );
 }
@@ -197,6 +265,7 @@ export default function RecapPanel({
   const designationLabel = useMemo(() => (designation ?? "").trim(), [designation]);
   const normalizedDesignation = useMemo(() => designationLabel.toLowerCase(), [designationLabel]);
   const isSemellesDesignation = normalizedDesignation === "semelles";
+  const isDallePleineDesignation = normalizedDesignation === "dalle pleine";
 
   const usesLongueurLabel = useMemo(() => {
     const v = normalizedDesignation;
@@ -271,7 +340,7 @@ export default function RecapPanel({
             {fmtNum(parsePositiveInt(nbStr) ?? null, 0)}
           </div>
 
-          {!isSemellesDesignation ? (
+          {!isSemellesDesignation && !isDallePleineDesignation ? (
             <>
               <div className="text-gray-500">{hauteurLabel}</div>
               <div className="text-right font-semibold text-gray-900">
@@ -318,6 +387,7 @@ export default function RecapPanel({
                     title={title}
                     left={entry.left}
                     right={entry.right}
+                    isDallePleineDesignation={isDallePleineDesignation}
                   />
                 );
               }
@@ -327,6 +397,7 @@ export default function RecapPanel({
                   key={`${entry.line.key}__${index}`}
                   title={title}
                   l={entry.line}
+                  isDallePleineDesignation={isDallePleineDesignation}
                 />
               );
             })}

@@ -673,13 +673,59 @@ export default function TotalRowModalWindowInner({
             spacingBStr: asString(f.slabEspacementBStr),
           });
 
+          if (
+            calcMethod === "SURFACE_TOTAL" &&
+            relation === "ab_diff_same_if" &&
+            spacingMode === "NB_CADRE"
+          ) {
+            const countA = parseNonNegativeInt(asString(f.slabNbCadreAStr)) ?? 0;
+            const countB = parseNonNegativeInt(asString(f.slabNbCadreBStr)) ?? 0;
+            const longueurA = parseNonNegativeNumber(asString(f.slabLongueurAStr)) ?? 0;
+            const longueurB = parseNonNegativeNumber(asString(f.slabLongueurBStr)) ?? 0;
+            const ancrage = parseNonNegativeNumber(asString(f.ancrageStr)) ?? 0;
+            const ntA = nb * countA;
+            const ntB = nb * countB;
+            const cutLenA = longueurA + ancrage;
+            const cutLenB = longueurB + ancrage;
+            const qtyA = ntA * cutLenA;
+            const qtyB = ntB * cutLenB;
+            const safeQtyA = qtyA > 0 ? qtyA : 0;
+            const safeQtyB = qtyB > 0 ? qtyB : 0;
+
+            linesBarres.push({
+              key: `${f.id}:a`,
+              label: "N.T.B façonnées ∥ a",
+              dia,
+              qtyM: safeQtyA,
+              nt: ntA > 0 ? ntA : 0,
+              cutLenM: cutLenA > 0 ? cutLenA : 0,
+              steelType,
+              litLabel: calcMethod === "SURFACE_TOTAL_PER_M2" ? "Surface totale / m²" : "Surface totale",
+            });
+
+            linesBarres.push({
+              key: `${f.id}:b`,
+              label: "N.T.B façonnées ∥ b",
+              dia,
+              qtyM: safeQtyB,
+              nt: ntB > 0 ? ntB : 0,
+              cutLenM: cutLenB > 0 ? cutLenB : 0,
+              steelType,
+              litLabel: calcMethod === "SURFACE_TOTAL_PER_M2" ? "Surface totale / m²" : "Surface totale",
+            });
+
+            addQty(dia, safeQtyA);
+            addQty(dia, safeQtyB);
+            continue;
+          }
+
           if (diffSharedSpacingMetrics) {
             const safeQtyA = diffSharedSpacingMetrics.qtyA > 0 ? diffSharedSpacingMetrics.qtyA : 0;
             const safeQtyB = diffSharedSpacingMetrics.qtyB > 0 ? diffSharedSpacingMetrics.qtyB : 0;
 
             linesBarres.push({
               key: `${f.id}:a`,
-              label: "N.T.B façonnées / a",
+              label: "N.T.B façonnées ∥ a",
               dia,
               qtyM: safeQtyA,
               nt: diffSharedSpacingMetrics.ntA > 0 ? diffSharedSpacingMetrics.ntA : 0,
@@ -690,7 +736,7 @@ export default function TotalRowModalWindowInner({
 
             linesBarres.push({
               key: `${f.id}:b`,
-              label: "N.T.B façonnées / b",
+              label: "N.T.B façonnées ∥ b",
               dia,
               qtyM: safeQtyB,
               nt: diffSharedSpacingMetrics.ntB > 0 ? diffSharedSpacingMetrics.ntB : 0,

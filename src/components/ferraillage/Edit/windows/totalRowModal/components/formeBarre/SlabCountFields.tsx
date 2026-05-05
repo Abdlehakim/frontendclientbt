@@ -73,7 +73,7 @@ export default function SlabCountFields({
           </div>
 
           <FieldInput
-            label="Nb. Barres /a"
+            label="Nb. Barres a"
             value={x.slabNbCadreAStr ?? "0"}
             onChange={(value) => onPatch({ slabNbCadreAStr: value })}
             inputClass={inputClass}
@@ -81,7 +81,7 @@ export default function SlabCountFields({
             inputMode="numeric"
           />
           <FieldInput
-            label="Nb. Barres /b"
+            label="Nb. Barres b"
             value={x.slabNbCadreBStr ?? "0"}
             onChange={(value) => onPatch({ slabNbCadreBStr: value })}
             inputClass={inputClass}
