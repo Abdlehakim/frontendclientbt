@@ -356,9 +356,9 @@ function EditProjectInfoModal({
 
     try {
       const response = await ferraillageApi.updateProject(nextProjectId, {
-        chantier: nextChantierName,
+        chantierName: nextChantierName,
         responsable: nextResponsable || null,
-        typeAcier: nextAcierType,
+        acierType: nextAcierType,
         note: nextNote || null,
       });
       updatedProject = response.item;
@@ -699,7 +699,7 @@ function EditProjectDataPanel({
           <EditProjectInfoModal
             open={projectEditOpen}
             project={project}
-            projectId={project?.id ?? rapport?.id ?? ""}
+            projectId={project?.id ?? ""}
             onClose={() => setProjectEditOpen(false)}
             onUpdated={handleProjectUpdated}
           />
