@@ -74,34 +74,40 @@ export function computeSemelleNTEqualShared(nbStr: string, nBarreStr: string) {
   return computeBarreNT(nbStr, nBarreStr);
 }
 
+export function computeSemelleNTSharedCount(nbStr: string, nBarreStr: string) {
+  return computeBarreNT(nbStr, nBarreStr);
+}
+
 export function computeSemelleNTSharedSpacing(
   nbStr: string,
   longueurBarreStr: string,
   spacingAStr: string,
-  ancrageStr: string,
+  _ancrageStr: string,
   spacingBStr?: string,
 ) {
   const nb = parseNonNegativeInt(nbStr);
   const longueur = parseNonNegativeNumber(longueurBarreStr);
   const spacingA = parseNonNegativeNumber(spacingAStr);
   const spacingB = spacingBStr == null ? null : parseNonNegativeNumber(spacingBStr);
-  const ancrage = parseNonNegativeNumber(ancrageStr);
+  if (spacingBStr == null) {
+    if (nb == null && longueur == null && spacingA == null) return 0;
 
-  if (nb == null && longueur == null && spacingA == null && spacingB == null && ancrage == null) return 0;
+    const safeNb = nb ?? 0;
+    const safeLongueur = longueur ?? 0;
+    const sharedSpacingCount = safeDivide(safeLongueur, spacingA ?? 0) * 2;
+
+    return safeNumber(sharedSpacingCount * safeNb);
+  }
+
+  if (nb == null && longueur == null && spacingA == null && spacingB == null) return 0;
 
   const safeNb = nb ?? 0;
   const safeLongueur = longueur ?? 0;
-  const safeAncrage = ancrage ?? 0;
-  const cutLength = safeLongueur + safeAncrage;
-  const partA = safeDivide(safeLongueur, spacingA ?? 0) * cutLength;
   const totalSpacingValue =
-    spacingBStr == null
-      ? partA * 2
-      : partA + (safeDivide(safeLongueur, spacingB ?? 0) * cutLength);
+    safeDivide(safeLongueur, spacingA ?? 0) +
+    safeDivide(safeLongueur, spacingB ?? 0);
 
-  return safeNumber(
-    (totalSpacingValue * safeNb) / 12,
-  );
+  return safeNumber(totalSpacingValue * safeNb);
 }
 
 export function computeSemelleNTDiffShared(nbStr: string, nBarreStr: string) {

@@ -10,6 +10,7 @@ import {
 import {
   computeSemelleNTDual,
   computeSemelleNTEqualShared,
+  computeSemelleNTSharedCount,
   computeSemelleNTSharedSpacing,
   computeSemelleNTDiffShared,
   computeSemelleQteDiffDual,
@@ -162,12 +163,7 @@ export function useBarreAutoValues({
     }
 
     if (useSemelleSharedCountNt) {
-      return computeSemelleQteEqualShared(
-        nbStr,
-        x.nBarreStr,
-        x.semelleLongueurAStr ?? "",
-        semelleAncrage,
-      ) / 12;
+      return computeSemelleNTSharedCount(nbStr, x.nBarreStr);
     }
 
     if (semelleEqualSharedActive) return computeSemelleNTEqualShared(nbStr, x.nBarreStr);

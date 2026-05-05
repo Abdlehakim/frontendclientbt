@@ -26,7 +26,7 @@ import {
   computeBarreNTLongueurDesignation,
   computeBarreNTStandard,
 } from "./calculations/barreCalculations";
-import { computeSemelleNTSharedSpacing } from "./calculations/semelleCalculations";
+import { computeSemelleNTSharedCount, computeSemelleNTSharedSpacing } from "./calculations/semelleCalculations";
 import {
   computeDiffDualSlabSpacingRecapMetrics,
   computeDiffSharedSlabSpacingRecapMetrics,
@@ -871,7 +871,10 @@ export default function TotalRowModalWindowInner({
                 spacingRelation === "EA_NE_EB" ? asString(f.slabEspacementBStr) : undefined,
               )
             : useSemelleSharedCountNt
-              ? qtyM / 12
+              ? computeSemelleNTSharedCount(
+                  nbStr,
+                  asString(f.nBarreStr),
+                )
               : nb * totalN;
 
           linesBarres.push({
