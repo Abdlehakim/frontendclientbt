@@ -589,7 +589,7 @@ export default function TotalRowModalWindowInner({
 
             linesBarres.push({
               key: f.id,
-              label: "N.T.Barre",
+              label: "N.T.Barre façonnées",
               dia,
               qtyM: safeTotalQtyM,
               nt: totalNt,
@@ -677,7 +677,7 @@ export default function TotalRowModalWindowInner({
 
             linesBarres.push({
               key: `${f.id}:a`,
-              label: "N.T.Barre / a",
+              label: "N.T.Barre façonnées / a",
               dia,
               qtyM: safeQtyA,
               nt: diffSharedSpacingMetrics.ntA > 0 ? diffSharedSpacingMetrics.ntA : 0,
@@ -688,7 +688,7 @@ export default function TotalRowModalWindowInner({
 
             linesBarres.push({
               key: `${f.id}:b`,
-              label: "N.T.Barre / b",
+              label: "N.T.Barre façonnées / b",
               dia,
               qtyM: safeQtyB,
               nt: diffSharedSpacingMetrics.ntB > 0 ? diffSharedSpacingMetrics.ntB : 0,
@@ -721,7 +721,7 @@ export default function TotalRowModalWindowInner({
 
             linesBarres.push({
               key: f.id,
-              label: "N.T.Barre",
+              label: "N.T.Barre façonnées",
               dia,
               qtyM: qtyM > 0 ? qtyM : 0,
               nt: nt > 0 ? nt : 0,
@@ -775,7 +775,10 @@ export default function TotalRowModalWindowInner({
 
             linesBarres.push({
               key: `${f.id}:${suffix}`,
-              label: suffix === "a" ? "N.T.Barre (a)" : "N.T.Barre (b)",
+              label:
+                suffix === "a"
+                  ? "N.T.Barre façonnées (a)"
+                  : "N.T.Barre façonnées (b)",
               dia: lineDia,
               qtyM: safeQty,
               nt: safeNt,
@@ -793,7 +796,7 @@ export default function TotalRowModalWindowInner({
 
             linesBarres.push({
               key: `${f.id}:a`,
-              label: "N.T.Barre (a)",
+              label: "N.T.Barre façonnées (a)",
               dia,
               qtyM: qtyM > 0 ? qtyM : 0,
               nt: nt > 0 ? nt : 0,
@@ -871,7 +874,7 @@ export default function TotalRowModalWindowInner({
 
           linesBarres.push({
             key: `${f.id}:ab`,
-            label: "N.T.Barre (a et b)",
+            label: "N.T.Barre façonnées (a et b)",
             dia,
             qtyM: qtyM > 0 ? qtyM : 0,
             nt: nt > 0 ? nt : 0,
@@ -920,7 +923,7 @@ export default function TotalRowModalWindowInner({
 
         linesBarres.push({
           key: f.id,
-          label: "N.T.Barre",
+          label: "N.T.Barre façonnées",
           dia,
           qtyM: qtyM > 0 ? qtyM : 0,
           nt: safeNt,

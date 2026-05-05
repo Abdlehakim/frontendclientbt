@@ -39,11 +39,11 @@ function getRecapBaseKey(key: string) {
 }
 
 function isSemellePairALabel(label: string) {
-  return label === "N.T.Barre (a)";
+  return label === "N.T.Barre façonnées (a)";
 }
 
 function isSemellePairBLabel(label: string) {
-  return label === "N.T.Barre (b)";
+  return label === "N.T.Barre façonnées (b)";
 }
 
 function groupBarreLines(lines: RecapLine[]): GroupedBarreEntry[] {
@@ -82,7 +82,9 @@ function BarreSingleCard({ l }: { l: RecapLine }) {
   return (
     <div className="rounded-md border border-gray-200 bg-white px-3 py-2">
       <div className="flex items-center justify-between text-xs">
-        <div className="font-semibold text-gray-900">{l.label || "N.T.Barre"}</div>
+        <div className="font-semibold text-gray-900">
+          {l.label || "N.T.Barre façonnées"}
+        </div>
         <div className="text-gray-600">{l.dia != null ? ferLabel(l.dia) : "-"}</div>
       </div>
 
@@ -155,7 +157,9 @@ function BarrePairCard({
 }) {
   return (
     <div className="rounded-md border border-gray-200 bg-white px-3 py-2">
-      <div className="mb-2 text-xs font-semibold text-gray-900">N.T.Barre</div>
+      <div className="mb-2 text-xs font-semibold text-gray-900">
+        N.T.Barre façonnées
+      </div>
 
       <div className="grid grid-cols-1 gap-2">
         <BarrePairColumn title="(a)" line={left} />

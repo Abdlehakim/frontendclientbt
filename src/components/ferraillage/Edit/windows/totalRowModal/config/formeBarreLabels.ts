@@ -102,15 +102,15 @@ export function getDualDiameterResultLabels(diaLabelA: string, diaLabelB: string
     return {
       qteLabelA: `Q. Fer a - Fer ${diaLabelA} (m)`,
       qteLabelB: `Q. Fer b - Fer ${diaLabelB} (m)`,
-      ntLabelA: `N.T.Barre a - Fer ${diaLabelA}`,
-      ntLabelB: `N.T.Barre b - Fer ${diaLabelB}`,
+      ntLabelA: `N.T.Barre façonnées a - Fer ${diaLabelA}`,
+      ntLabelB: `N.T.Barre façonnées b - Fer ${diaLabelB}`,
     };
   }
 
   return {
     qteLabelA: diaLabelA ? `Q. Fer ${diaLabelA} (m)` : "Q. Fer a (m)",
     qteLabelB: diaLabelB ? `Q. Fer ${diaLabelB} (m)` : "Q. Fer b (m)",
-    ntLabelA: diaLabelA ? `N.T.Barre ${diaLabelA}` : "N.T.Barre a",
-    ntLabelB: diaLabelB ? `N.T.Barre ${diaLabelB}` : "N.T.Barre b",
+    ntLabelA: diaLabelA ? `N.T.Barre façonnées ${diaLabelA}` : "N.T.Barre façonnées a",
+    ntLabelB: diaLabelB ? `N.T.Barre façonnées ${diaLabelB}` : "N.T.Barre façonnées b",
   };
 }
