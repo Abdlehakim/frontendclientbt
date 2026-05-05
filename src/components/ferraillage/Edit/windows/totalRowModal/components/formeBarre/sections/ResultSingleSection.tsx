@@ -24,7 +24,7 @@ export default function ResultSingleSection({
         style={blueAutoStyle}
       />
       <AutoValueField
-        label="N.T.Barres façonnées"
+        label="N.T.B façonnées"
         value={ntValue}
         inputClass={inputClass}
         style={blueAutoStyle}

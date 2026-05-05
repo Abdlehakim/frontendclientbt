@@ -39,11 +39,11 @@ function getRecapBaseKey(key: string) {
 }
 
 function isSemellePairALabel(label: string) {
-  return label === "N.T.Barres façonnées (a)";
+  return label === "N.T.B façonnées (a)";
 }
 
 function isSemellePairBLabel(label: string) {
-  return label === "N.T.Barres façonnées (b)";
+  return label === "N.T.B façonnées (b)";
 }
 
 function groupBarreLines(lines: RecapLine[]): GroupedBarreEntry[] {
@@ -118,7 +118,7 @@ function BarreSingleCard({
         <div className="text-gray-500">Quantités</div>
         <div className="text-right font-semibold text-gray-900">{fmtNum(l.qtyM)} m</div>
 
-        <div className="text-gray-500">{l.label || "N.T.Barres façonnées"}</div>
+        <div className="text-gray-500">{l.label || "N.T.B façonnées"}</div>
         <div className="text-right font-semibold text-gray-900">{fmtNum(l.nt)}</div>
 
         <div className="text-gray-500">Longueur tige à couper</div>
@@ -146,7 +146,7 @@ function BarrePairColumn({
         <div className="text-gray-500">Quantités</div>
         <div className="text-right font-semibold text-gray-900">{fmtNum(line.qtyM)} m</div>
 
-        <div className="text-gray-500">{line.label || "N.T.Barres façonnées"}</div>
+        <div className="text-gray-500">{line.label || "N.T.B façonnées"}</div>
         <div className="text-right font-semibold text-gray-900">{fmtNum(line.nt)}</div>
 
         <div className="text-gray-500">L. à couper</div>
@@ -195,9 +195,11 @@ export default function RecapPanel({
   onClose?: () => void;
 }) {
   const designationLabel = useMemo(() => (designation ?? "").trim(), [designation]);
+  const normalizedDesignation = useMemo(() => designationLabel.toLowerCase(), [designationLabel]);
+  const isSemellesDesignation = normalizedDesignation === "semelles";
 
   const usesLongueurLabel = useMemo(() => {
-    const v = designationLabel.toLowerCase();
+    const v = normalizedDesignation;
     return [
       "longrines",
       "raidisseurs",
@@ -207,7 +209,7 @@ export default function RecapPanel({
       "nervures",
       "semelles",
     ].includes(v);
-  }, [designationLabel]);
+  }, [normalizedDesignation]);
 
   const groupedBarreLines = useMemo(() => {
     return groupBarreLines(recap.linesBarres);
@@ -269,10 +271,14 @@ export default function RecapPanel({
             {fmtNum(parsePositiveInt(nbStr) ?? null, 0)}
           </div>
 
-          <div className="text-gray-500">{hauteurLabel}</div>
-          <div className="text-right font-semibold text-gray-900">
-            {fmtNum(parsePositiveNumber(hauteurStr) ?? null)} m
-          </div>
+          {!isSemellesDesignation ? (
+            <>
+              <div className="text-gray-500">{hauteurLabel}</div>
+              <div className="text-right font-semibold text-gray-900">
+                {fmtNum(parsePositiveNumber(hauteurStr) ?? null)} m
+              </div>
+            </>
+          ) : null}
         </div>
 
         <div className="mt-4 border-t border-gray-200 pt-3">
