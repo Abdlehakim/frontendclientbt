@@ -213,7 +213,7 @@ export default function ExtraBoxCard({
         </div>
 
         {calcMode === "ESPACEMENT" ? (
-          <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div className="flex flex-col">
               <label className="text-xs font-semibold text-gray-700 mb-1">{valuePerCadreLabel}</label>
               <input

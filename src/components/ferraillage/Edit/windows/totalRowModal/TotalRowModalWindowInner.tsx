@@ -126,7 +126,7 @@ export default function TotalRowModalWindowInner({
   const panelRef = useRef<HTMLDivElement | null>(null);
 
   const FORMS_PER_PAGE = 3;
-  const twoColGrid = "grid grid-cols-1 sm:grid-cols-2 gap-4";
+  const twoColGrid = "grid grid-cols-1 sm:grid-cols-2 gap-2";
 
   const safeMms = useMemo(() => {
     const arr = Array.isArray(mms) ? [...mms] : [];
