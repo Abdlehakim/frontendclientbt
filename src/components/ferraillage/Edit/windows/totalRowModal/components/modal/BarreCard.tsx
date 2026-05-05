@@ -32,7 +32,7 @@ export default function BarreCard({
 }) {
   return (
     <div
-      className={["max-h-fit md:col-span-4 rounded-lg min-h-fit border p-4", "border-slate-200 bg-slate-50/60"].join(" ")}
+      className={["max-h-fit md:col-span-4 rounded-lg min-h-fit border px-4 py-2", "border-slate-200 bg-slate-50/60"].join(" ")}
     >
       <div className="flex items-center justify-between mb-3">
         <div className="text-sm font-semibold text-slate-900">{label}</div>
