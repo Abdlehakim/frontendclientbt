@@ -18,6 +18,7 @@ import TotalRowModalWindow, {
   type ExtraFormePayload,
 } from "./windows/TotalRowModalWindow";
 import {
+  computeSlabCrossSpacingParts,
   computeSlabSurfacePerM2SpacingMetrics,
   computeSlabSurfacePerM2SplitMetrics,
 } from "./windows/totalRowModal/calculations/slabCalculations";
@@ -263,14 +264,17 @@ function computeSlabSpacingQtyEntriesFromPayload(
   const espacementB =
     payload.slabSpacingRelation === "EA_NE_EB" ? payload.slabEspacementB ?? 0 : espacementA;
   const ancrage = payload.ancrage ?? 0;
-
-  const ntA = espacementA > 0 ? safeDivide(longueurA, espacementA) : 0;
-  const ntB = espacementB > 0 ? safeDivide(longueurB, espacementB) : 0;
-  const qtyA = safeNumber(parentNb * ntA * (longueurB + ancrage));
-  const qtyB = safeNumber(parentNb * ntB * (longueurA + ancrage));
+  const crossSpacingParts = computeSlabCrossSpacingParts(
+    String(parentNb),
+    String(longueurA),
+    String(longueurB),
+    String(espacementA),
+    String(espacementB),
+    String(ancrage),
+  );
 
   if (payload.slabRelation === "ab_diff_same_if") {
-    return [{ dia: fallbackDia, qtyM: safeNumber(qtyA + qtyB) }];
+    return [{ dia: fallbackDia, qtyM: safeNumber(crossSpacingParts.qteA + crossSpacingParts.qteB) }];
   }
 
   if (payload.slabRelation === "ab_diff_diff_if") {
@@ -284,8 +288,8 @@ function computeSlabSpacingQtyEntriesFromPayload(
         : fallbackDia;
 
     return [
-      { dia: diaA, qtyM: qtyA },
-      { dia: diaB, qtyM: qtyB },
+      { dia: diaA, qtyM: crossSpacingParts.qteA },
+      { dia: diaB, qtyM: crossSpacingParts.qteB },
     ];
   }
 

@@ -628,16 +628,12 @@ export default function TotalRowModalWindowInner({
               typeof f.slabDiametreBMm === "number" && Number.isFinite(f.slabDiametreBMm)
                 ? f.slabDiametreBMm
                 : dia;
-            const dualNtLabels = getDualDiameterResultLabels(
-              formatDiametreLabel(diaA),
-              formatDiametreLabel(diaB),
-            );
             const safeQtyA = diffDualSpacingMetrics.qteA > 0 ? diffDualSpacingMetrics.qteA : 0;
             const safeQtyB = diffDualSpacingMetrics.qteB > 0 ? diffDualSpacingMetrics.qteB : 0;
 
             linesBarres.push({
               key: `${f.id}:a`,
-              label: dualNtLabels.ntLabelA,
+              label: "N.T.B façonnées ∥ a",
               dia: diaA,
               qtyM: safeQtyA,
               nt: diffDualSpacingMetrics.ntA > 0 ? diffDualSpacingMetrics.ntA : 0,
@@ -648,7 +644,7 @@ export default function TotalRowModalWindowInner({
 
             linesBarres.push({
               key: `${f.id}:b`,
-              label: dualNtLabels.ntLabelB,
+              label: "N.T.B façonnées ∥ b",
               dia: diaB,
               qtyM: safeQtyB,
               nt: diffDualSpacingMetrics.ntB > 0 ? diffDualSpacingMetrics.ntB : 0,

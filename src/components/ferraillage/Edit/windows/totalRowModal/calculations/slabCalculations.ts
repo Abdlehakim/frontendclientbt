@@ -297,15 +297,21 @@ export function computeSlabCrossSpacingParts(
 ) {
   const NB = parseNonNegativeInt(nbStr);
   const nb = NB ?? 0;
-  const ntA = computeSlabDiffSharedSpacingNTA(longueurAStr, spacingAStr) * nb;
-  const ntB = computeSlabDiffSharedSpacingNTB(longueurBStr, spacingBStr) * nb;
+  const rawNtA = computeSlabDiffSharedSpacingNTA(longueurAStr, spacingAStr) * nb;
+  const rawNtB = computeSlabDiffSharedSpacingNTB(longueurBStr, spacingBStr) * nb;
   const longueurA = parseNonNegativeNumber(longueurAStr) ?? 0;
   const longueurB = parseNonNegativeNumber(longueurBStr) ?? 0;
   const ancrage = parseNonNegativeNumber(ancrageStr) ?? 0;
-  const cutLenA = longueurB + ancrage;
-  const cutLenB = longueurA + ancrage;
-  const qteA = ntA * cutLenA;
-  const qteB = ntB * cutLenB;
+  const rawCutLenA = longueurB + ancrage;
+  const rawCutLenB = longueurA + ancrage;
+  const rawQteA = rawNtA * rawCutLenA;
+  const rawQteB = rawNtB * rawCutLenB;
+  const ntA = rawNtB;
+  const ntB = rawNtA;
+  const cutLenA = rawCutLenB;
+  const cutLenB = rawCutLenA;
+  const qteA = rawQteB;
+  const qteB = rawQteA;
 
   return {
     ntA,
