@@ -25,8 +25,7 @@ export default function SlabSpacingFields({
   const spacingModeOptions = slab.isSlabSurfacePerM2SpacingMode
     ? (["ESPACEMENT"] as const)
     : SLAB_SPACING_MODES;
-  const hideSpacingRelationForNbBarMode =
-    slab.slabEffectiveSpacingModeValue === "NB_CADRE";
+  const isNbBarMode = slab.slabEffectiveSpacingModeValue === "NB_CADRE";
 
   if (slab.showSlabSharedSpacingInput) {
     return (
@@ -111,7 +110,7 @@ export default function SlabSpacingFields({
     );
   }
 
-  if (slab.showSlabSpacingMode) {
+  if (slab.showSlabSpacingMode && !isNbBarMode) {
     return (
       <>
         <div className="flex flex-col">
@@ -123,17 +122,15 @@ export default function SlabSpacingFields({
             getOptionLabel={getSlabSpacingModeLabel}
           />
         </div>
-        {!hideSpacingRelationForNbBarMode ? (
-          <div className="flex flex-col">
-            <SelectDropdown
-              label="Re. Es."
-              value={slab.slabSpacingRelationValue}
-              onChange={(v) => onPatch({ slabSpacingRelation: v })}
-              options={SLAB_SPACING_RELATIONS}
-              getOptionLabel={getSlabSpacingRelationLabel}
-            />
-          </div>
-        ) : null}
+        <div className="flex flex-col">
+          <SelectDropdown
+            label="Re. Es."
+            value={slab.slabSpacingRelationValue}
+            onChange={(v) => onPatch({ slabSpacingRelation: v })}
+            options={SLAB_SPACING_RELATIONS}
+            getOptionLabel={getSlabSpacingRelationLabel}
+          />
+        </div>
       </>
     );
   }

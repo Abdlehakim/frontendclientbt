@@ -354,7 +354,7 @@ export default function SemelleFields({
                   </div>
 
                   <FieldInput
-                    label="Nb. Barres a"
+                    label="Nb. Barres /a"
                     value={x.semelleNBarreAStr ?? "0"}
                     onChange={(value) => onPatch({ semelleNBarreAStr: value })}
                     inputClass={inputClass}
@@ -363,7 +363,7 @@ export default function SemelleFields({
                   />
 
                   <FieldInput
-                    label="Nb. Barres b"
+                    label="Nb. Barres /"
                     value={x.semelleNBarreBStr ?? "0"}
                     onChange={(value) => onPatch({ semelleNBarreBStr: value })}
                     inputClass={inputClass}

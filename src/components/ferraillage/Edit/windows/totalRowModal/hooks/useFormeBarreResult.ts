@@ -15,6 +15,8 @@ import {
   computeSlabCrossSpacingParts,
   computeSlabDiffSharedSpacingNTA,
   computeSlabDiffSharedSpacingNTB,
+  computeSlabNTFromSharedCount,
+  computeSlabQuantityFromSplitCounts,
 } from "../calculations/slabCalculations";
 import { safeDivide, safeNumber } from "../utils";
 
@@ -126,6 +128,32 @@ export function useFormeBarreResult({
   }
 
   if (!slabDualResultActive) {
+    const slabDiffSharedCountResultActive =
+      base.isSlab &&
+      slab.slabDiffSharedActive &&
+      slab.slabEffectiveSpacingModeValue === "NB_CADRE";
+
+    if (slabDiffSharedCountResultActive) {
+      const countA = parseNum(x.slabNbCadreAStr);
+      const countB = parseNum(x.slabNbCadreBStr);
+
+      return {
+        kind: "single-qte-dual-nt",
+        qteValue: fmt(
+          computeSlabQuantityFromSplitCounts(
+            nbStr,
+            countA,
+            countB,
+            x.slabLongueurAStr ?? "0",
+            x.slabLongueurBStr ?? "0",
+            x.ancrageStr ?? "0",
+          ),
+        ),
+        ntA: fmt(computeSlabNTFromSharedCount(nbStr, countA)),
+        ntB: fmt(computeSlabNTFromSharedCount(nbStr, countB)),
+      };
+    }
+
     const slabDiffSharedSpacingResultActive =
       base.isSlab &&
       slab.slabDiffSharedActive &&
