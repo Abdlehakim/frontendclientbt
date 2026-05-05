@@ -184,15 +184,15 @@ export const ferraillageApi = {
       method: "PUT",
       body: JSON.stringify(normalizedPayload),
     };
-    const projectPath = `${BASE}/projects/${encodeURIComponent(normalizedProjectId)}`;
     const rapportPath = `${BASE}/rapports/${encodeURIComponent(normalizedProjectId)}`;
+    const projectPath = `${BASE}/projects/${encodeURIComponent(normalizedProjectId)}`;
 
-    return request<{ item: FerProjectDetailDTO }>(projectPath, requestOptions).catch((error: unknown) => {
+    return request<{ item: FerProjectDetailDTO }>(rapportPath, requestOptions).catch((error: unknown) => {
       if (!isApiError(error) || error.status !== 404) {
         throw error;
       }
 
-      return request<{ item: FerProjectDetailDTO }>(rapportPath, requestOptions);
+      return request<{ item: FerProjectDetailDTO }>(projectPath, requestOptions);
     });
   },
 
