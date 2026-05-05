@@ -229,10 +229,10 @@ function BarrePairCard({
           <div className="text-gray-500">{right.label || "N.T.B façonnées ∥ b"}</div>
           <div className="text-right font-semibold text-gray-900">{fmtNum(right.nt)}</div>
 
-          <div className="text-gray-500">Longueur tige à couper / a</div>
+          <div className="text-gray-500">Longueur tige à couper ∥ a</div>
           <div className="text-right font-semibold text-gray-900">{fmtNum(left.cutLenM)} m</div>
 
-          <div className="text-gray-500">Longueur tige à couper / b</div>
+          <div className="text-gray-500">Longueur tige à couper ∥ b</div>
           <div className="text-right font-semibold text-gray-900">{fmtNum(right.cutLenM)} m</div>
         </div>
       ) : (

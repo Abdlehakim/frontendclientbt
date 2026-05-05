@@ -182,15 +182,21 @@ export function computeDiffSharedSlabSpacingRecapMetrics(params: {
 
   const ntBSpacingStr = normalizedSpacingRelation === "EA_NE_EB" ? spacingBStr : spacingAStr;
   const nb = parseNonNegativeInt(nbStr) ?? 0;
-  const ntA = computeSlabDiffSharedSpacingNTA(longueurAStr, spacingAStr) * nb;
-  const ntB = computeSlabDiffSharedSpacingNTB(longueurBStr, ntBSpacingStr) * nb;
+  const rawNtA = computeSlabDiffSharedSpacingNTA(longueurAStr, spacingAStr) * nb;
+  const rawNtB = computeSlabDiffSharedSpacingNTB(longueurBStr, ntBSpacingStr) * nb;
   const longueurA = parseNonNegativeNumber(longueurAStr) ?? 0;
   const longueurB = parseNonNegativeNumber(longueurBStr) ?? 0;
   const ancrage = parseNonNegativeNumber(ancrageStr) ?? 0;
-  const cutLenA = longueurB + ancrage;
-  const cutLenB = longueurA + ancrage;
-  const qtyA = ntA * cutLenA;
-  const qtyB = ntB * cutLenB;
+  const rawCutLenA = longueurB + ancrage;
+  const rawCutLenB = longueurA + ancrage;
+  const rawQtyA = rawNtA * rawCutLenA;
+  const rawQtyB = rawNtB * rawCutLenB;
+  const ntA = rawNtB;
+  const ntB = rawNtA;
+  const cutLenA = rawCutLenB;
+  const cutLenB = rawCutLenA;
+  const qtyA = rawQtyB;
+  const qtyB = rawQtyA;
 
   return {
     ntA,

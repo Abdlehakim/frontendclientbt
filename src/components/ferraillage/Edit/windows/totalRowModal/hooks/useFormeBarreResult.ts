@@ -168,15 +168,15 @@ export function useFormeBarreResult({
         kind: "single-qte-dual-nt",
         qteValue: fmt(barreAuto.qte),
         ntA: fmt(
-          computeSlabDiffSharedSpacingNTA(
-            x.slabLongueurAStr ?? "0",
-            x.slabEspacementAStr ?? "0",
-          ) * nbMultiplier,
-        ),
-        ntB: fmt(
           computeSlabDiffSharedSpacingNTB(
             x.slabLongueurBStr ?? "0",
             spacingBStr ?? "0",
+          ) * nbMultiplier,
+        ),
+        ntB: fmt(
+          computeSlabDiffSharedSpacingNTA(
+            x.slabLongueurAStr ?? "0",
+            x.slabEspacementAStr ?? "0",
           ) * nbMultiplier,
         ),
       };
