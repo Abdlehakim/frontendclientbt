@@ -339,6 +339,23 @@ textarea {
     grid-column: 1 / -1 !important;
   }
 
+  .project-print-area .designation-cell__primary,
+  .project-print-area .fer-table .designation-cell__primary {
+    font-weight: 600 !important;
+    color: rgb(17 24 39) !important;
+    line-height: 1.15 !important;
+  }
+
+  .project-print-area .designation-cell__secondary,
+  .project-print-area .fer-table .designation-cell__secondary {
+    display: block !important;
+    margin-top: 4px !important;
+    font-size: 8px !important;
+    color: #6b7280 !important;
+    font-weight: 400 !important;
+    line-height: 1.2 !important;
+  }
+
   .print-recap-details-section,
   .project-print-recap-details {
     break-before: page !important;

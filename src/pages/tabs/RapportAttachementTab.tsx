@@ -27,7 +27,6 @@ function fmtQtyFR(qty?: string | null) {
 
 type RapportAttachementTabProps = {
   rapportId: string;
-  onPrint?: () => void;
 };
 
 export default function RapportAttachementTab({ rapportId }: RapportAttachementTabProps) {

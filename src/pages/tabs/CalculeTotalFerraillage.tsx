@@ -1,10 +1,12 @@
 import { useMemo, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from "react";
 import { FaRegEye } from "react-icons/fa";
+import { MdOutlineLocalPrintshop } from "react-icons/md";
 import type { NiveauTotal, TotalFerraillageData, TotalRow } from "@/components/ferraillage/shared/totalFerraillageData";
 import RecapPanel, { type RecapData } from "@/components/ferraillage/Edit/windows/totalRowModal/components/recap/RecapPanel";
 
 type CalculeTotalFerraillageProps = {
   data?: TotalFerraillageData | null;
+  onPrint?: () => void;
 };
 
 type Totals = {
@@ -82,9 +84,9 @@ function getRecapPreviewTarget(row: TotalRow): RecapPreviewTarget | null {
 
 function DesignationCell({ row }: { row: TotalRow }) {
   return (
-    <div className="whitespace-pre-wrap wrap-break-word">
-      <div className="font-semibold">{row.designation || "-"}</div>
-      <div className="text-[11px] text-gray-600">{row.typeName || "-"}</div>
+    <div className="designation-cell whitespace-pre-wrap wrap-break-word">
+      <div className="designation-cell__primary font-semibold">{row.designation || "-"}</div>
+      <div className="designation-cell__secondary text-[11px] text-gray-600">{row.typeName || "-"}</div>
     </div>
   );
 }
@@ -155,7 +157,7 @@ function EmptyState({ message }: { message: string }) {
   );
 }
 
-export default function CalculeTotalFerraillage({ data: rawData }: CalculeTotalFerraillageProps) {
+export default function CalculeTotalFerraillage({ data: rawData, onPrint }: CalculeTotalFerraillageProps) {
   const data = rawData ?? EMPTY_TOTAL_FERRAILLAGE;
   const niveaux = data.niveaux ?? [];
   const [selectedRecap, setSelectedRecap] = useState<RecapPreviewTarget | null>(null);
@@ -168,12 +170,28 @@ export default function CalculeTotalFerraillage({ data: rawData }: CalculeTotalF
     return Array.from(set).sort((a, b) => a - b);
   }, [niveaux]);
 
+  const printButton = onPrint ? (
+    <div className="no-print flex justify-end">
+      <button
+        type="button"
+        onClick={onPrint}
+        aria-label="Imprimer"
+        title="Imprimer"
+        className="print-button inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white border border-slate-200 text-slate-700 shadow-sm transition-colors hover:bg-slate-50 hover:text-(--primary) hoverButtons"
+      >
+        <MdOutlineLocalPrintshop size={20} />
+      </button>
+    </div>
+  ) : null;
+
   if (!niveaux.length) {
     return <EmptyState message="Aucun niveau trouvé" />;
   }
 
   return (
     <div className="project-print-flow flex flex-col gap-4">
+      {printButton}
+
       {niveaux.map((niveau) => (
         <NiveauBlock key={niveau.id} niveau={niveau} onOpenRecap={setSelectedRecap} />
       ))}

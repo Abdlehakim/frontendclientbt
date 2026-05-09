@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { MdOutlineLocalPrintshop } from "react-icons/md";
 import { buildTotalFerraillageData } from "@/components/ferraillage/shared/totalFerraillageData";
 import { type FerProjectDetailDTO } from "@/lib/ferraillageApi";
 import RapportAttachementTab from "@/pages/tabs/RapportAttachementTab";
@@ -49,7 +48,7 @@ export default function ProjectDetailViewContent({
       </div>
 
       <div className="mt-4">
-        <div className="no-print flex items-center justify-between gap-3 p-3">
+        <div className="no-print flex items-center gap-3 p-3">
           <div className="flex flex-wrap gap-2 text-xs font-bold">
             {TABS.map((item) => {
               const active = item.key === tab;
@@ -70,25 +69,13 @@ export default function ProjectDetailViewContent({
               );
             })}
           </div>
-
-          <div className="flex max-w-26 items-start gap-3">
-            <button
-              type="button"
-              onClick={onPrint}
-              aria-label="Imprimer"
-              title="Imprimer"
-              className="print-button no-print inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white border border-slate-200 text-slate-700 shadow-sm transition-colors hover:bg-slate-50 hover:text-(--primary)  hoverButtons"
-            >
-              <MdOutlineLocalPrintshop size={20} />
-            </button>
-          </div>
         </div>
 
         <div className="min-h-65 project-print-section">
           {tab === "TOTAL_FERRAILLAGE" ? (
-            <CalculeTotalFerraillage data={totalFerraillageData} />
+            <CalculeTotalFerraillage data={totalFerraillageData} onPrint={onPrint} />
           ) : tab === "ATTACHEMENT" ? (
-            <RapportAttachementTab rapportId={project.id} onPrint={onPrint} />
+            <RapportAttachementTab rapportId={project.id} />
           ) : (
             <div className="text-gray-500">
               <strong>{tabLabel}</strong>
