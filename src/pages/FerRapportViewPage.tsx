@@ -74,9 +74,9 @@ export default function FerRapportViewPage() {
   }
 
   return (
-    <div className="mx-auto px-4 py-4 flex flex-col gap-4 h-full bg-green-50 rounded-xl">
+    <div className="project-print-area print-wrapper mx-auto px-4 py-4 flex flex-col gap-4 h-full bg-green-50 rounded-xl">
       <div className="flex items-center gap-4">
-        <button onClick={() => nav(-1)} className="px-4 py-2 bg-(--primary) text-white rounded" type="button">
+        <button onClick={() => nav(-1)} className="no-print px-4 py-2 bg-(--primary) text-white rounded" type="button">
           Back to list
         </button>
         <h1 className="text-3xl font-bold">Ferraillage - Details du projet</h1>

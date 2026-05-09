@@ -150,7 +150,7 @@ function BarreSingleCard({
       : l.label || ntFallbackLabel;
 
   return (
-    <div className="rounded-md border border-gray-200 bg-white px-3 py-2">
+    <div className="recap-panel__card rounded-md border border-gray-200 bg-white px-3 py-2">
       <div className="flex items-center justify-between text-xs">
         <div className="font-semibold text-gray-900">{title}</div>
         <div className="text-gray-600">{l.dia != null ? ferLabel(l.dia) : "-"}</div>
@@ -255,7 +255,7 @@ function BarrePairCard({
       : showSplitQtyForDallePleine;
 
   return (
-    <div className="rounded-md border border-gray-200 bg-white px-3 py-2">
+    <div className="recap-panel__card rounded-md border border-gray-200 bg-white px-3 py-2">
       <div className="mb-2 text-xs font-semibold text-gray-900">{title}</div>
 
       {left.steelType || left.litLabel ? (
@@ -388,11 +388,11 @@ export default function RecapPanel({
   return (
     <div
       className={[
-        "flex min-h-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl",
+        "recap-panel flex min-h-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl",
         className,
       ].join(" ").trim()}
     >
-      <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 py-3">
+      <div className="recap-panel__header flex items-start justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 py-3">
         <div>
           <div className="text-sm font-semibold text-gray-900">Récapitulatif</div>
           <div className="mt-0.5 text-xs text-gray-600">
@@ -413,7 +413,7 @@ export default function RecapPanel({
         ) : null}
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto p-4">
+      <div className="recap-panel__content flex-1 min-h-0 overflow-y-auto p-4">
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="text-gray-500">NB</div>
           <div className="text-right font-semibold text-gray-900">
@@ -430,15 +430,15 @@ export default function RecapPanel({
           ) : null}
         </div>
 
-        <div className="mt-4 border-t border-gray-200 pt-3">
+        <div className="recap-panel__section mt-4 border-t border-gray-200 pt-3">
           <div className="mb-2 text-xs font-semibold text-gray-800">Totaux par diamètre</div>
 
           {recap.totals.length ? (
-            <div className="space-y-2">
+            <div className="recap-panel__totals space-y-2">
               {recap.totals.map((t) => (
                 <div
                   key={t.dia}
-                  className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-xs"
+                  className="recap-panel__card flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-xs"
                 >
                   <div className="font-semibold text-gray-900">{ferLabel(t.dia)}</div>
                   <div className="text-gray-700">
@@ -453,10 +453,10 @@ export default function RecapPanel({
           )}
         </div>
 
-        <div className="mt-4 border-t border-gray-200 pt-3">
+        <div className="recap-panel__section mt-4 border-t border-gray-200 pt-3">
           <div className="mb-2 text-xs font-semibold text-gray-800">Détails rapides</div>
 
-          <div className="space-y-2">
+          <div className="recap-panel__details space-y-2">
             {groupedBarreLines.map((entry, index) => {
               const title = `Barre ${index + 1}`;
 
@@ -490,7 +490,7 @@ export default function RecapPanel({
             })}
 
             {recap.linesCadres.map((l, index) => (
-              <div key={l.key} className="rounded-md border border-gray-200 bg-white px-3 py-2">
+              <div key={l.key} className="recap-panel__card rounded-md border border-gray-200 bg-white px-3 py-2">
                 <div className="flex items-center justify-between text-xs">
                   <div className="font-semibold text-gray-900">{`Cadre ${index + 1}`}</div>
                   <div className="text-gray-600">{l.dia != null ? ferLabel(l.dia) : "-"}</div>
@@ -510,7 +510,7 @@ export default function RecapPanel({
             ))}
 
             {titledExtraLines.map(({ line, title }) => (
-              <div key={line.key} className="rounded-md border border-gray-200 bg-white px-3 py-2">
+              <div key={line.key} className="recap-panel__card rounded-md border border-gray-200 bg-white px-3 py-2">
                 <div className="flex items-center justify-between text-xs">
                   <div className="font-semibold text-gray-900">{title}</div>
                   <div className="text-gray-600">{line.dia != null ? ferLabel(line.dia) : "-"}</div>

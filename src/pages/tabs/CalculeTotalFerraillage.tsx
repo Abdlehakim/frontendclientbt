@@ -21,6 +21,12 @@ type RecapPreviewTarget = {
   recap: RecapData;
 };
 
+type PrintRecapGroup = {
+  id: string;
+  name: string;
+  items: RecapPreviewTarget[];
+};
+
 const EMPTY_TOTAL_FERRAILLAGE: TotalFerraillageData = {
   rapportId: "",
   chantierName: "",
@@ -172,6 +178,7 @@ export default function CalculeTotalFerraillage({ data: rawData }: CalculeTotalF
         <NiveauBlock key={niveau.id} niveau={niveau} onOpenRecap={setSelectedRecap} />
       ))}
       {allMms.length ? <RecapByNiveau niveaux={niveaux} allMms={allMms} /> : null}
+      <PrintRecapDetailsSection niveaux={niveaux} />
 
       {selectedRecap ? (
         <RecapPreviewDrawer
@@ -179,6 +186,56 @@ export default function CalculeTotalFerraillage({ data: rawData }: CalculeTotalF
           onClose={() => setSelectedRecap(null)}
         />
       ) : null}
+    </div>
+  );
+}
+
+function PrintRecapDetailsSection({ niveaux }: { niveaux: NiveauTotal[] }) {
+  const groups = useMemo<PrintRecapGroup[]>(() => {
+    return niveaux
+      .map((niveau) => ({
+        id: niveau.id,
+        name: niveau.niveauName || "-",
+        items: (niveau.rows ?? [])
+          .map((row) => getRecapPreviewTarget(row))
+          .filter((target): target is RecapPreviewTarget => target !== null),
+      }))
+      .filter((group) => group.items.length > 0);
+  }, [niveaux]);
+
+  if (!groups.length) return null;
+
+  return (
+    <div className="print-only print-recap-details-section project-print-card print-card project-print-recap-details bg-white shadow-sm overflow-hidden">
+      <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between gap-3">
+        <div className="w-full text-xs font-bold text-gray-900 text-center align-middle items-center uppercase">
+          {"D\u00C9TAILS R\u00C9CAPITULATIFS"}
+        </div>
+      </div>
+
+      <div className="project-print-recap-details-body flex flex-col gap-4 p-4">
+        {groups.map((group) => (
+          <div key={group.id} className="project-print-recap-group flex flex-col gap-2">
+            <div className="project-print-recap-group-title text-xs font-semibold uppercase tracking-wide text-gray-900">
+              Niveau : {group.name}
+            </div>
+
+            <div className="project-print-recap-group-list flex flex-col gap-3">
+              {group.items.map((item) => (
+                <RecapPanel
+                  key={item.id}
+                  designation={item.designation}
+                  typeName={item.typeName}
+                  nbStr={item.nbStr}
+                  hauteurStr={item.hauteurStr}
+                  recap={item.recap}
+                  className="project-print-recap-panel h-auto w-full"
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -325,7 +382,7 @@ function RecapByNiveau({ niveaux, allMms }: { niveaux: NiveauTotal[]; allMms: nu
 
         <div className="total-poids-block mt-4 flex flex-wrap items-center justify-center gap-3">
           <div className="inline-flex items-center gap-2 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-900 border border-emerald-100">
-            <span className="font-semibold">Total Poids (tous O)</span>
+            <span className="font-semibold">Total Poids (tous Ø)</span>
             <span>{fmtNumTrim3(sumPoidsAll)} T</span>
           </div>
         </div>
