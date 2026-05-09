@@ -216,14 +216,25 @@ export const ferraillageApi = {
       body: JSON.stringify(payload),
     }),
 
-  updateProjectNiveau: (projectId: string, niveauId: string, payload: FerProjectNiveauUpdatePayload) =>
-    request<{ item: FerProjectNiveauDTO }>(
-      `${BASE}/projects/${encodeURIComponent(projectId)}/niveaux/${encodeURIComponent(niveauId)}`,
-      {
-        method: "PUT",
-        body: JSON.stringify(payload),
-      },
-    ),
+  updateProjectNiveau: (projectId: string, niveauId: string, payload: FerProjectNiveauUpdatePayload) => {
+    const normalizedProjectId = projectId.trim();
+    const normalizedNiveauId = niveauId.trim();
+    if (!normalizedProjectId) {
+      throw new ApiError(400, "Invalid projectId");
+    }
+    if (!normalizedNiveauId) {
+      throw new ApiError(400, "Invalid niveauId");
+    }
+
+    const requestOptions: RequestInit = {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    };
+    const projectPath =
+      `${BASE}/projects/${encodeURIComponent(normalizedProjectId)}/niveaux/${encodeURIComponent(normalizedNiveauId)}`;
+
+    return request<{ item: FerProjectNiveauDTO }>(projectPath, requestOptions);
+  },
 
   createProjectLine: (projectId: string, payload: FerProjectLineCreatePayload) =>
     request<{ item: FerProjectLineDTO }>(`${BASE}/projects/${encodeURIComponent(projectId)}/lignes`, {
