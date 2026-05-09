@@ -236,6 +236,22 @@ export const ferraillageApi = {
     return request<{ item: FerProjectNiveauDTO }>(projectPath, requestOptions);
   },
 
+  deleteProjectNiveau: (projectId: string, niveauId: string) => {
+    const normalizedProjectId = projectId.trim();
+    const normalizedNiveauId = niveauId.trim();
+    if (!normalizedProjectId) {
+      throw new ApiError(400, "Invalid projectId");
+    }
+    if (!normalizedNiveauId) {
+      throw new ApiError(400, "Invalid niveauId");
+    }
+
+    return request<{ ok: true }>(
+      `${BASE}/projects/${encodeURIComponent(normalizedProjectId)}/niveaux/${encodeURIComponent(normalizedNiveauId)}`,
+      { method: "DELETE" },
+    );
+  },
+
   createProjectLine: (projectId: string, payload: FerProjectLineCreatePayload) =>
     request<{ item: FerProjectLineDTO }>(`${BASE}/projects/${encodeURIComponent(projectId)}/lignes`, {
       method: "POST",

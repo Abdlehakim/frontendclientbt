@@ -681,6 +681,7 @@ function EditProjectDataPanel({
                 <CalculeTotalFerraillage
                   initialData={totalFerraillageData}
                   onNiveauCreated={handleNiveauCreated}
+                  onProjectReloaded={handleProjectUpdated}
                   onLineCreated={handleLineCreated}
                   onLineUpdated={handleLineUpdated}
                   onLineDeleted={handleLineDeleted}

@@ -7,9 +7,11 @@ import DeleteConfirmModal from "@/components/common/DeleteConfirmModal";
 import {
   ferraillageApi,
   isApiError as isFerApiError,
+  type FerProjectDetailDTO,
   type FerProjectLineDTO,
   type FerProjectNiveauDTO,
 } from "@/lib/ferraillageApi";
+import { buildTotalFerraillageData } from "@/components/ferraillage/shared/totalFerraillageData";
 import NiveauModalWindow from "./windows/NiveauModalWindow";
 import TotalRowModalWindow, {
   type TotalRowModalPayload,
@@ -47,6 +49,7 @@ type TotalFerraillageData = {
 type EditCalculeTotalFerraillageProps = {
   initialData?: TotalFerraillageData | null;
   onNiveauCreated?: (niveau: FerProjectNiveauDTO) => void;
+  onProjectReloaded?: (project: FerProjectDetailDTO) => void;
   onLineCreated?: (niveauId: string, ligne: FerProjectLineDTO) => void;
   onLineUpdated?: (niveauId: string, ligne: FerProjectLineDTO) => void;
   onLineDeleted?: (niveauId: string, ligneId: string) => void;
@@ -486,6 +489,7 @@ function NiveauModal({
 export default function EditCalculeTotalFerraillage({
   initialData,
   onNiveauCreated,
+  onProjectReloaded,
   onLineCreated,
   onLineUpdated,
   onLineDeleted,
@@ -495,12 +499,15 @@ export default function EditCalculeTotalFerraillage({
   const [openAdd, setOpenAdd] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
 
+  const [niveauDeleteTarget, setNiveauDeleteTarget] = useState<{ niveauId: string; itemName: string } | null>(null);
   const [rowModal, setRowModal] = useState<{ mode: "add" | "edit"; niveauId: string; rowId?: string } | null>(null);
   const [rowDeleteTarget, setRowDeleteTarget] = useState<{ niveauId: string; rowId: string; itemName: string } | null>(null);
   const [addSubmitting, setAddSubmitting] = useState(false);
   const [addErr, setAddErr] = useState("");
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [editErr, setEditErr] = useState("");
+  const [niveauDeleteLoading, setNiveauDeleteLoading] = useState(false);
+  const [niveauDeleteErr, setNiveauDeleteErr] = useState("");
   const [rowSubmitting, setRowSubmitting] = useState(false);
   const [rowErr, setRowErr] = useState("");
   const [rowDeleteLoading, setRowDeleteLoading] = useState(false);
@@ -510,12 +517,15 @@ export default function EditCalculeTotalFerraillage({
     setData(initialData ?? EMPTY_TOTAL_FERRAILLAGE);
     setOpenAdd(false);
     setEditId(null);
+    setNiveauDeleteTarget(null);
     setRowModal(null);
     setRowDeleteTarget(null);
     setAddSubmitting(false);
     setAddErr("");
     setEditSubmitting(false);
     setEditErr("");
+    setNiveauDeleteLoading(false);
+    setNiveauDeleteErr("");
     setRowSubmitting(false);
     setRowErr("");
     setRowDeleteLoading(false);
@@ -550,9 +560,44 @@ export default function EditCalculeTotalFerraillage({
     return [...arr].sort((a, b) => a - b);
   }, [rowEditingNiveau]);
 
-  const removeNiveau = (id: string) => {
-    setEditId((curr) => (curr === id ? null : curr));
-    setData((p) => ({ ...p, niveaux: (p.niveaux ?? []).filter((x) => x.id !== id) }));
+  const refreshProjectFromDb = async (projectId: string) => {
+    const refreshedProject = await ferraillageApi.getProject(projectId);
+    const refreshedData = buildTotalFerraillageData(refreshedProject.item);
+    if (!refreshedData) {
+      throw new Error("PROJECT_REFRESH_FAILED");
+    }
+
+    setData(refreshedData);
+    onProjectReloaded?.(refreshedProject.item);
+    return refreshedProject.item;
+  };
+
+  const deleteNiveauFromProject = async () => {
+    const target = niveauDeleteTarget;
+    if (!target) return;
+
+    const projectId = String(data.rapportId ?? "").trim();
+    if (!projectId) {
+      setNiveauDeleteErr("Projet introuvable.");
+      return;
+    }
+
+    setNiveauDeleteLoading(true);
+    setNiveauDeleteErr("");
+
+    try {
+      await ferraillageApi.deleteProjectNiveau(projectId, target.niveauId);
+      await refreshProjectFromDb(projectId);
+
+      setEditId((current) => (current === target.niveauId ? null : current));
+      setRowModal((current) => (current?.niveauId === target.niveauId ? null : current));
+      setRowDeleteTarget((current) => (current?.niveauId === target.niveauId ? null : current));
+      setNiveauDeleteTarget(null);
+    } catch (error: unknown) {
+      setNiveauDeleteErr(isFerApiError(error) ? error.message : "Echec de la suppression du niveau");
+    } finally {
+      setNiveauDeleteLoading(false);
+    }
   };
 
   const addFromModal = async (payload: { niveauName: string; note: string; sousTraitants: string[]; diametres: number[] }) => {
@@ -606,18 +651,14 @@ export default function EditCalculeTotalFerraillage({
     setEditErr("");
 
     try {
-      const response = await ferraillageApi.updateProjectNiveau(projectId, id, {
+      await ferraillageApi.updateProjectNiveau(projectId, id, {
         nomNiveau: payload.niveauName,
         note: payload.note || null,
         entreprisesMainsOeuvres: payload.sousTraitants ?? [],
         diametresActifs: (payload.diametres?.length ? payload.diametres : [...DEFAULT_MMS]).sort((a, b) => a - b),
       });
 
-      const updated = mapProjectNiveauToLocal(response.item);
-      setData((p) => ({
-        ...p,
-        niveaux: (p.niveaux ?? []).map((niveau) => (niveau.id === id ? updated : niveau)),
-      }));
+      await refreshProjectFromDb(projectId);
       setEditErr("");
       setEditId(null);
     } catch (error: unknown) {
@@ -884,6 +925,20 @@ export default function EditCalculeTotalFerraillage({
       ) : null}
 
       <DeleteConfirmModal
+        open={Boolean(niveauDeleteTarget)}
+        title="Supprimer le niveau"
+        itemName={niveauDeleteTarget?.itemName ?? ""}
+        message={niveauDeleteErr || "sera definitivement supprime. Les lignes liees seront aussi supprimees."}
+        loading={niveauDeleteLoading}
+        onConfirm={() => void deleteNiveauFromProject()}
+        onCancel={() => {
+          if (niveauDeleteLoading) return;
+          setNiveauDeleteTarget(null);
+          setNiveauDeleteErr("");
+        }}
+      />
+
+      <DeleteConfirmModal
         open={Boolean(rowDeleteTarget)}
         title="Supprimer la ligne"
         itemName={rowDeleteTarget?.itemName ?? ""}
@@ -905,7 +960,13 @@ export default function EditCalculeTotalFerraillage({
             setEditErr("");
             setEditId(niv.id);
           }}
-          onDelete={() => removeNiveau(niv.id)}
+          onDelete={() => {
+            setNiveauDeleteErr("");
+            setNiveauDeleteTarget({
+              niveauId: niv.id,
+              itemName: (niv.niveauName || "").trim() || "Niveau",
+            });
+          }}
           onAddRow={() => {
             setRowErr("");
             setRowModal({ mode: "add", niveauId: niv.id });
