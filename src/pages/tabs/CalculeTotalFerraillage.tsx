@@ -85,12 +85,12 @@ function DesignationCell({ row }: { row: TotalRow }) {
 
 function buildFerPrintTableStyle(mms: number[]): CSSProperties {
   const remainingCols = mms.length * 2;
-  const otherWidth = remainingCols > 0 ? `${80 / remainingCols}%` : "0%";
+  const otherWidth = remainingCols > 0 ? `${85 / remainingCols}%` : "0%";
 
   return {
     ["--print-first-col-width" as string]: "12%",
     ["--print-nb-col-width" as string]: "3%",
-    ["--print-recap-col-width" as string]: "5%",
+    ["--print-recap-col-width" as string]: "0%",
     ["--print-other-col-width" as string]: otherWidth,
   };
 }
@@ -397,7 +397,7 @@ function NiveauBlock({
                 {mms.map((mm) => (
                   <col key={`fer-p-col-${niveau.id}-${mm}`} className="fer-col-other" />
                 ))}
-                <col className="fer-col-recap" />
+                <col className="fer-col-recap fer-print-recap" />
               </colgroup>
               <thead>
                 <tr className="bg-(--primary) text-white">
@@ -417,7 +417,7 @@ function NiveauBlock({
                     Poids <span className="text-[10px] font-semibold normal-case">(en tonnes)</span>
                   </th>
 
-                  <th className="sticky right-0 z-30 border-l-2 bg-(--primary) py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-14" rowSpan={2}>
+                  <th className="fer-print-recap sticky right-0 z-30 border-l-2 bg-(--primary) py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-14" rowSpan={2}>
                     RÉCAP
                   </th>
                 </tr>
@@ -472,7 +472,7 @@ function NiveauBlock({
                           </td>
                         ))}
 
-                        <td className={["sticky right-0 z-20 w-14 py-2 text-center text-xs border-l-2", rowBgClass].join(" ")}>
+                        <td className={["fer-print-recap sticky right-0 z-20 w-14 py-2 text-center text-xs border-l-2", rowBgClass].join(" ")}>
                           <button
                             type="button"
                             className="ButtonSquare disabled:cursor-not-allowed disabled:opacity-50"
@@ -512,7 +512,7 @@ function NiveauBlock({
                     </td>
                   ))}
 
-                  <td className="sticky right-0 bottom-0 z-40 bg-(--primary) text-white border-l-2" />
+                  <td className="fer-print-recap sticky right-0 bottom-0 z-40 bg-(--primary) text-white border-l-2" />
                 </tr>
               </tbody>
             </table>

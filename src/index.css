@@ -223,6 +223,24 @@ textarea {
     margin: 6mm;
   }
 
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .fer-table col.fer-print-recap,
+  .fer-table .fer-print-recap {
+    display: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+  }
+
   html,
   body {
     width: 210mm !important;

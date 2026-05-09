@@ -51,7 +51,7 @@ export default function ProjectDetailViewContent({
   return (
     <>
       <div className="grid grid-cols-1 gap-2">
-        <div className="project-print-card print-card project-print-project-header bg-white shadow rounded p-2 grid grid-cols-1 md:grid-cols-4 gap-2">
+        <div className="project-print-card print-card project-print-project-header no-print bg-white shadow rounded p-2 grid grid-cols-1 md:grid-cols-4 gap-2">
           <div className="text-xs">
             <strong>Etats chantier:</strong> {project.etats.length} (Dernier: {fmtDateTime(lastEtatDate)})
           </div>
