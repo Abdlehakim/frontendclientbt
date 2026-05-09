@@ -246,10 +246,19 @@ export const ferraillageApi = {
       throw new ApiError(400, "Invalid niveauId");
     }
 
-    return request<{ ok: true }>(
-      `${BASE}/projects/${encodeURIComponent(normalizedProjectId)}/niveaux/${encodeURIComponent(normalizedNiveauId)}`,
-      { method: "DELETE" },
-    );
+    const requestOptions: RequestInit = { method: "DELETE" };
+    const projectPath =
+      `${BASE}/projects/${encodeURIComponent(normalizedProjectId)}/niveaux/${encodeURIComponent(normalizedNiveauId)}`;
+    const rapportPath =
+      `${BASE}/rapports/${encodeURIComponent(normalizedProjectId)}/niveaux/${encodeURIComponent(normalizedNiveauId)}`;
+
+    return request<{ ok: true }>(projectPath, requestOptions).catch((error: unknown) => {
+      if (!isApiError(error) || error.status !== 404) {
+        throw error;
+      }
+
+      return request<{ ok: true }>(rapportPath, requestOptions);
+    });
   },
 
   createProjectLine: (projectId: string, payload: FerProjectLineCreatePayload) =>
