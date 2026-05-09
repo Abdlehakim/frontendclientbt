@@ -328,12 +328,12 @@ function SousTraitantsField({
                     <div className="text-sm text-gray-800 truncate">{st || "—"}</div>
                     <button
                       type="button"
-                      className="inline-flex items-center justify-center rounded-md px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
+                      className="ButtonSquareDelete ButtonSquareDelete--compact shrink-0"
                       title="Supprimer"
                       aria-label="Supprimer"
                       onClick={() => onRemove(idx)}
                     >
-                      Supprimer
+                      <FaTrashAlt size={13} />
                     </button>
                   </div>
                 ))
