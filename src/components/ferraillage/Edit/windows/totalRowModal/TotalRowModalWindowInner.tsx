@@ -1226,7 +1226,19 @@ export default function TotalRowModalWindowInner({
       initDia,
     });
 
-    if (payload) void onSubmit(payload);
+    if (!payload) return;
+
+    const persistedRecap: TotalRowModalPayload["persistedRecap"] = {
+      totals: recap.totals.map((entry) => ({ ...entry })),
+      linesCadres: recap.linesCadres.map((line) => ({ ...line })),
+      linesBarres: recap.linesBarres.map((line) => ({ ...line })),
+      linesExtras: recap.linesExtras.map((line) => ({ ...line })),
+    };
+
+    void onSubmit({
+      ...payload,
+      persistedRecap,
+    });
   };
 
   const closeRecapOnBackdrop = (ev: ReactMouseEvent<HTMLDivElement>) => {

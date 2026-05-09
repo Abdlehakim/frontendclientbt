@@ -96,6 +96,8 @@ export type FerProjectNiveauCreatePayload = {
   diametresActifs: number[];
 };
 
+export type FerProjectNiveauUpdatePayload = FerProjectNiveauCreatePayload;
+
 export type FerProjectLineCreatePayload = {
   niveauId?: string;
   designation: string;
@@ -213,6 +215,15 @@ export const ferraillageApi = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+
+  updateProjectNiveau: (projectId: string, niveauId: string, payload: FerProjectNiveauUpdatePayload) =>
+    request<{ item: FerProjectNiveauDTO }>(
+      `${BASE}/projects/${encodeURIComponent(projectId)}/niveaux/${encodeURIComponent(niveauId)}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      },
+    ),
 
   createProjectLine: (projectId: string, payload: FerProjectLineCreatePayload) =>
     request<{ item: FerProjectLineDTO }>(`${BASE}/projects/${encodeURIComponent(projectId)}/lignes`, {

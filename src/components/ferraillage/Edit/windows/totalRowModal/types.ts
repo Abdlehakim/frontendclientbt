@@ -86,6 +86,30 @@ export type ExtraFormePayload = {
   slabNbCadreB?: number | null;
 };
 
+export type PersistedRecapTotal = {
+  dia: number;
+  qtyM: number;
+};
+
+export type PersistedRecapLine = {
+  key: string;
+  label: string;
+  dia: number | null;
+  qtyM: number;
+  nt: number;
+  cutLenM: number;
+  steelType?: string;
+  litLabel?: string;
+  splitQtyInPair?: boolean;
+};
+
+export type PersistedRecapData = {
+  totals: PersistedRecapTotal[];
+  linesCadres: PersistedRecapLine[];
+  linesBarres: PersistedRecapLine[];
+  linesExtras: PersistedRecapLine[];
+};
+
 export type FormeState = {
   id: string;
   forme: FormeKind;
@@ -181,4 +205,6 @@ export type TotalRowModalPayload = {
   slabEspacementB?: number | null;
   slabNbCadreA?: number | null;
   slabNbCadreB?: number | null;
+
+  persistedRecap?: PersistedRecapData;
 };

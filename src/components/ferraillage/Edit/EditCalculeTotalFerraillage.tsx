@@ -14,24 +14,7 @@ import NiveauModalWindow from "./windows/NiveauModalWindow";
 import TotalRowModalWindow, {
   type TotalRowModalPayload,
   type RowForme,
-  type ExtraBoxKind,
-  type ExtraFormePayload,
 } from "./windows/TotalRowModalWindow";
-import {
-  computeSlabCrossSpacingParts,
-  computeSlabDiffSharedDualSpacingQte,
-  computeSlabDiffSharedSpacingQte,
-  computeSlabDualSpacingQte,
-  computeSlabEqualDualCountPartMetrics,
-  computeSlabEqualDualSpacingPartMetrics,
-  computeSlabQuantityFromSharedCount,
-  computeSlabQuantityFromSharedCountWithAverageLength,
-  computeSlabSharedSpacingQte,
-  computeSlabSplitCountPartMetrics,
-  computeSlabSurfacePerM2SpacingMetrics,
-  computeSlabSurfacePerM2SplitMetrics,
-} from "./windows/totalRowModal/calculations/slabCalculations";
-import { normalizeSlabSurfacePerM2Relation } from "./windows/totalRowModal/state/guards";
 import { safeDivide, safeNumber } from "./windows/totalRowModal/utils";
 
 type TotalRow = {
@@ -173,270 +156,60 @@ function kgPerMeter(mm: number) {
   return safeDivide(safeNumber(mm) * safeNumber(mm), 162);
 }
 
-function computeExtraPerimetreNum(kind: ExtraBoxKind, longueur: number, ancrage: number) {
-  if (kind === "EPINGLE") return longueur + 2 * ancrage;
-  return 2 * longueur + 2 * ancrage;
-}
-
-function computeCadrePerimetreNum(forme: Exclude<RowForme, "BARRE">, longueur: number, largeur: number, diamCercle: number, ancrage: number) {
-  if (forme === "CARRE") return 4 * longueur + 2 * ancrage;
-  if (forme === "CIRCULAIRE") return diamCercle * Math.PI + 2 * ancrage;
-  if (forme === "RECTANGULAIRE") return 2 * (longueur + largeur) + 2 * ancrage;
-  return 0;
-}
-
-function isSlabDesignationName(value: string) {
-  const normalized = value.trim().toLowerCase();
-  return (
-    normalized === "semelles" ||
-    normalized === "dalle pleine" ||
-    normalized === "chape" ||
-    normalized === "radier" ||
-    normalized === "voile"
-  );
-}
-
-function isSlabSurfacePerM2SpacingDesignationName(value: string) {
-  const normalized = value.trim().toLowerCase();
-  return (
-    normalized === "dalle pleine" ||
-    normalized === "chape" ||
-    normalized === "radier" ||
-    normalized === "voile"
-  );
-}
-
-function computeSlabSpacingQtyEntriesFromPayload(
-  payload: TotalRowModalPayload | ExtraFormePayload,
-  parentNb: number,
-  fallbackDia: number,
-  isSlabSurfacePerM2SpacingDesignation: boolean,
-) {
-  if (
-    isSlabSurfacePerM2SpacingDesignation &&
-    payload.slabCalcMethod === "SURFACE_TOTAL_PER_M2" &&
-    payload.slabSpacingMode === "ESPACEMENT" &&
-    (payload.slabSpacingRelation === "EA_EQ_EB" || payload.slabSpacingRelation === "EA_NE_EB")
-  ) {
-    const dallePleinePerM2Metrics = computeSlabSurfacePerM2SpacingMetrics({
-      surfaceStr: String(payload.slabSurface ?? 0),
-      perimetreStr: String(payload.slabPerimetre ?? 0),
-      ancrageLineaireStr: String(payload.slabAncrageLineaire ?? 0),
-      spacingRelation: payload.slabSpacingRelation,
-      spacingAStr: String(payload.slabEspacementA ?? 0),
-      spacingBStr: String(payload.slabEspacementB ?? 0),
-    });
-    const dallePleineRelation = normalizeSlabSurfacePerM2Relation(payload.slabRelation);
-
-    if (dallePleineRelation === "ab_equal_diff_if") {
-      const diaA =
-        typeof payload.slabDiametreAMm === "number" && Number.isFinite(payload.slabDiametreAMm)
-          ? payload.slabDiametreAMm
-          : fallbackDia;
-      const diaB =
-        typeof payload.slabDiametreBMm === "number" && Number.isFinite(payload.slabDiametreBMm)
-          ? payload.slabDiametreBMm
-          : fallbackDia;
-      const splitMetrics = computeSlabSurfacePerM2SplitMetrics({
-        qA: dallePleinePerM2Metrics.qA,
-        qB: dallePleinePerM2Metrics.qB,
-        ancrageM: dallePleinePerM2Metrics.ancrageM,
-        multiplier: parentNb,
-        commercialBarLengthM: dallePleinePerM2Metrics.cutLenM,
-      });
-
-      return [
-        {
-          dia: diaA,
-          qtyM: splitMetrics.qtyA,
-        },
-        {
-          dia: diaB,
-          qtyM: splitMetrics.qtyB,
-        },
-      ];
-    }
-
-    return [{ dia: fallbackDia, qtyM: parentNb > 0 ? parentNb * dallePleinePerM2Metrics.qtyM : 0 }];
-  }
-
-  if (payload.slabCalcMethod !== "SURFACE_TOTAL") {
-    return null;
-  }
-
-  const relation = payload.slabRelation ?? "ab_equal_same_if";
-  const spacingMode = payload.slabSpacingMode ?? "ESPACEMENT";
-  const spacingRelation = payload.slabSpacingRelation ?? "EA_EQ_EB";
-  const longueurA = payload.slabLongueurA ?? 0;
-  const longueurB = payload.slabLongueurB ?? 0;
-  const ancrage = payload.ancrage ?? 0;
-  const diaA =
-    typeof payload.slabDiametreAMm === "number" && Number.isFinite(payload.slabDiametreAMm)
-      ? payload.slabDiametreAMm
-      : fallbackDia;
-  const diaB =
-    typeof payload.slabDiametreBMm === "number" && Number.isFinite(payload.slabDiametreBMm)
-      ? payload.slabDiametreBMm
-      : fallbackDia;
-
-  if (spacingMode === "ESPACEMENT") {
-    if (spacingRelation !== "EA_EQ_EB" && spacingRelation !== "EA_NE_EB") {
-      return null;
-    }
-
-    const espacementA = payload.slabEspacementA ?? 0;
-    const espacementB = spacingRelation === "EA_NE_EB" ? payload.slabEspacementB ?? 0 : espacementA;
-
-    if (relation === "ab_equal_same_if") {
-      const qtyM =
-        spacingRelation === "EA_NE_EB"
-          ? computeSlabDualSpacingQte(
-              String(parentNb),
-              String(longueurA),
-              String(longueurA),
-              String(espacementA),
-              String(espacementB),
-              String(ancrage),
-            )
-          : computeSlabSharedSpacingQte(
-              String(parentNb),
-              String(longueurA),
-              String(espacementA),
-              String(ancrage),
-            );
-
-      return [{ dia: fallbackDia, qtyM }];
-    }
-
-    if (relation === "ab_equal_diff_if") {
-      const equalDualSpacingParts = computeSlabEqualDualSpacingPartMetrics(
-        String(parentNb),
-        String(longueurA),
-        String(espacementA),
-        String(espacementB),
-        String(ancrage),
-        spacingRelation,
-      );
-
-      return [
-        { dia: diaA, qtyM: equalDualSpacingParts.qteA },
-        { dia: diaB, qtyM: equalDualSpacingParts.qteB },
-      ];
-    }
-
-    if (relation === "ab_diff_same_if") {
-      const qtyM =
-        spacingRelation === "EA_NE_EB"
-          ? computeSlabDiffSharedDualSpacingQte(
-              String(longueurA),
-              String(longueurB),
-              String(espacementA),
-              String(espacementB),
-              String(ancrage),
-            ) * parentNb
-          : computeSlabDiffSharedSpacingQte(
-              String(longueurA),
-              String(longueurB),
-              String(espacementA),
-              String(ancrage),
-            ) * parentNb;
-
-      return [{ dia: fallbackDia, qtyM }];
-    }
-
-    if (relation === "ab_diff_diff_if") {
-      const crossSpacingParts = computeSlabCrossSpacingParts(
-        String(parentNb),
-        String(longueurA),
-        String(longueurB),
-        String(espacementA),
-        String(espacementB),
-        String(ancrage),
-      );
-
-      return [
-        { dia: diaA, qtyM: crossSpacingParts.qteA },
-        { dia: diaB, qtyM: crossSpacingParts.qteB },
-      ];
-    }
-  }
-
-  if (spacingMode === "NB_CADRE") {
-    const countA = payload.slabNbCadreA ?? 0;
-    const countB = payload.slabNbCadreB ?? countA;
-
-    if (relation === "ab_equal_same_if") {
-      return [
-        {
-          dia: fallbackDia,
-          qtyM: computeSlabQuantityFromSharedCount(
-            String(parentNb),
-            countA,
-            String(longueurA),
-            String(ancrage),
-          ),
-        },
-      ];
-    }
-
-    if (relation === "ab_equal_diff_if") {
-      const equalDualCountParts = computeSlabEqualDualCountPartMetrics(
-        String(parentNb),
-        countA,
-        countB,
-        String(longueurA),
-        String(ancrage),
-      );
-
-      return [
-        { dia: diaA, qtyM: equalDualCountParts.qteA },
-        { dia: diaB, qtyM: equalDualCountParts.qteB },
-      ];
-    }
-
-    if (relation === "ab_diff_same_if") {
-      return [
-        {
-          dia: fallbackDia,
-          qtyM: computeSlabQuantityFromSharedCountWithAverageLength(
-            String(parentNb),
-            countA,
-            String(longueurA),
-            String(longueurB),
-            String(ancrage),
-          ),
-        },
-      ];
-    }
-
-    if (relation === "ab_diff_diff_if") {
-      const splitCountParts = computeSlabSplitCountPartMetrics(
-        String(parentNb),
-        countA,
-        countB,
-        String(longueurA),
-        String(longueurB),
-        String(ancrage),
-      );
-
-      return [
-        { dia: diaA, qtyM: splitCountParts.qteA },
-        { dia: diaB, qtyM: splitCountParts.qteB },
-      ];
-    }
-  }
-
-  return null;
-}
-
 function normalizePayloadDiameters(payload: TotalRowModalPayload, mms: number[]) {
   const fallbackDia = mms[0] ?? 6;
   const pick = (d: number | null | undefined) =>
     typeof d === "number" && mms.includes(d) ? d : fallbackDia;
+  const pickOptional = (d: number | null | undefined) =>
+    typeof d === "number" && Number.isFinite(d) ? pick(d) : null;
+  const pickFirstValid = (...dias: Array<number | null | undefined>) => {
+    for (const dia of dias) {
+      if (typeof dia === "number" && Number.isFinite(dia)) return pick(dia);
+    }
+    return fallbackDia;
+  };
+  const normalizePersistedDia = (d: number | null | undefined) =>
+    typeof d === "number" && Number.isFinite(d) ? d : null;
+  const normalizePositive = (value: number | null | undefined) =>
+    typeof value === "number" && Number.isFinite(value) && value > 0 ? value : 0;
+  const normalizePersistedRecap = (recap: TotalRowModalPayload["persistedRecap"]) =>
+    recap
+      ? {
+          totals: (recap.totals ?? [])
+            .filter((entry) => typeof entry?.dia === "number" && Number.isFinite(entry.dia))
+            .map((entry) => ({
+              dia: entry.dia,
+              qtyM: normalizePositive(entry.qtyM),
+            })),
+          linesCadres: (recap.linesCadres ?? []).map((line) => ({
+            ...line,
+            dia: normalizePersistedDia(line.dia),
+            qtyM: normalizePositive(line.qtyM),
+            nt: normalizePositive(line.nt),
+            cutLenM: normalizePositive(line.cutLenM),
+          })),
+          linesBarres: (recap.linesBarres ?? []).map((line) => ({
+            ...line,
+            dia: normalizePersistedDia(line.dia),
+            qtyM: normalizePositive(line.qtyM),
+            nt: normalizePositive(line.nt),
+            cutLenM: normalizePositive(line.cutLenM),
+          })),
+          linesExtras: (recap.linesExtras ?? []).map((line) => ({
+            ...line,
+            dia: normalizePersistedDia(line.dia),
+            qtyM: normalizePositive(line.qtyM),
+            nt: normalizePositive(line.nt),
+            cutLenM: normalizePositive(line.cutLenM),
+          })),
+        }
+      : undefined;
 
   const extraFormes = (payload.extraFormes ?? []).map((x) => ({
     ...x,
-    diametreMm: pick(x.diametreMm),
+    diametreMm: pickFirstValid(x.diametreMm, x.slabDiametreAMm, x.slabDiametreBMm, payload.diametreMm),
+    slabDiametreAMm: pickOptional(x.slabDiametreAMm),
+    slabDiametreBMm: pickOptional(x.slabDiametreBMm),
   }));
 
   const extraBoxes = (payload.extraBoxes ?? []).map((b) => ({
@@ -449,9 +222,12 @@ function normalizePayloadDiameters(payload: TotalRowModalPayload, mms: number[])
     typeName: payload.typeName ?? "",
     forme: payload.forme ?? "BARRE",
     nb: payload.nb ?? null,
-    diametreMm: pick(payload.diametreMm),
+    diametreMm: pickFirstValid(payload.diametreMm, payload.slabDiametreAMm, payload.slabDiametreBMm),
+    slabDiametreAMm: pickOptional(payload.slabDiametreAMm),
+    slabDiametreBMm: pickOptional(payload.slabDiametreBMm),
     extraFormes,
     extraBoxes,
+    persistedRecap: normalizePersistedRecap(payload.persistedRecap),
   };
 }
 
@@ -461,89 +237,14 @@ function computeQtyPoidsByMmFromPayload(payloadIn: TotalRowModalPayload, mms: nu
   const qtyByMm = buildZerosByMm(mms);
   const poidsByMm = buildZerosByMm(mms);
 
-  const nb = payload.nb ?? 0;
-  const h = payload.hauteur ?? 0;
-  const isSlabPayload = isSlabDesignationName(payload.designation);
-  const isSlabSurfacePerM2SpacingPayload =
-    isSlabSurfacePerM2SpacingDesignationName(payload.designation);
-
   const addQty = (dia: number, qtyM: number) => {
     if (!Number.isFinite(qtyM) || qtyM <= 0) return;
     if (!(dia in qtyByMm)) return;
     qtyByMm[dia] = (qtyByMm[dia] ?? 0) + qtyM;
   };
 
-  const handleBarre = (dia: number, nBarre: number, ancrage: number, attente: number) => {
-    const qtyM = nb * (nBarre * (h + attente + ancrage));
-    addQty(dia, qtyM);
-  };
-
-  const handleCadre = (forme: Exclude<RowForme, "BARRE">, dia: number, longueur: number, largeur: number, diamCercle: number, ancrage: number, espacement: number) => {
-    const per = computeCadrePerimetreNum(forme, longueur, largeur, diamCercle, ancrage);
-    const ratio = espacement > 0 ? h / espacement : 0;
-    const qtyM = nb * per * ratio;
-    addQty(dia, qtyM);
-  };
-
-  const mainDia = payload.diametreMm;
-
-  if (payload.forme === "BARRE") {
-    const slabQtyEntries = isSlabPayload
-      ? computeSlabSpacingQtyEntriesFromPayload(
-          payload,
-          nb,
-          mainDia,
-          isSlabSurfacePerM2SpacingPayload,
-        )
-      : null;
-    if (slabQtyEntries) slabQtyEntries.forEach((entry) => addQty(entry.dia, entry.qtyM));
-    else handleBarre(mainDia, payload.nBarre ?? 0, payload.ancrage ?? 0, payload.attenteBarre ?? 0);
-  } else {
-    handleCadre(
-      payload.forme,
-      mainDia,
-      payload.longueur ?? 0,
-      payload.largeur ?? 0,
-      payload.rayon ?? 0,
-      payload.ancrage ?? 0,
-      payload.espacement ?? 0,
-    );
-  }
-
-  for (const x of payload.extraFormes ?? []) {
-    const dia = x.diametreMm;
-    if (x.forme === "BARRE") {
-      const fallbackDia = typeof dia === "number" && Number.isFinite(dia) ? dia : mainDia;
-      const slabQtyEntries = isSlabPayload
-        ? computeSlabSpacingQtyEntriesFromPayload(
-            x,
-            nb,
-            fallbackDia,
-            isSlabSurfacePerM2SpacingPayload,
-          )
-        : null;
-      if (slabQtyEntries) slabQtyEntries.forEach((entry) => addQty(entry.dia, entry.qtyM));
-      else handleBarre(dia, x.nBarre ?? 0, x.ancrage ?? 0, x.attenteBarre ?? 0);
-    } else {
-      handleCadre(
-        x.forme as Exclude<RowForme, "BARRE">,
-        dia,
-        x.longueur ?? 0,
-        x.largeur ?? 0,
-        x.rayon ?? 0,
-        x.ancrage ?? 0,
-        x.espacement ?? 0,
-      );
-    }
-  }
-
-  for (const b of payload.extraBoxes ?? []) {
-    const dia = b.diametreMm;
-    const per = computeExtraPerimetreNum(b.kind, b.longueur ?? 0, b.ancrage ?? 0);
-    const esp = b.espacement ?? 0;
-    const ratio = esp > 0 ? h / esp : 0;
-    const qtyM = nb * ((b.n ?? 0) * per) * ratio;
-    addQty(dia, qtyM);
+  for (const entry of payload.persistedRecap?.totals ?? []) {
+    addQty(entry.dia, entry.qtyM);
   }
 
   for (const mm of mms) {
@@ -798,6 +499,8 @@ export default function EditCalculeTotalFerraillage({
   const [rowDeleteTarget, setRowDeleteTarget] = useState<{ niveauId: string; rowId: string; itemName: string } | null>(null);
   const [addSubmitting, setAddSubmitting] = useState(false);
   const [addErr, setAddErr] = useState("");
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editErr, setEditErr] = useState("");
   const [rowSubmitting, setRowSubmitting] = useState(false);
   const [rowErr, setRowErr] = useState("");
   const [rowDeleteLoading, setRowDeleteLoading] = useState(false);
@@ -811,6 +514,8 @@ export default function EditCalculeTotalFerraillage({
     setRowDeleteTarget(null);
     setAddSubmitting(false);
     setAddErr("");
+    setEditSubmitting(false);
+    setEditErr("");
     setRowSubmitting(false);
     setRowErr("");
     setRowDeleteLoading(false);
@@ -887,15 +592,39 @@ export default function EditCalculeTotalFerraillage({
     }
   };
 
-  const updateFromModal = (id: string, payload: { niveauName: string; note: string; sousTraitants: string[]; diametres: number[] }) => {
-    setData((p) => ({
-      ...p,
-      niveaux: (p.niveaux ?? []).map((n) => {
-        if (n.id !== id) return n;
-        const diametres = (payload.diametres?.length ? payload.diametres : n.diametres?.length ? n.diametres : [...DEFAULT_MMS]).sort((a, b) => a - b);
-        return { ...n, niveauName: payload.niveauName, note: payload.note, sousTraitants: payload.sousTraitants ?? [], diametres };
-      }),
-    }));
+  const updateFromModal = async (
+    id: string,
+    payload: { niveauName: string; note: string; sousTraitants: string[]; diametres: number[] },
+  ) => {
+    const projectId = String(data.rapportId ?? "").trim();
+    if (!projectId) {
+      setEditErr("Projet introuvable.");
+      return;
+    }
+
+    setEditSubmitting(true);
+    setEditErr("");
+
+    try {
+      const response = await ferraillageApi.updateProjectNiveau(projectId, id, {
+        nomNiveau: payload.niveauName,
+        note: payload.note || null,
+        entreprisesMainsOeuvres: payload.sousTraitants ?? [],
+        diametresActifs: (payload.diametres?.length ? payload.diametres : [...DEFAULT_MMS]).sort((a, b) => a - b),
+      });
+
+      const updated = mapProjectNiveauToLocal(response.item);
+      setData((p) => ({
+        ...p,
+        niveaux: (p.niveaux ?? []).map((niveau) => (niveau.id === id ? updated : niveau)),
+      }));
+      setEditErr("");
+      setEditId(null);
+    } catch (error: unknown) {
+      setEditErr(isFerApiError(error) ? error.message : "Echec de la mise a jour du niveau");
+    } finally {
+      setEditSubmitting(false);
+    }
   };
 
   const allMms = useMemo(() => {
@@ -1085,10 +814,13 @@ export default function EditCalculeTotalFerraillage({
         <NiveauModal
           key={editingNiveau.id}
           open={openEdit}
-          onClose={() => setEditId(null)}
-          onSubmit={(payload: { niveauName: string; note: string; sousTraitants: string[]; diametres: number[] }) => {
-            updateFromModal(editingNiveau.id, payload);
+          onClose={() => {
+            if (editSubmitting) return;
+            setEditErr("");
             setEditId(null);
+          }}
+          onSubmit={(payload: { niveauName: string; note: string; sousTraitants: string[]; diametres: number[] }) => {
+            return updateFromModal(editingNiveau.id, payload);
           }}
           inputClass={inputClass}
           initial={{
@@ -1098,6 +830,8 @@ export default function EditCalculeTotalFerraillage({
             sousTraitants: editingNiveau.sousTraitants ?? [],
             diametres: editingNiveau.diametres ?? [],
           }}
+          submitting={editSubmitting}
+          errorMessage={editErr}
         />
       ) : null}
 
@@ -1167,7 +901,10 @@ export default function EditCalculeTotalFerraillage({
         <NiveauBlock
           key={niv.id}
           niveau={niv}
-          onEdit={() => setEditId(niv.id)}
+          onEdit={() => {
+            setEditErr("");
+            setEditId(niv.id);
+          }}
           onDelete={() => removeNiveau(niv.id)}
           onAddRow={() => {
             setRowErr("");
