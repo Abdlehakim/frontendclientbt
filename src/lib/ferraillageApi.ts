@@ -121,6 +121,8 @@ export type FerProjectLineDeletePayload = {
   niveauId: string;
 };
 
+export type FerProjectLineDuplicatePayload = FerProjectLineDeletePayload;
+
 class ApiError extends Error {
   status: number;
   constructor(status: number, message: string) {
@@ -267,6 +269,12 @@ export const ferraillageApi = {
   updateProjectLine: (ligneId: string, payload: FerProjectLineUpdatePayload) =>
     request<{ item: FerProjectLineDTO }>(`${BASE}/lignes/${encodeURIComponent(ligneId)}`, {
       method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+
+  duplicateProjectLine: (ligneId: string, payload: FerProjectLineDuplicatePayload) =>
+    request<{ item: FerProjectLineDTO }>(`${BASE}/lignes/${encodeURIComponent(ligneId)}/duplicate`, {
+      method: "POST",
       body: JSON.stringify(payload),
     }),
 

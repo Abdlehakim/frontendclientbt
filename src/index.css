@@ -99,6 +99,13 @@ textarea {
   display: inline-flex;
 }
 
+.ButtonSquare.ButtonSquare--compact,
+.ButtonSquareDelete.ButtonSquareDelete--compact {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+}
+
 .ButtonSquare:hover {
   background-color: var(--primary);
   color: #fff;
@@ -463,6 +470,10 @@ textarea {
     width: var(--print-nb-col-width, 5%) !important;
   }
 
+  body.project-print-active .project-print-area .fer-table col.fer-col-recap {
+    width: var(--print-recap-col-width, 6%) !important;
+  }
+
   body.project-print-active .project-print-area .fer-table col.fer-col-other,
   body.project-print-active .project-print-area .recap-table col.recap-col-other {
     width: var(--print-other-col-width, auto) !important;
@@ -482,6 +493,10 @@ textarea {
   body.project-print-active .project-print-area .w-70,
   body.project-print-active .project-print-area .w-80,
   body.project-print-active .project-print-area .w-40,
+  body.project-print-active .project-print-area .w-52,
+  body.project-print-active .project-print-area .w-12,
+  body.project-print-active .project-print-area .w-14,
+  body.project-print-active .project-print-area .w-16,
   body.project-print-active .project-print-area .w-23\.75,
   body.project-print-active .project-print-area .w-21\.25 {
     width: auto !important;

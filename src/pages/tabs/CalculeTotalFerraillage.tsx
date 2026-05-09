@@ -1,5 +1,7 @@
-import { useMemo, type CSSProperties } from "react";
+import { useMemo, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from "react";
+import { FaRegEye } from "react-icons/fa";
 import type { NiveauTotal, TotalFerraillageData, TotalRow } from "@/components/ferraillage/shared/totalFerraillageData";
+import RecapPanel, { type RecapData } from "@/components/ferraillage/Edit/windows/totalRowModal/components/recap/RecapPanel";
 
 type CalculeTotalFerraillageProps = {
   data?: TotalFerraillageData | null;
@@ -8,6 +10,15 @@ type CalculeTotalFerraillageProps = {
 type Totals = {
   qty: Record<number, number>;
   poids: Record<number, number>;
+};
+
+type RecapPreviewTarget = {
+  id: string;
+  designation: string;
+  typeName: string;
+  nbStr: string;
+  hauteurStr: string;
+  recap: RecapData;
 };
 
 const EMPTY_TOTAL_FERRAILLAGE: TotalFerraillageData = {
@@ -32,13 +43,54 @@ function cellVal(map: Record<number, number>, mm: number) {
   return fmtNumTrim3(map[mm] ?? 0);
 }
 
+function toFormFieldValue(value: number | null | undefined) {
+  return value == null || !Number.isFinite(value) ? "" : String(value);
+}
+
+function getPersistedRecap(row: TotalRow): RecapData | null {
+  const persistedRecap = row.payload?.persistedRecap;
+  if (!persistedRecap) return null;
+
+  return {
+    totals: (persistedRecap.totals ?? []).map((entry) => ({ ...entry })),
+    linesCadres: (persistedRecap.linesCadres ?? []).map((line) => ({ ...line })),
+    linesBarres: (persistedRecap.linesBarres ?? []).map((line) => ({ ...line })),
+    linesExtras: (persistedRecap.linesExtras ?? []).map((line) => ({ ...line })),
+  };
+}
+
+function getRecapPreviewTarget(row: TotalRow): RecapPreviewTarget | null {
+  const recap = getPersistedRecap(row);
+  const payload = row.payload;
+  if (!recap || !payload) return null;
+
+  return {
+    id: row.id,
+    designation: (typeof payload.designation === "string" ? payload.designation : "").trim(),
+    typeName: (typeof payload.typeName === "string" ? payload.typeName : "").trim(),
+    nbStr: toFormFieldValue(payload.nb),
+    hauteurStr: toFormFieldValue(payload.hauteur),
+    recap,
+  };
+}
+
+function DesignationCell({ row }: { row: TotalRow }) {
+  return (
+    <div className="whitespace-pre-wrap wrap-break-word">
+      <div className="font-semibold">{row.designation || "-"}</div>
+      <div className="text-[11px] text-gray-600">{row.typeName || "-"}</div>
+    </div>
+  );
+}
+
 function buildFerPrintTableStyle(mms: number[]): CSSProperties {
   const remainingCols = mms.length * 2;
   const otherWidth = remainingCols > 0 ? `${80 / remainingCols}%` : "0%";
 
   return {
-    ["--print-first-col-width" as string]: "15%",
-    ["--print-nb-col-width" as string]: "5%",
+    ["--print-first-col-width" as string]: "12%",
+    ["--print-nb-col-width" as string]: "3%",
+    ["--print-recap-col-width" as string]: "5%",
     ["--print-other-col-width" as string]: otherWidth,
   };
 }
@@ -100,6 +152,7 @@ function EmptyState({ message }: { message: string }) {
 export default function CalculeTotalFerraillage({ data: rawData }: CalculeTotalFerraillageProps) {
   const data = rawData ?? EMPTY_TOTAL_FERRAILLAGE;
   const niveaux = data.niveaux ?? [];
+  const [selectedRecap, setSelectedRecap] = useState<RecapPreviewTarget | null>(null);
 
   const allMms = useMemo(() => {
     const set = new Set<number>();
@@ -116,9 +169,42 @@ export default function CalculeTotalFerraillage({ data: rawData }: CalculeTotalF
   return (
     <div className="project-print-flow flex flex-col gap-4">
       {niveaux.map((niveau) => (
-        <NiveauBlock key={niveau.id} niveau={niveau} />
+        <NiveauBlock key={niveau.id} niveau={niveau} onOpenRecap={setSelectedRecap} />
       ))}
       {allMms.length ? <RecapByNiveau niveaux={niveaux} allMms={allMms} /> : null}
+
+      {selectedRecap ? (
+        <RecapPreviewDrawer
+          target={selectedRecap}
+          onClose={() => setSelectedRecap(null)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function RecapPreviewDrawer({
+  target,
+  onClose,
+}: {
+  target: RecapPreviewTarget;
+  onClose: () => void;
+}) {
+  const closeOnBackdrop = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (event.target === event.currentTarget) onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-140 flex justify-end bg-slate-900/10 p-3 sm:p-4" onMouseDown={closeOnBackdrop}>
+      <RecapPanel
+        designation={target.designation}
+        typeName={target.typeName}
+        nbStr={target.nbStr}
+        hauteurStr={target.hauteurStr}
+        recap={target.recap}
+        className="h-full w-full max-w-[24rem]"
+        onClose={onClose}
+      />
     </div>
   );
 }
@@ -248,11 +334,17 @@ function RecapByNiveau({ niveaux, allMms }: { niveaux: NiveauTotal[]; allMms: nu
   );
 }
 
-function NiveauBlock({ niveau }: { niveau: NiveauTotal }) {
+function NiveauBlock({
+  niveau,
+  onOpenRecap,
+}: {
+  niveau: NiveauTotal;
+  onOpenRecap: (target: RecapPreviewTarget) => void;
+}) {
   const mms = useMemo(() => getNiveauDiametres(niveau), [niveau]);
   const totals = useMemo(() => computeTotals(niveau.rows ?? [], mms), [niveau.rows, mms]);
   const tablePrintStyle = useMemo(() => buildFerPrintTableStyle(mms), [mms]);
-  const colSpan = 2 + 2 * mms.length;
+  const colSpan = 3 + 2 * mms.length;
 
   return (
     <div className="project-print-card print-card niveau-card bg-white shadow-sm overflow-hidden">
@@ -305,14 +397,15 @@ function NiveauBlock({ niveau }: { niveau: NiveauTotal }) {
                 {mms.map((mm) => (
                   <col key={`fer-p-col-${niveau.id}-${mm}`} className="fer-col-other" />
                 ))}
+                <col className="fer-col-recap" />
               </colgroup>
               <thead>
                 <tr className="bg-(--primary) text-white">
-                  <th className="border-r-2 py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-70" rowSpan={2}>
+                  <th className="border-r-2 py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-52" rowSpan={2}>
                     Designations
                   </th>
 
-                  <th className="border-r-2 py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-23.75" rowSpan={2}>
+                  <th className="border-r-2 py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-12" rowSpan={2}>
                     NB
                   </th>
 
@@ -322,6 +415,10 @@ function NiveauBlock({ niveau }: { niveau: NiveauTotal }) {
 
                   <th className="py-2 text-[11px] font-semibold text-center uppercase tracking-wide" colSpan={mms.length}>
                     Poids <span className="text-[10px] font-semibold normal-case">(en tonnes)</span>
+                  </th>
+
+                  <th className="sticky right-0 z-30 border-l-2 bg-(--primary) py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-14" rowSpan={2}>
+                    RÉCAP
                   </th>
                 </tr>
 
@@ -351,27 +448,48 @@ function NiveauBlock({ niveau }: { niveau: NiveauTotal }) {
                     </td>
                   </tr>
                 ) : (
-                  (niveau.rows ?? []).map((row, index) => (
-                    <tr key={row.id} className={index % 2 === 0 ? "bg-white" : "bg-gray-100"}>
-                      <td className="py-2 px-2 text-xs border-r-2">
-                        <div className="whitespace-pre-wrap wrap-break-word">{row.designation || "-"}</div>
-                      </td>
+                  (niveau.rows ?? []).map((row, index) => {
+                    const recapTarget = getRecapPreviewTarget(row);
+                    const rowBgClass = index % 2 === 0 ? "bg-white" : "bg-gray-100";
 
-                      <td className="py-2 text-center text-xs border-r-2">{row.nb == null ? "" : fmtNumTrim3(row.nb)}</td>
-
-                      {mms.map((mm) => (
-                        <td key={`rq-${row.id}-${mm}`} className="py-2 text-center text-xs border-r-2">
-                          {cellVal(row.qtyByMm, mm)}
+                    return (
+                      <tr key={row.id} className={rowBgClass}>
+                        <td className="w-52 py-2 px-2 text-xs border-r-2">
+                          <DesignationCell row={row} />
                         </td>
-                      ))}
 
-                      {mms.map((mm, index2) => (
-                        <td key={`rp-${row.id}-${mm}`} className={["py-2 text-center text-xs", index2 < mms.length - 1 ? "border-r-2" : ""].join(" ")}>
-                          {cellVal(row.poidsByMm, mm)}
+                        <td className="w-12 py-2 text-center text-xs border-r-2">{row.nb == null ? "" : fmtNumTrim3(row.nb)}</td>
+
+                        {mms.map((mm) => (
+                          <td key={`rq-${row.id}-${mm}`} className="py-2 text-center text-xs border-r-2">
+                            {cellVal(row.qtyByMm, mm)}
+                          </td>
+                        ))}
+
+                        {mms.map((mm, index2) => (
+                          <td key={`rp-${row.id}-${mm}`} className={["py-2 text-center text-xs", index2 < mms.length - 1 ? "border-r-2" : ""].join(" ")}>
+                            {cellVal(row.poidsByMm, mm)}
+                          </td>
+                        ))}
+
+                        <td className={["sticky right-0 z-20 w-14 py-2 text-center text-xs border-l-2", rowBgClass].join(" ")}>
+                          <button
+                            type="button"
+                            className="ButtonSquare disabled:cursor-not-allowed disabled:opacity-50"
+                            title={recapTarget ? "Voir le récapitulatif" : "Aucun récapitulatif enregistré"}
+                            aria-label={recapTarget ? "Voir le récapitulatif" : "Aucun récapitulatif enregistré"}
+                            disabled={!recapTarget}
+                            onClick={() => {
+                              if (!recapTarget) return;
+                              onOpenRecap(recapTarget);
+                            }}
+                          >
+                            <FaRegEye size={14} />
+                          </button>
                         </td>
-                      ))}
-                    </tr>
-                  ))
+                      </tr>
+                    );
+                  })
                 )}
 
                 <tr className="bg-(--primary) text-white">
@@ -393,6 +511,8 @@ function NiveauBlock({ niveau }: { niveau: NiveauTotal }) {
                       {fmtNumTrim3(totals.poids[mm] ?? 0)}
                     </td>
                   ))}
+
+                  <td className="sticky right-0 bottom-0 z-40 bg-(--primary) text-white border-l-2" />
                 </tr>
               </tbody>
             </table>

@@ -1,9 +1,11 @@
 // src/components/ferraillage/Edit/EditCalculeTotalFerraillage.tsx
 import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { FaRegEdit, FaTrashAlt } from "react-icons/fa";
-import { LuPlus } from "react-icons/lu";
+import { FaSpinner } from "react-icons/fa6";
+import { LuCopy, LuPlus } from "react-icons/lu";
 import { IoIosArrowDropdown, IoIosArrowDropup } from "react-icons/io";
 import DeleteConfirmModal from "@/components/common/DeleteConfirmModal";
+import DuplicateLigneConfirmModal from "@/components/common/DuplicateLigneConfirmModal";
 import {
   ferraillageApi,
   isApiError as isFerApiError,
@@ -502,6 +504,12 @@ export default function EditCalculeTotalFerraillage({
   const [niveauDeleteTarget, setNiveauDeleteTarget] = useState<{ niveauId: string; itemName: string } | null>(null);
   const [rowModal, setRowModal] = useState<{ mode: "add" | "edit"; niveauId: string; rowId?: string } | null>(null);
   const [rowDeleteTarget, setRowDeleteTarget] = useState<{ niveauId: string; rowId: string; itemName: string } | null>(null);
+  const [rowDuplicateTarget, setRowDuplicateTarget] = useState<{
+    niveauId: string;
+    rowId: string;
+    designation: string;
+    nomenclature: string;
+  } | null>(null);
   const [addSubmitting, setAddSubmitting] = useState(false);
   const [addErr, setAddErr] = useState("");
   const [editSubmitting, setEditSubmitting] = useState(false);
@@ -512,6 +520,8 @@ export default function EditCalculeTotalFerraillage({
   const [rowErr, setRowErr] = useState("");
   const [rowDeleteLoading, setRowDeleteLoading] = useState(false);
   const [rowDeleteErr, setRowDeleteErr] = useState("");
+  const [rowDuplicateLoading, setRowDuplicateLoading] = useState(false);
+  const [rowDuplicateErr, setRowDuplicateErr] = useState("");
 
   useEffect(() => {
     setData(initialData ?? EMPTY_TOTAL_FERRAILLAGE);
@@ -520,6 +530,7 @@ export default function EditCalculeTotalFerraillage({
     setNiveauDeleteTarget(null);
     setRowModal(null);
     setRowDeleteTarget(null);
+    setRowDuplicateTarget(null);
     setAddSubmitting(false);
     setAddErr("");
     setEditSubmitting(false);
@@ -530,6 +541,8 @@ export default function EditCalculeTotalFerraillage({
     setRowErr("");
     setRowDeleteLoading(false);
     setRowDeleteErr("");
+    setRowDuplicateLoading(false);
+    setRowDuplicateErr("");
   }, [initialData]);
 
   const inputClass =
@@ -819,6 +832,34 @@ export default function EditCalculeTotalFerraillage({
     }
   };
 
+  const duplicateRowInNiveau = async () => {
+    const target = rowDuplicateTarget;
+    if (!target) return;
+
+    const projectId = String(data.rapportId ?? "").trim();
+    if (!projectId) {
+      setRowDuplicateErr("Projet introuvable.");
+      return;
+    }
+
+    setRowDuplicateLoading(true);
+    setRowDuplicateErr("");
+
+    try {
+      await ferraillageApi.duplicateProjectLine(target.rowId, {
+        projectId,
+        niveauId: target.niveauId,
+      });
+      await refreshProjectFromDb(projectId);
+      setRowDuplicateTarget(null);
+      setRowDuplicateErr("");
+    } catch (error: unknown) {
+      setRowDuplicateErr(isFerApiError(error) ? error.message : "Echec de la duplication de la ligne");
+    } finally {
+      setRowDuplicateLoading(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-end">
@@ -952,6 +993,20 @@ export default function EditCalculeTotalFerraillage({
         }}
       />
 
+      <DuplicateLigneConfirmModal
+        open={Boolean(rowDuplicateTarget)}
+        designation={rowDuplicateTarget?.designation ?? ""}
+        nomenclature={rowDuplicateTarget?.nomenclature ?? ""}
+        errorMessage={rowDuplicateErr}
+        loading={rowDuplicateLoading}
+        onConfirm={() => void duplicateRowInNiveau()}
+        onCancel={() => {
+          if (rowDuplicateLoading) return;
+          setRowDuplicateTarget(null);
+          setRowDuplicateErr("");
+        }}
+      />
+
       {(data.niveaux ?? []).map((niv) => (
         <NiveauBlock
           key={niv.id}
@@ -982,6 +1037,18 @@ export default function EditCalculeTotalFerraillage({
             setRowDeleteErr("");
             setRowDeleteTarget({ niveauId: niv.id, rowId, itemName });
           }}
+          onDuplicateRow={(rowId: string) => {
+            const row = (niv.rows ?? []).find((item) => item.id === rowId);
+            if (!row) return;
+            setRowDuplicateErr("");
+            setRowDuplicateTarget({
+              niveauId: niv.id,
+              rowId,
+              designation: row.designation ?? "",
+              nomenclature: row.typeName ?? "",
+            });
+          }}
+          duplicatingRowId={rowDuplicateLoading && rowDuplicateTarget?.niveauId === niv.id ? rowDuplicateTarget.rowId : null}
         />
       ))}
 
@@ -1121,6 +1188,8 @@ function NiveauBlock({
   onAddRow,
   onEditRow,
   onDeleteRow,
+  onDuplicateRow,
+  duplicatingRowId,
 }: {
   niveau: NiveauTotal;
   onEdit: () => void;
@@ -1128,6 +1197,8 @@ function NiveauBlock({
   onAddRow: () => void;
   onEditRow: (rowId: string) => void;
   onDeleteRow: (rowId: string) => void;
+  onDuplicateRow: (rowId: string) => void;
+  duplicatingRowId: string | null;
 }) {
   const mms = useMemo(() => [...(niveau.diametres?.length ? niveau.diametres : DEFAULT_MMS)].sort((a, b) => a - b), [niveau.diametres]);
   const totals = useMemo(() => computeTotals(niveau.rows ?? [], mms), [niveau.rows, mms]);
@@ -1188,11 +1259,11 @@ function NiveauBlock({
           <table className="border-collapse table-fixed w-full min-w-350">
             <thead>
               <tr className="bg-(--primary) text-white">
-                <th className="border-r-2 py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-70" rowSpan={2}>
+                <th className="border-r-2 py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-52" rowSpan={2}>
                   Designations
                 </th>
 
-                <th className="border-r-2 py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-23.75" rowSpan={2}>
+                <th className="border-r-2 py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-12" rowSpan={2}>
                   NB
                 </th>
 
@@ -1204,7 +1275,7 @@ function NiveauBlock({
                   Poids <span className="text-[10px] font-semibold normal-case">(en tonnes)</span>
                 </th>
 
-                <th className="border-l-2 py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-26" rowSpan={2}>
+                <th className="border-l-2 py-2 text-[11px] font-semibold text-center uppercase tracking-wide w-28" rowSpan={2}>
                   Actions
                 </th>
               </tr>
@@ -1235,63 +1306,87 @@ function NiveauBlock({
                   </td>
                 </tr>
               ) : (
-                (niveau.rows ?? []).map((row, idx) => (
-                  <tr
-                    key={row.id}
-                    className={idx % 2 === 0 ? "bg-white cursor-pointer" : "bg-gray-100 cursor-pointer"}
-                    onDoubleClick={() => onEditRow(row.id)}
-                    title="Double clic pour modifier"
-                  >
-                    <td className="py-2 px-2 text-xs border-r-2">
-                      <div className="whitespace-pre-wrap wrap-break-word">
-                        <div className="font-semibold">{row.designation || "—"}</div>
-                        <div className="text-[11px] text-gray-600">{row.typeName || "—"}</div>
-                      </div>
-                    </td>
+                (niveau.rows ?? []).map((row, idx) => {
+                  const isDuplicating = duplicatingRowId === row.id;
+                  const disableRowActions = Boolean(duplicatingRowId);
 
-                    <td className="py-2 text-center text-xs border-r-2">{row.nb == null ? "" : fmtNumTrim3(row.nb)}</td>
-
-                    {mms.map((mm) => (
-                      <td key={`rq-${row.id}-${mm}`} className="py-2 text-center text-xs border-r-2">
-                        {cellVal(row.qtyByMm, mm)}
+                  return (
+                    <tr
+                      key={row.id}
+                      className={idx % 2 === 0 ? "bg-white cursor-pointer" : "bg-gray-100 cursor-pointer"}
+                      onDoubleClick={() => {
+                        if (disableRowActions) return;
+                        onEditRow(row.id);
+                      }}
+                      title="Double clic pour modifier"
+                    >
+                      <td className="w-52 py-2 px-2 text-xs border-r-2">
+                        <div className="whitespace-pre-wrap wrap-break-word">
+                          <div className="font-semibold">{row.designation || "—"}</div>
+                          <div className="text-[11px] text-gray-600">{row.typeName || "—"}</div>
+                        </div>
                       </td>
-                    ))}
 
-                    {mms.map((mm, i2) => (
-                      <td key={`rp-${row.id}-${mm}`} className={["py-2 text-center text-xs", i2 < mms.length - 1 ? "border-r-2" : ""].join(" ")}>
-                        {cellVal(row.poidsByMm, mm)}
+                      <td className="w-12 py-2 text-center text-xs border-r-2 align-middle whitespace-nowrap">{row.nb == null ? "" : fmtNumTrim3(row.nb)}</td>
+
+                      {mms.map((mm) => (
+                        <td key={`rq-${row.id}-${mm}`} className="py-2 text-center text-xs border-r-2">
+                          {cellVal(row.qtyByMm, mm)}
+                        </td>
+                      ))}
+
+                      {mms.map((mm, i2) => (
+                        <td key={`rp-${row.id}-${mm}`} className={["py-2 text-center text-xs", i2 < mms.length - 1 ? "border-r-2" : ""].join(" ")}>
+                          {cellVal(row.poidsByMm, mm)}
+                        </td>
+                      ))}
+
+                      <td className="w-28 py-2 px-2 border-l-2">
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            type="button"
+                            className="ButtonSquare ButtonSquare--compact disabled:cursor-not-allowed disabled:opacity-50"
+                            title="Dupliquer la ligne"
+                            aria-label="Dupliquer la ligne"
+                            disabled={disableRowActions}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onDuplicateRow(row.id);
+                            }}
+                          >
+                            {isDuplicating ? <FaSpinner className="animate-spin" size={12} /> : <LuCopy size={13} />}
+                          </button>
+
+                          <button
+                            type="button"
+                            className="ButtonSquare ButtonSquare--compact disabled:cursor-not-allowed disabled:opacity-50"
+                            title="Modifier la ligne"
+                            disabled={disableRowActions}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onEditRow(row.id);
+                            }}
+                          >
+                            <FaRegEdit size={13} />
+                          </button>
+
+                          <button
+                            type="button"
+                            className="ButtonSquareDelete ButtonSquareDelete--compact disabled:cursor-not-allowed disabled:opacity-50"
+                            title="Supprimer la ligne"
+                            disabled={disableRowActions}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onDeleteRow(row.id);
+                            }}
+                          >
+                            <FaTrashAlt size={13} />
+                          </button>
+                        </div>
                       </td>
-                    ))}
-
-                    <td className="py-2 px-2 border-l-2">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          type="button"
-                          className="ButtonSquare"
-                          title="Modifier la ligne"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            onEditRow(row.id);
-                          }}
-                        >
-                          <FaRegEdit size={14} />
-                        </button>
-
-                        <button
-                          type="button"
-                          className="ButtonSquareDelete"
-                          title="Supprimer la ligne"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            onDeleteRow(row.id);
-                          }}
-                        >
-                          <FaTrashAlt size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                    </tr>
+                  );
+                })
               )}
 
               <AddRowInsideTable colSpan={colSpan} bottomOffsetPx={stickyTotalH} onClick={onAddRow} text="Ajouter une ligne" />
