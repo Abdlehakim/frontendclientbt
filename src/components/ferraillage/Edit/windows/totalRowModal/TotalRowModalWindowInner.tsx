@@ -15,7 +15,6 @@ import {
   parseNonNegativeInt,
   parseNonNegativeNumber,
   parsePositiveInt,
-  parsePositiveNumber,
 } from "./utils";
 import {
   ExtraBoxCard,
@@ -24,6 +23,8 @@ import {
 import {
   computeBarreNT,
   computeBarreNTStandard,
+  computeFinalBarreCutLength,
+  computeFinalBarreQte,
 } from "./calculations/barreCalculations";
 import {
   computeDiffDualSlabSpacingRecapMetrics,
@@ -41,10 +42,15 @@ import {
   computeSlabSurfacePerM2SplitMetrics,
 } from "./calculations/slabCalculations";
 import {
+  computeCadreNT,
   computeCadrePerimetre,
+  computeCadreQte,
+  computeExtraNTFromNb,
   computeExtraSpacingNt,
   computeExtraPerimetre,
+  computeFinalExtraQte,
 } from "./calculations/shapeCalculations";
+import { shouldShowStandardBarreAncrageField } from "./config/formeBarreOptions";
 import { getSlabAxisLabels } from "./config/formeBarreLabels";
 import RecapPanel, { type RecapData } from "./components/recap/RecapPanel";
 import FormeBarreAbbreviationsModal from "./components/formeBarre/FormeBarreAbbreviationsModal";
@@ -515,9 +521,7 @@ export default function TotalRowModalWindowInner({
 
   const recap: RecapData = useMemo(() => {
     const nb = parsePositiveInt(nbStr) ?? 0;
-    const h = showHauteurField ? parsePositiveNumber(hauteurStr) ?? 0 : 0;
     const isSemellesDesignationInner = normalizeDesignation(designation) === "semelles";
-    const isLongrinesDesignationInner = normalizeDesignation(designation) === "longrines";
     const usesCountBasedBarreNT = isCountBasedBarreNTDesignationValue(designation);
     const isSlabDesignationInner = isSlabDesignationValue(designation);
     const isSlabSurfacePerM2SpacingDesignationInner =
@@ -547,10 +551,25 @@ export default function TotalRowModalWindowInner({
         });
 
         if (isSimpleBarreLayout) {
-          const n = parseNonNegativeInt(asString(f.nBarreStr)) ?? 0;
-          const barLen = parseNonNegativeNumber(asString(f.longueurStr)) ?? 0;
           const nt = computeBarreNT(nbStr, asString(f.nBarreStr));
-          const qtyM = nb * (n * barLen);
+          const qtyM = computeFinalBarreQte({
+            nbStr,
+            nBarreStr: asString(f.nBarreStr),
+            hauteurStr,
+            longueurStr: asString(f.longueurStr),
+            attenteStr: asString(f.attenteStr),
+            ancrageStr: asString(f.ancrageStr),
+            showBarreOptions: true,
+            showAncrageField: false,
+          });
+          const cutLenM = computeFinalBarreCutLength({
+            hauteurStr,
+            longueurStr: asString(f.longueurStr),
+            attenteStr: asString(f.attenteStr),
+            ancrageStr: asString(f.ancrageStr),
+            showBarreOptions: true,
+            showAncrageField: false,
+          });
           const safeNt = nt > 0 ? nt : 0;
 
           linesBarres.push({
@@ -559,7 +578,7 @@ export default function TotalRowModalWindowInner({
             dia,
             qtyM: qtyM > 0 ? qtyM : 0,
             nt: safeNt,
-            cutLenM: barLen > 0 ? barLen : 0,
+            cutLenM: cutLenM > 0 ? cutLenM : 0,
             steelType: asTrimmedString(f.barreCategorie, "") || undefined,
           });
 
@@ -1122,23 +1141,21 @@ export default function TotalRowModalWindowInner({
           continue;
         }
 
-        const n = parseNonNegativeInt(asString(f.nBarreStr)) ?? 0;
-        const anc = parseNonNegativeNumber(asString(f.ancrageStr)) ?? 0;
-        const att = parseNonNegativeNumber(asString(f.attenteStr)) ?? 0;
-        const barLen = parseNonNegativeNumber(asString(f.longueurStr)) ?? 0;
         const steelTypeRaw = asTrimmedString(f.barreCategorie, "");
-        const effectiveAnc =
-          usesLongueurLabel &&
-          steelTypeRaw !== "Acier infÃ©rieur" &&
-          steelTypeRaw !== "Acier supÃ©rieur"
-            ? 0
-            : anc;
-
-        const cutLenM = isLongrinesDesignationInner
-          ? barLen + anc
-          : usesLongueurLabel
-            ? barLen + effectiveAnc
-            : h + att + anc;
+        const showAncrageField = shouldShowStandardBarreAncrageField({
+          isSemelle: false,
+          isSlab: false,
+          showBarreOptions: usesLongueurLabel,
+          barreCategorie: steelTypeRaw,
+        });
+        const cutLenM = computeFinalBarreCutLength({
+          hauteurStr,
+          longueurStr: asString(f.longueurStr),
+          attenteStr: asString(f.attenteStr),
+          ancrageStr: asString(f.ancrageStr),
+          showBarreOptions: usesLongueurLabel,
+          showAncrageField,
+        });
         const nt = usesCountBasedBarreNT
           ? computeBarreNT(
               nbStr,
@@ -1151,11 +1168,16 @@ export default function TotalRowModalWindowInner({
               asString(f.attenteStr),
               asString(f.ancrageStr),
             );
-        const qtyM = isLongrinesDesignationInner
-          ? nb * (n * (barLen + anc))
-          : usesLongueurLabel
-            ? nb * (n * (barLen + effectiveAnc))
-            : nb * (n * (h + att + anc));
+        const qtyM = computeFinalBarreQte({
+          nbStr,
+          nBarreStr: asString(f.nBarreStr),
+          hauteurStr,
+          longueurStr: asString(f.longueurStr),
+          attenteStr: asString(f.attenteStr),
+          ancrageStr: asString(f.ancrageStr),
+          showBarreOptions: usesLongueurLabel,
+          showAncrageField,
+        });
         const safeNt = nt > 0 ? nt : 0;
 
         const steelType = usesLongueurLabel && steelTypeRaw ? steelTypeRaw : undefined;
@@ -1188,12 +1210,14 @@ export default function TotalRowModalWindowInner({
         ) ?? 0;
 
       const calcMode = f.cadreCalcMode === "NB_CADRE" ? "NB_CADRE" : "ESPACEMENT";
-      const nbCadre = parseNonNegativeInt(asString(f.nbCadreStr)) ?? 0;
-      const esp = parsePositiveNumber(asString(f.espacementStr)) ?? 0;
-
-      const ratio = calcMode === "NB_CADRE" ? nbCadre : esp > 0 ? h / esp : 0;
-      const nt = nb * ratio;
-      const qtyM = nb * per * ratio;
+      const nt = computeCadreNT(
+        calcMode,
+        nbStr,
+        hauteurStr,
+        asString(f.espacementStr),
+        asString(f.nbCadreStr),
+      );
+      const qtyM = computeCadreQte(nt, per);
       const safeNt = nt > 0 ? nt : 0;
       const cutLenM = safeNt > 0 ? qtyM / safeNt : 0;
 
@@ -1219,14 +1243,9 @@ export default function TotalRowModalWindowInner({
     }
 
     for (const b of extraBoxes) {
-      const n = parseNonNegativeInt(asString(b.valueStr)) ?? 0;
       const per = computeExtraPerimetre(b.kind, asString(b.longueurStr), asString(b.ancrageStr)) ?? 0;
       const calcMode = b.extraCalcMode === "NB" ? "NB" : "ESPACEMENT";
-      const nbExtra = parseNonNegativeInt(asString(b.nbExtraStr)) ?? 0;
-      const esp = parsePositiveNumber(asString(b.espacementStr)) ?? 0;
-
-      const ratio = calcMode === "NB" ? nbExtra : esp > 0 ? h / esp : 0;
-      const extraSpacingNt =
+      const nt =
         calcMode === "ESPACEMENT"
           ? computeExtraSpacingNt(
               nbStr,
@@ -1234,16 +1253,18 @@ export default function TotalRowModalWindowInner({
               asString(b.valueStr),
               asString(b.espacementStr),
             )
-          : null;
-      const nt = extraSpacingNt ?? nb * ratio;
-      const qtyM = extraSpacingNt != null ? per * extraSpacingNt : n * per * (nb * ratio);
+          : computeExtraNTFromNb(nbStr, asString(b.nbExtraStr));
+      const qtyM = computeFinalExtraQte({
+        mode: calcMode,
+        nbStr,
+        hauteurStr,
+        valueStr: asString(b.valueStr),
+        espacementStr: asString(b.espacementStr),
+        nbExtraStr: asString(b.nbExtraStr),
+        perimetre: per,
+      });
       const safeNt = nt > 0 ? nt : 0;
-      const cutLenM =
-        extraSpacingNt != null
-          ? per
-          : safeNt > 0
-            ? qtyM / safeNt
-            : 0;
+      const cutLenM = safeNt > 0 ? qtyM / safeNt : 0;
 
       const ntLabel = b.kind === "EPINGLE" ? "N.T.Épingle" : "N.T.Étriers";
 

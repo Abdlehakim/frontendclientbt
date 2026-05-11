@@ -1,7 +1,11 @@
 import { useMemo } from "react";
 import { CiCircleRemove } from "react-icons/ci";
 import type { FormeState } from "../../types";
-import { parseNonNegativeInt, parseNonNegativeNumber } from "../../utils";
+import {
+  computeCadreNT,
+  computeCadrePerimetre,
+  computeCadreQte,
+} from "../../calculations/shapeCalculations";
 import DiametreDropdown from "../common/DiametreDropdown";
 import FormeDropdown from "./FormeDropdown";
 
@@ -19,76 +23,6 @@ function asString(value: unknown, fallback = "0") {
 
 function isCadreForme(value: FormeState["forme"]): value is CadreForme {
   return value === "CARRE" || value === "CIRCULAIRE" || value === "RECTANGULAIRE";
-}
-
-function computeCadrePerimetre(
-  forme: CadreForme,
-  longueurStr: string,
-  largeurStr: string,
-  diamCercleStr: string,
-  ancrageStr: string,
-) {
-  const L = parseNonNegativeNumber(longueurStr);
-  const W = parseNonNegativeNumber(largeurStr);
-  const D = parseNonNegativeNumber(diamCercleStr);
-  const A = parseNonNegativeNumber(ancrageStr);
-
-  const hasAny = L != null || W != null || D != null || A != null;
-  if (!hasAny) return 0;
-
-  const l = L ?? 0;
-  const w = W ?? 0;
-  const d = D ?? 0;
-  const a = A ?? 0;
-
-  if (forme === "CARRE") return 4 * l + 2 * a;
-  if (forme === "CIRCULAIRE") return d * Math.PI + 2 * a;
-  return 2 * (l + w) + 2 * a;
-}
-
-function computeCadreNTFromEspacement(nbStr: string, hauteurStr: string, espacementStr: string) {
-  const NB = parseNonNegativeInt(nbStr);
-  const H = parseNonNegativeNumber(hauteurStr);
-  const E = parseNonNegativeNumber(espacementStr);
-
-  const hasAny = NB != null || H != null || E != null;
-  if (!hasAny) return 0;
-
-  const nb = NB ?? 0;
-  const h = H ?? 0;
-  const e = E ?? 0;
-
-  if (e <= 0) return 0;
-  return nb * (h / e);
-}
-
-function computeCadreNTFromNbCadre(nbStr: string, nbCadreStr: string) {
-  const NB = parseNonNegativeInt(nbStr);
-  const NC = parseNonNegativeInt(nbCadreStr);
-
-  const hasAny = NB != null || NC != null;
-  if (!hasAny) return 0;
-
-  const nb = NB ?? 0;
-  const nbCadre = NC ?? 0;
-
-  return nb * nbCadre;
-}
-
-function computeCadreNT(
-  mode: CadreCalcMode,
-  nbStr: string,
-  hauteurStr: string,
-  espacementStr: string,
-  nbCadreStr: string,
-) {
-  if (mode === "NB_CADRE") return computeCadreNTFromNbCadre(nbStr, nbCadreStr);
-  return computeCadreNTFromEspacement(nbStr, hauteurStr, espacementStr);
-}
-
-function computeCadreQte(nt: number, perimetre: number) {
-  if (nt <= 0) return 0;
-  return perimetre * nt;
 }
 
 export default function FormeCard({
@@ -131,7 +65,7 @@ export default function FormeCard({
   const espacementStr = asString(x.espacementStr);
 
   const perimetreAuto = useMemo(() => {
-    return computeCadrePerimetre(cadreForme, longueurStr, largeurStr, rayonStr, ancrageStr);
+    return computeCadrePerimetre(cadreForme, longueurStr, largeurStr, rayonStr, ancrageStr) ?? 0;
   }, [cadreForme, longueurStr, largeurStr, rayonStr, ancrageStr]);
 
   const cadreNTAuto = useMemo(() => {

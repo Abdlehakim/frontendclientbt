@@ -119,13 +119,6 @@ export default function FormeBarre({
 
   const semelleAncrage = base.isSemelle && semelle.isChaise ? "0" : x.ancrageStr;
 
-  const effectiveAncrageStr =
-    effectiveShowBarreOptions && !base.isSemelle && !effectiveIsSlab
-      ? standardBarreBase.showAncrageField
-        ? x.ancrageStr
-        : "0"
-      : x.ancrageStr;
-
   const barreAuto = useBarreAutoValues({
     x,
     nbStr,
@@ -141,7 +134,7 @@ export default function FormeBarre({
     semelleDiffSharedActive: semelle.semelleDiffSharedActive,
     semelleDiffDualActive: semelle.semelleDiffDualActive,
     showBarreOptions: effectiveShowBarreOptions,
-    effectiveAncrageStr,
+    showAncrageField: standardBarreBase.showAncrageField,
     semelleAncrage,
   });
 

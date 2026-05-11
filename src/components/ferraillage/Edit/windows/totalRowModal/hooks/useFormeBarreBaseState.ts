@@ -6,6 +6,7 @@ import {
   SLAB_SURFACE_PER_M2_SPACING_DESIGNATIONS,
   type BarreCategorie,
   isBarreCategorie,
+  shouldShowStandardBarreAncrageField,
 } from "../config/formeBarreOptions";
 import { isSlabDesignationValue } from "../state/guards";
 
@@ -54,13 +55,12 @@ export function useFormeBarreBaseState({
 
   const litValue = showLitField && barreLitIndex != null ? `Lit ${barreLitIndex}` : "";
 
-  const showAncrageField = isSemelle
-    ? true
-    : isSlab
-      ? false
-      : !showBarreOptions ||
-        barreCategorieValue === "Acier inférieur" ||
-        barreCategorieValue === "Acier supérieur";
+  const showAncrageField = shouldShowStandardBarreAncrageField({
+    isSemelle,
+    isSlab,
+    showBarreOptions,
+    barreCategorie: barreCategorieValue,
+  });
 
   const diametreValue = (x.diametreMm ?? fallbackDiametreValue) as number;
 

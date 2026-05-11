@@ -1,30 +1,20 @@
 import { useMemo } from "react";
 import { CiCircleRemove } from "react-icons/ci";
 import type { ExtraBoxState } from "../../types";
-import { computeExtraPerimetre, computeExtraSpacingNt } from "../../calculations/shapeCalculations";
+import {
+  computeExtraNTFromNb,
+  computeExtraPerimetre,
+  computeExtraSpacingNt,
+  computeFinalExtraQte,
+} from "../../calculations/shapeCalculations";
 import DiametreDropdown from "../common/DiametreDropdown";
 
 type ExtraCalcMode = "ESPACEMENT" | "NB";
-
-function parseIntNum(raw: string) {
-  const s = (raw ?? "").trim();
-  if (!s) return 0;
-  const v = Math.floor(Number(s));
-  if (!Number.isFinite(v)) return 0;
-  if (v < 0) return 0;
-  return v;
-}
 
 function fmt(n: number) {
   const r = Math.round(n * 1000) / 1000;
   const s = String(r);
   return s.replace(".", ",");
-}
-
-function computeNTFromNb(nbStr: string, nbExtraStr: string) {
-  const nb = parseIntNum(nbStr);
-  const count = parseIntNum(nbExtraStr);
-  return nb * count;
 }
 
 export default function ExtraBoxCard({
@@ -71,18 +61,25 @@ export default function ExtraBoxCard({
         b.espacementStr,
       );
     }
-    if (calcMode === "NB") return computeNTFromNb(nbStr, nbExtraStr);
+    if (calcMode === "NB") return computeExtraNTFromNb(nbStr, nbExtraStr);
     return 0;
   }, [calcMode, nbStr, nbExtraStr, hauteurStr, b.valueStr, b.espacementStr]);
 
   const computedNTStr = useMemo(() => fmt(computedNT), [computedNT]);
 
   const computedQtyFerStr = useMemo(() => {
-    if (calcMode === "ESPACEMENT") return fmt(computedPerimetre * computedNT);
-    const n = parseIntNum(b.valueStr);
-    const q = n * computedPerimetre * computedNT;
-    return fmt(q);
-  }, [calcMode, b.valueStr, computedPerimetre, computedNT]);
+    return fmt(
+      computeFinalExtraQte({
+        mode: calcMode,
+        nbStr,
+        hauteurStr,
+        valueStr: b.valueStr,
+        espacementStr: b.espacementStr,
+        nbExtraStr,
+        perimetre: computedPerimetre,
+      }),
+    );
+  }, [calcMode, nbStr, hauteurStr, b.valueStr, b.espacementStr, nbExtraStr, computedPerimetre]);
 
   const ntLabel = isEpingle ? "N.T.Épingle" : "N.T.Étriers";
   const countLabel = isEpingle ? "Nb. Épingles" : "Nb. Étriers";

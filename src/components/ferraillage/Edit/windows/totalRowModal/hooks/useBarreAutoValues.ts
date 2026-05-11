@@ -4,7 +4,7 @@ import {
   computeBarreNT,
   computeBarreNTStandard,
   computeBarreQteLongueur,
-  computeBarreQteStandard,
+  computeFinalBarreQte,
 } from "../calculations/barreCalculations";
 import {
   computeSemelleNTDual,
@@ -34,7 +34,7 @@ export function useBarreAutoValues({
   semelleDiffSharedActive,
   semelleDiffDualActive,
   showBarreOptions,
-  effectiveAncrageStr,
+  showAncrageField,
   semelleAncrage,
 }: {
   x: FormeState;
@@ -51,7 +51,7 @@ export function useBarreAutoValues({
   semelleDiffSharedActive: boolean;
   semelleDiffDualActive: boolean;
   showBarreOptions: boolean;
-  effectiveAncrageStr: string;
+  showAncrageField: boolean;
   semelleAncrage: string;
 }) {
   const usesCountBasedBarreNT = isCountBasedBarreNTDesignationValue(normalizedDesignation);
@@ -105,22 +105,20 @@ export function useBarreAutoValues({
       }
     }
 
-    if (showBarreOptions) {
-      return computeBarreQteLongueur(
+    if (!isSemelle) {
+      return computeFinalBarreQte({
         nbStr,
-        x.nBarreStr,
-        x.longueurStr,
-        effectiveAncrageStr,
-      );
+        nBarreStr: x.nBarreStr,
+        hauteurStr,
+        longueurStr: x.longueurStr,
+        attenteStr: x.attenteStr,
+        ancrageStr: x.ancrageStr,
+        showBarreOptions,
+        showAncrageField,
+      });
     }
 
-    return computeBarreQteStandard(
-      nbStr,
-      x.nBarreStr,
-      hauteurStr,
-      x.attenteStr,
-      x.ancrageStr,
-    );
+    return 0;
   }, [
     isSlab,
     slabQte,
@@ -131,6 +129,7 @@ export function useBarreAutoValues({
     semelleDiffSharedActive,
     semelleDiffDualActive,
     showBarreOptions,
+    showAncrageField,
     nbStr,
     x.nBarreStr,
     x.longueurStr,
@@ -140,7 +139,6 @@ export function useBarreAutoValues({
     x.semelleLongueurBStr,
     x.semelleNBarreAStr,
     x.semelleNBarreBStr,
-    effectiveAncrageStr,
     semelleAncrage,
     hauteurStr,
   ]);

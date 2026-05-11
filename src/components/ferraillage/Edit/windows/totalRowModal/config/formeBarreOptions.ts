@@ -100,6 +100,29 @@ export const LIT_CATEGORIES = new Set<BarreCategorie>([
   "Chapeau",
 ]);
 
+export const BARRE_ANCRAGE_CATEGORIES = new Set<BarreCategorie>([
+  "Acier inférieur",
+  "Acier supérieur",
+]);
+
+export function shouldShowStandardBarreAncrageField({
+  isSemelle,
+  isSlab,
+  showBarreOptions,
+  barreCategorie,
+}: {
+  isSemelle: boolean;
+  isSlab: boolean;
+  showBarreOptions: boolean;
+  barreCategorie: string;
+}) {
+  if (isSemelle) return true;
+  if (isSlab) return false;
+  if (!showBarreOptions) return true;
+
+  return isBarreCategorie(barreCategorie) && BARRE_ANCRAGE_CATEGORIES.has(barreCategorie);
+}
+
 export const SEMELLE_RELATIONS: readonly SemelleRelation[] = [
   "ab_equal_same_if",
   "ab_equal_diff_if",

@@ -35,9 +35,11 @@ const defaultSlabPairBLabels = [
   getSlabAxisLabels("voile").ntParallelBLabel,
 ];
 
-function fmtNum(n: number | null | undefined, digits = 2) {
+function fmtNum(n: number | null | undefined, digits = 3) {
   if (n == null || !Number.isFinite(n)) return "0";
-  return safeNumber(n).toLocaleString(undefined, { maximumFractionDigits: digits });
+  const factor = 10 ** digits;
+  const rounded = Math.round(safeNumber(n) * factor) / factor;
+  return String(rounded).replace(".", ",");
 }
 
 function ferLabel(mm: number) {
