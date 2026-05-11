@@ -2,6 +2,7 @@ import { createPortal } from "react-dom";
 import { useEffect, useRef, useState } from "react";
 import { IoIosArrowDropdown, IoIosArrowDropup } from "react-icons/io";
 import { usePortalPos } from "../../hooks/usePortalPos";
+import { ELEMENT_ORDER, type ElementOrderType } from "../../state/cardOrder";
 
 export default function AddPlusDropdown({
   onAddCadre,
@@ -66,11 +67,13 @@ export default function AddPlusDropdown({
     if (disabled) setOpen(false);
   }, [disabled]);
 
-  const items: { key: "CADRE" | "BARRE" | "EPINGLE" | "ETRIERS"; label: string }[] = [];
-  if (showBarreOption) items.push({ key: "BARRE", label: "Ajouter Barre" });
-  if (showCadreOption) items.push({ key: "CADRE", label: "Ajouter Cadre" });
-  if (showEpingleOption) items.push({ key: "EPINGLE", label: "Ajouter Épingle" });
-  if (showEtriersOption) items.push({ key: "ETRIERS", label: "Ajouter Étriers" });
+  const itemByType: Record<ElementOrderType, { label: string; show: boolean; onAdd: () => void }> = {
+    barre: { label: "Ajouter Barre", show: showBarreOption, onAdd: onAddBarre },
+    cadre: { label: "Ajouter Cadre", show: showCadreOption, onAdd: onAddCadre },
+    epingle: { label: "Ajouter Épingle", show: showEpingleOption, onAdd: onAddEpingle },
+    etriers: { label: "Ajouter Étriers", show: showEtriersOption, onAdd: onAddEtriers },
+  };
+  const items = ELEMENT_ORDER.map((type) => ({ type, ...itemByType[type] })).filter((it) => it.show);
 
   return (
     <div className="relative flex items-center justify-end" ref={wrapRef}>
@@ -116,14 +119,11 @@ export default function AddPlusDropdown({
             >
               {items.map((it) => (
                 <button
-                  key={it.key}
+                  key={it.type}
                   type="button"
                   role="menuitem"
                   onClick={() => {
-                    if (it.key === "CADRE") onAddCadre();
-                    if (it.key === "BARRE") onAddBarre();
-                    if (it.key === "EPINGLE") onAddEpingle();
-                    if (it.key === "ETRIERS") onAddEtriers();
+                    it.onAdd();
                     setOpen(false);
                   }}
                   className="w-full px-3 py-2 text-sm text-left flex items-center justify-between gap-2 text-slate-700 hover:bg-emerald-100 hover:text-emerald-800 cursor-pointer "

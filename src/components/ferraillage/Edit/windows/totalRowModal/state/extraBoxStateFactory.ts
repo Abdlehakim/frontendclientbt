@@ -1,5 +1,6 @@
 import type { ExtraBoxKind, ExtraBoxState, TotalRowModalPayload } from "../types";
 import { makeId } from "../utils";
+import { elementTypeFromExtraKind, sortElementsByDropdownOrder } from "./cardOrder";
 import { asExtraCalcMode, asFiniteNumber, asString } from "./guards";
 
 export function createExtraBoxState(
@@ -37,17 +38,20 @@ export function buildInitialExtraBoxes(
   if (!shouldHydrate) return [];
 
   if (Array.isArray(initial?.extraBoxes) && initial.extraBoxes.length) {
-    return initial.extraBoxes.map((b) =>
-      createExtraBoxState(b.kind, initDia, {
-        diametreMm: typeof b.diametreMm === "number" ? b.diametreMm : initDia,
-        valueStr: b.n == null ? "0" : String(b.n),
-        longueurStr: b.longueur == null ? "0" : String(b.longueur),
-        ancrageStr: b.ancrage == null ? "0" : String(b.ancrage),
-        perimetreStr: b.perimetre == null ? "0" : String(b.perimetre),
-        espacementStr: b.espacement == null ? "0" : String(b.espacement),
-        extraCalcMode: "ESPACEMENT",
-        nbExtraStr: "0",
-      }),
+    return sortElementsByDropdownOrder(
+      initial.extraBoxes.map((b) =>
+        createExtraBoxState(b.kind, initDia, {
+          diametreMm: typeof b.diametreMm === "number" ? b.diametreMm : initDia,
+          valueStr: b.n == null ? "0" : String(b.n),
+          longueurStr: b.longueur == null ? "0" : String(b.longueur),
+          ancrageStr: b.ancrage == null ? "0" : String(b.ancrage),
+          perimetreStr: b.perimetre == null ? "0" : String(b.perimetre),
+          espacementStr: b.espacement == null ? "0" : String(b.espacement),
+          extraCalcMode: "ESPACEMENT",
+          nbExtraStr: "0",
+        }),
+      ),
+      (b) => elementTypeFromExtraKind(b.kind),
     );
   }
 
@@ -69,6 +73,5 @@ export function buildInitialExtraBoxes(
     );
   }
 
-  return out;
+  return sortElementsByDropdownOrder(out, (b) => elementTypeFromExtraKind(b.kind));
 }
-

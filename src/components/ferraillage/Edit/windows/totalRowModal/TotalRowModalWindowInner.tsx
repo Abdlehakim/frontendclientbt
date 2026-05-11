@@ -51,7 +51,12 @@ import FormeBarreAbbreviationsModal from "./components/formeBarre/FormeBarreAbbr
 import BarreCard from "./components/modal/BarreCard";
 import ModalHeader from "./components/modal/ModalHeader";
 import ModalTopFields from "./components/modal/ModalTopFields";
-import { buildInitialOrder, insertCardAtEndOfCurrentPage } from "./state/cardOrder";
+import {
+  buildInitialOrder,
+  elementTypeFromExtraKind,
+  insertCardByDropdownOrder,
+  sortElementsByDropdownOrder,
+} from "./state/cardOrder";
 import {
   buildInitialExtraBoxes,
   createExtraBoxState,
@@ -326,11 +331,17 @@ export default function TotalRowModalWindowInner({
     const nextBox = createExtraBoxState(kind, initDia);
 
     setSt((prev) => {
-      const nextBoxes = [...prev.extraBoxes, nextBox];
-      const { nextOrder, nextPage } = insertCardAtEndOfCurrentPage(prev.cardOrder, prev.page, FORMS_PER_PAGE, {
-        kind: "EXTRA",
-        id: nextBox.id,
-      });
+      const nextBoxes = sortElementsByDropdownOrder(
+        [...prev.extraBoxes, nextBox],
+        (b) => elementTypeFromExtraKind(b.kind),
+      );
+      const { nextOrder, nextPage } = insertCardByDropdownOrder(
+        prev.cardOrder,
+        FORMS_PER_PAGE,
+        { kind: "EXTRA", id: nextBox.id },
+        nextBoxes,
+        prev.formes,
+      );
 
       return {
         ...prev,
@@ -402,10 +413,13 @@ export default function TotalRowModalWindowInner({
       });
 
       const nextFormes = [...prev.formes, nextItem];
-      const { nextOrder, nextPage } = insertCardAtEndOfCurrentPage(prev.cardOrder, prev.page, FORMS_PER_PAGE, {
-        kind: "FORME",
-        id: nextItem.id,
-      });
+      const { nextOrder, nextPage } = insertCardByDropdownOrder(
+        prev.cardOrder,
+        FORMS_PER_PAGE,
+        { kind: "FORME", id: nextItem.id },
+        prev.extraBoxes,
+        nextFormes,
+      );
 
       return {
         ...prev,
@@ -421,10 +435,13 @@ export default function TotalRowModalWindowInner({
       const nextItem = createFormeState("BARRE", initDia);
       const nextFormes = [...prev.formes, nextItem];
 
-      const { nextOrder, nextPage } = insertCardAtEndOfCurrentPage(prev.cardOrder, prev.page, FORMS_PER_PAGE, {
-        kind: "FORME",
-        id: nextItem.id,
-      });
+      const { nextOrder, nextPage } = insertCardByDropdownOrder(
+        prev.cardOrder,
+        FORMS_PER_PAGE,
+        { kind: "FORME", id: nextItem.id },
+        prev.extraBoxes,
+        nextFormes,
+      );
 
       return {
         ...prev,
