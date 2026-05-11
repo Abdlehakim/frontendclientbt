@@ -1,18 +1,17 @@
 import type { FormeState } from "../../types";
 import {
   SLAB_CALC_METHODS,
-  SLAB_NAPPES,
   SLAB_RELATIONS,
 } from "../../config/formeBarreOptions";
 import {
   getSlabAxisLabels,
-  getNappeLabel,
   getSlabCalcMethodLabel,
   getSlabRelationLabel,
 } from "../../config/formeBarreLabels";
 import FieldInput from "../common/FieldInput";
 import SelectDropdown from "../common/SelectDropdown";
 import type { FormeBarreBaseView, FormeBarrePatch, SlabView } from "./FormeBarreFields.types";
+import SlabNappeSelect from "./SlabNappeSelect";
 
 export default function SlabHeaderFields({
   x,
@@ -42,12 +41,10 @@ export default function SlabHeaderFields({
   return (
     <>
       <div className="flex flex-col">
-        <SelectDropdown
-          label="Type de nappe"
+        <SlabNappeSelect
+          designation={base.normalizedDesignation}
           value={slab.slabNappeShown}
           onChange={(v) => onPatch({ barreCategorie: v })}
-          options={SLAB_NAPPES}
-          getOptionLabel={getNappeLabel}
         />
       </div>
 

@@ -8,10 +8,12 @@ import { useSemelleSpacingCountSync } from "../../hooks/useSemelleSpacingCountSy
 import { useSemelleState } from "../../hooks/useSemelleState";
 import { useSlabAutoValues } from "../../hooks/useSlabAutoValues";
 import { useSlabState } from "../../hooks/useSlabState";
+import { shouldUseSimpleBarreLayout } from "../../state/barreModes";
 import BarreSteelSection from "./sections/BarreSteelSection";
 import FormeBarreResults from "./FormeBarreResults";
 import SemelleFields from "./SemelleFields";
 import SlabFields from "./SlabFields";
+import SlabNappeSelect from "./SlabNappeSelect";
 import StandardBarreFields from "./StandardBarreFields";
 
 export default function FormeBarre({
@@ -51,9 +53,31 @@ export default function FormeBarre({
   const slab = useSlabState({
     isSlab: base.isSlab,
     isSlabSurfacePerM2SpacingDesignation: base.isSlabSurfacePerM2SpacingDesignation,
+    designation,
     x,
     fallbackDiametreValue: base.fallbackDiametreValue,
   });
+
+  const simpleBarreMode = {
+    designation,
+    forme: x.forme,
+    typeDeNappe: x.barreCategorie,
+  };
+  const shouldRenderSimpleBarreLayout = shouldUseSimpleBarreLayout(simpleBarreMode);
+  const shouldRenderSlabLayout = base.isSlab && !shouldRenderSimpleBarreLayout;
+  const effectiveIsSlab = base.isSlab && !shouldRenderSimpleBarreLayout;
+  const effectiveShowBarreOptions = base.showBarreOptions || shouldRenderSimpleBarreLayout;
+  const standardBarreBase = shouldRenderSimpleBarreLayout
+    ? {
+        ...base,
+        isSlab: false,
+        showBarreOptions: true,
+        barreCategorieValue: "Acier de renfort" as const,
+        showLitField: false,
+        litValue: "",
+        showAncrageField: false,
+      }
+    : base;
 
   useFormeBarreDefaults({
     x,
@@ -79,7 +103,7 @@ export default function FormeBarre({
   const slabAutoValues = useSlabAutoValues({
     x,
     nbStr,
-    isSlab: base.isSlab,
+    isSlab: effectiveIsSlab,
     slabDiffSharedActive: slab.slabDiffSharedActive,
     slabDiffDualActive: slab.slabDiffDualActive,
     showSlabSharedSpacingInput: slab.showSlabSharedSpacingInput,
@@ -96,8 +120,8 @@ export default function FormeBarre({
   const semelleAncrage = base.isSemelle && semelle.isChaise ? "0" : x.ancrageStr;
 
   const effectiveAncrageStr =
-    base.showBarreOptions && !base.isSemelle && !base.isSlab
-      ? base.showAncrageField
+    effectiveShowBarreOptions && !base.isSemelle && !effectiveIsSlab
+      ? standardBarreBase.showAncrageField
         ? x.ancrageStr
         : "0"
       : x.ancrageStr;
@@ -106,8 +130,8 @@ export default function FormeBarre({
     x,
     nbStr,
     hauteurStr,
-    normalizedDesignation: base.normalizedDesignation,
-    isSlab: base.isSlab,
+    normalizedDesignation: shouldRenderSimpleBarreLayout ? "longrines" : base.normalizedDesignation,
+    isSlab: effectiveIsSlab,
     slabQte: slabAutoValues.auto.qte,
     slabNt: slabAutoValues.auto.nt,
     isSemelle: base.isSemelle,
@@ -116,7 +140,7 @@ export default function FormeBarre({
     semelleEqualDualActive: semelle.semelleEqualDualActive,
     semelleDiffSharedActive: semelle.semelleDiffSharedActive,
     semelleDiffDualActive: semelle.semelleDiffDualActive,
-    showBarreOptions: base.showBarreOptions,
+    showBarreOptions: effectiveShowBarreOptions,
     effectiveAncrageStr,
     semelleAncrage,
   });
@@ -137,7 +161,7 @@ export default function FormeBarre({
   const result = useFormeBarreResult({
     x,
     nbStr,
-    base,
+    base: standardBarreBase,
     semelle,
     slab,
     barreAuto,
@@ -157,7 +181,7 @@ export default function FormeBarre({
         />
       ) : null}
 
-      {base.isSlab ? (
+      {shouldRenderSlabLayout ? (
         <SlabFields
           x={x}
           base={base}
@@ -167,6 +191,16 @@ export default function FormeBarre({
           inputClass={inputClass}
           onPatch={onPatch}
         />
+      ) : null}
+
+      {shouldRenderSimpleBarreLayout ? (
+        <div className="flex flex-col sm:col-span-2">
+          <SlabNappeSelect
+            designation={designation}
+            value={slab.slabNappeShown}
+            onChange={(value) => onPatch({ barreCategorie: value })}
+          />
+        </div>
       ) : null}
 
       {base.showBarreOptions && !base.isSemelle && !base.isSlab ? (
@@ -181,10 +215,10 @@ export default function FormeBarre({
         </div>
       ) : null}
 
-      {!base.isSemelle && !base.isSlab ? (
+      {!base.isSemelle && (!base.isSlab || shouldRenderSimpleBarreLayout) ? (
         <StandardBarreFields
           x={x}
-          base={base}
+          base={standardBarreBase}
           safeMms={safeMms}
           inputClass={inputClass}
           onPatch={onPatch}

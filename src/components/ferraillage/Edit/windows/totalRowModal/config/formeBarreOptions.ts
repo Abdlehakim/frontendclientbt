@@ -57,6 +57,43 @@ export const SLAB_NAPPES: readonly SlabNappe[] = [
   "Acier de renfort",
 ];
 
+function normalizeDesignationLabel(value: unknown) {
+  return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+
+function normalizeSlabNappeLabel(value: unknown) {
+  const normalized = typeof value === "string" ? value.trim() : "";
+  const nappeInferieur = SLAB_NAPPES[0];
+  const nappeSuperieur = SLAB_NAPPES[1];
+
+  if (normalized === "Nappe inférieure") return nappeInferieur;
+  if (normalized === "Nappe supérieure") return nappeSuperieur;
+
+  return normalized;
+}
+
+export function getTypeDeNappeOptions(designation: unknown): readonly SlabNappe[] {
+  if (normalizeDesignationLabel(designation) === "voile") {
+    return SLAB_NAPPES.filter((option) => option !== "Chaise");
+  }
+
+  return SLAB_NAPPES;
+}
+
+export function normalizeTypeDeNappe(
+  value: unknown,
+  designation: unknown,
+): SlabNappe {
+  const normalized = normalizeSlabNappeLabel(value);
+  const options = getTypeDeNappeOptions(designation);
+
+  if ((options as readonly string[]).includes(normalized)) {
+    return normalized as SlabNappe;
+  }
+
+  return options[0] ?? SLAB_NAPPES[0];
+}
+
 export const LIT_CATEGORIES = new Set<BarreCategorie>([
   "Acier inférieur",
   "Acier supérieur",

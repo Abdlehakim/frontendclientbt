@@ -1,28 +1,25 @@
 import type { FormeState } from "../types";
-import { SLAB_NAPPES, type SlabNappe } from "../config/formeBarreOptions";
+import { normalizeTypeDeNappe } from "../config/formeBarreOptions";
 import { normalizeSlabSurfacePerM2Relation } from "../state/guards";
-
-function isSlabNappe(value: string): value is SlabNappe {
-  return (SLAB_NAPPES as readonly string[]).includes(value);
-}
 
 export function useSlabState({
   isSlab,
   isSlabSurfacePerM2SpacingDesignation,
+  designation,
   x,
   fallbackDiametreValue,
 }: {
   isSlab: boolean;
   isSlabSurfacePerM2SpacingDesignation: boolean;
+  designation: string;
   x: FormeState;
   fallbackDiametreValue: number;
 }) {
   const rawBarreCategorie = (x.barreCategorie ?? "").trim();
-
-  const slabNappeShown: SlabNappe =
-    isSlab && isSlabNappe(rawBarreCategorie)
-      ? rawBarreCategorie
-      : "Nappe inférieur";
+  const slabNappeShown = normalizeTypeDeNappe(
+    isSlab ? rawBarreCategorie : "",
+    designation,
+  );
 
   const slabCalcMethodValue = (x.slabCalcMethod ?? "SURFACE_TOTAL") as
     | "SURFACE_TOTAL"

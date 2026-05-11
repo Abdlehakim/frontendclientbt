@@ -87,6 +87,7 @@ import {
 } from "./state/guards";
 import { isSlabBarreValid } from "./state/validators";
 import { buildTotalRowModalPayload } from "./state/payloadMapper";
+import { shouldUseSimpleBarreLayout } from "./state/barreModes";
 
 type ModalState = {
   extraBoxes: ExtraBoxState[];
@@ -484,6 +485,16 @@ export default function TotalRowModalWindowInner({
     formes.every((x) => {
       const forme = isFormeKind(x.forme) ? x.forme : "BARRE";
 
+      if (shouldUseSimpleBarreLayout({ designation, forme, typeDeNappe: x.barreCategorie })) {
+        return formeValid(
+          forme,
+          asString(x.nBarreStr),
+          asString(x.longueurStr),
+          asString(x.largeurStr),
+          asString(x.rayonStr),
+        );
+      }
+
       if (forme === "BARRE" && isSlabDesignation) {
         return isSlabBarreValid(x, {
           isSlabSurfacePerM2SpacingDesignation:
@@ -529,6 +540,33 @@ export default function TotalRowModalWindowInner({
       const dia = typeof f.diametreMm === "number" && Number.isFinite(f.diametreMm) ? f.diametreMm : initDia;
 
       if (forme === "BARRE") {
+        const isSimpleBarreLayout = shouldUseSimpleBarreLayout({
+          designation,
+          forme,
+          typeDeNappe: f.barreCategorie,
+        });
+
+        if (isSimpleBarreLayout) {
+          const n = parseNonNegativeInt(asString(f.nBarreStr)) ?? 0;
+          const barLen = parseNonNegativeNumber(asString(f.longueurStr)) ?? 0;
+          const nt = computeBarreNT(nbStr, asString(f.nBarreStr));
+          const qtyM = nb * (n * barLen);
+          const safeNt = nt > 0 ? nt : 0;
+
+          linesBarres.push({
+            key: f.id,
+            label: "N.T.B façonnées",
+            dia,
+            qtyM: qtyM > 0 ? qtyM : 0,
+            nt: safeNt,
+            cutLenM: barLen > 0 ? barLen : 0,
+            steelType: asTrimmedString(f.barreCategorie, "") || undefined,
+          });
+
+          addQty(dia, qtyM > 0 ? qtyM : 0);
+          continue;
+        }
+
         if (isSlabDesignationInner) {
           const calcMethod = asSlabCalcMethod(f.slabCalcMethod);
           const relation = asSlabRelation(f.slabRelation);

@@ -26,6 +26,8 @@ import {
   isFormeKind,
   isSlabDesignationValue,
 } from "./guards";
+import { shouldUseSimpleBarreLayout } from "./barreModes";
+import { normalizeTypeDeNappe } from "../config/formeBarreOptions";
 
 export function buildTotalRowModalPayload({
   designation,
@@ -79,15 +81,24 @@ export function buildTotalRowModalPayload({
   if (!main) return null;
 
   const mainForme: FormeKind = isFormeKind(main.forme) ? main.forme : "BARRE";
+  const mainBarreCategorie =
+    mainForme === "BARRE" && isSlabMode
+      ? normalizeTypeDeNappe(main.barreCategorie, designation)
+      : asTrimmedString(main.barreCategorie, "");
+  const isMainSimpleBarreLayout = shouldUseSimpleBarreLayout({
+    designation,
+    forme: mainForme,
+    typeDeNappe: mainBarreCategorie,
+  });
+  const isMainStandardBarre = mainForme === "BARRE" && (!isSlabMode || isMainSimpleBarreLayout);
   const mainDia =
     typeof main.diametreMm === "number" && Number.isFinite(main.diametreMm) ? main.diametreMm : initDia;
   const mainShow = formeNeedsParams(mainForme);
 
-  const mainNBarre =
-    mainForme === "BARRE" && !isSlabMode ? parsePositiveInt(asString(main.nBarreStr)) : null;
+  const mainNBarre = isMainStandardBarre ? parsePositiveInt(asString(main.nBarreStr)) : null;
 
   const mainLongueur =
-    mainForme === "BARRE" && isSlabMode
+    mainForme === "BARRE" && isSlabMode && !isMainSimpleBarreLayout
       ? null
       : mainForme === "BARRE" || mainForme === "CARRE" || mainForme === "RECTANGULAIRE"
         ? parsePositiveNumber(asString(main.longueurStr))
@@ -97,7 +108,11 @@ export function buildTotalRowModalPayload({
   const mainRayon = mainForme === "CIRCULAIRE" ? parsePositiveNumber(asString(main.rayonStr)) : null;
 
   const mainAncrage =
-    mainForme === "BARRE" || !isSlabMode ? parseNonNegativeNumber(asString(main.ancrageStr)) ?? null : null;
+    isMainSimpleBarreLayout
+      ? null
+      : mainForme === "BARRE" || !isSlabMode
+        ? parseNonNegativeNumber(asString(main.ancrageStr)) ?? null
+        : null;
   const mainAttenteBarre =
     mainForme === "BARRE" && !isSlabMode ? (parseNonNegativeNumber(asString(main.attenteStr)) ?? null) : null;
 
@@ -114,7 +129,17 @@ export function buildTotalRowModalPayload({
 
   const extras: ExtraFormePayload[] = formes.slice(1).map((x) => {
     const forme: FormeKind = isFormeKind(x.forme) ? x.forme : "CARRE";
-    const isSlabBarre = forme === "BARRE" && isSlabMode;
+    const barreCategorie =
+      forme === "BARRE" && isSlabMode
+        ? normalizeTypeDeNappe(x.barreCategorie, designation)
+        : asTrimmedString(x.barreCategorie, "");
+    const isSimpleBarreLayout = shouldUseSimpleBarreLayout({
+      designation,
+      forme,
+      typeDeNappe: barreCategorie,
+    });
+    const isSlabBarre = forme === "BARRE" && isSlabMode && !isSimpleBarreLayout;
+    const isStandardBarre = forme === "BARRE" && (!isSlabMode || isSimpleBarreLayout);
     const calcMethod = isSlabBarre ? asSlabCalcMethod(x.slabCalcMethod) : undefined;
     const isSlabSurfacePerM2SpacingMode =
       isSlabSurfacePerM2SpacingDesignation && calcMethod === "SURFACE_TOTAL_PER_M2";
@@ -137,10 +162,10 @@ export function buildTotalRowModalPayload({
       forme,
       diametreMm:
         typeof x.diametreMm === "number" && Number.isFinite(x.diametreMm) ? x.diametreMm : initDia,
-      barreCategorie: asTrimmedString(x.barreCategorie, "") || undefined,
-      nBarre: forme === "BARRE" && !isSlabMode ? parsePositiveInt(asString(x.nBarreStr)) : null,
+      barreCategorie: barreCategorie || undefined,
+      nBarre: isStandardBarre ? parsePositiveInt(asString(x.nBarreStr)) : null,
       longueur:
-        forme === "BARRE" && isSlabMode
+        forme === "BARRE" && isSlabMode && !isSimpleBarreLayout
           ? null
           : forme === "BARRE" || forme === "CARRE" || forme === "RECTANGULAIRE"
             ? parsePositiveNumber(asString(x.longueurStr))
@@ -148,7 +173,11 @@ export function buildTotalRowModalPayload({
       largeur: forme === "RECTANGULAIRE" ? parsePositiveNumber(asString(x.largeurStr)) : null,
       rayon: forme === "CIRCULAIRE" ? parsePositiveNumber(asString(x.rayonStr)) : null,
       ancrage:
-        forme === "BARRE" || !isSlabMode ? parseNonNegativeNumber(asString(x.ancrageStr)) ?? null : null,
+        isSimpleBarreLayout
+          ? null
+          : forme === "BARRE" || !isSlabMode
+            ? parseNonNegativeNumber(asString(x.ancrageStr)) ?? null
+            : null,
       attenteBarre: forme === "BARRE" && !isSlabMode ? (parseNonNegativeNumber(asString(x.attenteStr)) ?? null) : null,
       perimetre: xShow ? (per != null && per > 0 ? per : null) : null,
       espacement: xShow ? (parsePositiveNumber(asString(x.espacementStr)) ?? null) : null,
@@ -185,7 +214,7 @@ export function buildTotalRowModalPayload({
     };
   });
 
-  const isMainSlabBarre = mainForme === "BARRE" && isSlabMode;
+  const isMainSlabBarre = mainForme === "BARRE" && isSlabMode && !isMainSimpleBarreLayout;
   const mainSlabCalcMethod = isMainSlabBarre ? asSlabCalcMethod(main.slabCalcMethod) : undefined;
   const isMainSlabSurfacePerM2SpacingMode =
     isMainSlabBarre &&
@@ -206,7 +235,7 @@ export function buildTotalRowModalPayload({
     enrobage: null,
     forme: mainForme,
     diametreMm: mainDia,
-    barreCategorie: asTrimmedString(main.barreCategorie, "") || undefined,
+    barreCategorie: mainBarreCategorie || undefined,
     nBarre: mainNBarre,
     longueur: mainLongueur,
     largeur: mainLargeur,

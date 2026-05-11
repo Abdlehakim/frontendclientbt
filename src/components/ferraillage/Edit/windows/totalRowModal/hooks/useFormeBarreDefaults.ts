@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { FormeState } from "../types";
+import { normalizeTypeDeNappe } from "../config/formeBarreOptions";
 import { normalizeSlabSurfacePerM2Relation } from "../state/guards";
 
 export function useFormeBarreDefaults({
@@ -69,10 +70,15 @@ export function useFormeBarreDefaults({
   }, [isSemelle, x.barreCategorie, onPatch]);
 
   useEffect(() => {
-    if (isSlab && !(x.barreCategorie ?? "").trim()) {
-      onPatch({ barreCategorie: "Nappe inférieure" });
+    if (!isSlab) return;
+
+    const rawTypeDeNappe = (x.barreCategorie ?? "").trim();
+    const normalizedTypeDeNappe = normalizeTypeDeNappe(rawTypeDeNappe, normalizedDesignation);
+
+    if (rawTypeDeNappe !== normalizedTypeDeNappe) {
+      onPatch({ barreCategorie: normalizedTypeDeNappe });
     }
-  }, [isSlab, x.barreCategorie, onPatch]);
+  }, [isSlab, x.barreCategorie, normalizedDesignation, onPatch]);
 
   useEffect(() => {
     if (isSemelle && !(x.semelleRelation ?? "").trim()) {
