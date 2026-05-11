@@ -20,6 +20,7 @@ import TotalRowModalWindow, {
   type RowForme,
 } from "./windows/TotalRowModalWindow";
 import { safeDivide, safeNumber } from "./windows/totalRowModal/utils";
+import { repairPersistedRecapQuantities } from "./windows/totalRowModal/state/recapQuantityRepair";
 
 type TotalRow = {
   id: string;
@@ -238,6 +239,10 @@ function normalizePayloadDiameters(payload: TotalRowModalPayload, mms: number[])
 
 function computeQtyPoidsByMmFromPayload(payloadIn: TotalRowModalPayload, mms: number[]) {
   const payload = normalizePayloadDiameters(payloadIn, mms);
+  const repairedRecap = repairPersistedRecapQuantities(payload);
+  const payloadWithRepairedRecap = repairedRecap
+    ? { ...payload, persistedRecap: repairedRecap }
+    : payload;
 
   const qtyByMm = buildZerosByMm(mms);
   const poidsByMm = buildZerosByMm(mms);
@@ -248,7 +253,7 @@ function computeQtyPoidsByMmFromPayload(payloadIn: TotalRowModalPayload, mms: nu
     qtyByMm[dia] = (qtyByMm[dia] ?? 0) + qtyM;
   };
 
-  for (const entry of payload.persistedRecap?.totals ?? []) {
+  for (const entry of payloadWithRepairedRecap.persistedRecap?.totals ?? []) {
     addQty(entry.dia, entry.qtyM);
   }
 
@@ -258,7 +263,7 @@ function computeQtyPoidsByMmFromPayload(payloadIn: TotalRowModalPayload, mms: nu
     poidsByMm[mm] = Number.isFinite(t) && t > 0 ? t : 0;
   }
 
-  return { qtyByMm, poidsByMm, payload };
+  return { qtyByMm, poidsByMm, payload: payloadWithRepairedRecap };
 }
 
 function SousTraitantsField({

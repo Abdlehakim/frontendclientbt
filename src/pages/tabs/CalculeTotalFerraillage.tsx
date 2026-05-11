@@ -3,6 +3,7 @@ import { FaRegEye } from "react-icons/fa";
 import { MdOutlineLocalPrintshop } from "react-icons/md";
 import type { NiveauTotal, TotalFerraillageData, TotalRow } from "@/components/ferraillage/shared/totalFerraillageData";
 import RecapPanel, { type RecapData } from "@/components/ferraillage/Edit/windows/totalRowModal/components/recap/RecapPanel";
+import { repairPersistedRecapQuantities } from "@/components/ferraillage/Edit/windows/totalRowModal/state/recapQuantityRepair";
 
 type CalculeTotalFerraillageProps = {
   data?: TotalFerraillageData | null;
@@ -56,7 +57,7 @@ function toFormFieldValue(value: number | null | undefined) {
 }
 
 function getPersistedRecap(row: TotalRow): RecapData | null {
-  const persistedRecap = row.payload?.persistedRecap;
+  const persistedRecap = repairPersistedRecapQuantities(row.payload);
   if (!persistedRecap) return null;
 
   return {
