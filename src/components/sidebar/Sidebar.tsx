@@ -54,11 +54,12 @@ export default function Sidebar() {
   const nav = useNavigate();
   const { pathname, search } = useLocation();
 
-  const { logout, user, modules, subModules } = useAuth() as unknown as {
+  const { logout, user, modules, subModules, subscription } = useAuth() as unknown as {
     logout: () => Promise<void>;
-    user: { email?: string } | null;
+    user: { email?: string; role?: string } | null;
     modules?: ModuleKey[];
     subModules?: SubModuleKey[];
+    subscription?: { plan?: string | null } | null;
   };
 
   const moduleSet = useMemo(() => new Set(modules ?? []), [modules]);
@@ -70,9 +71,12 @@ export default function Sidebar() {
       const [kind, key] = perm.split(":");
       if (kind === "module") return moduleSet.has(key as ModuleKey);
       if (kind === "submodule") return subModuleSet.has(key as SubModuleKey);
+      if (perm === "company-owner") {
+        return subscription?.plan === "ENTERPRISE" && user?.role === "OWNER";
+      }
       return false;
     },
-    [moduleSet, subModuleSet]
+    [moduleSet, subModuleSet, subscription?.plan, user?.role]
   );
 
   const visibleItems = useMemo(() => filterSidebarItems(sidebarItems, hasPermission), [hasPermission]);

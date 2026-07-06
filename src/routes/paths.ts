@@ -3,6 +3,7 @@ export const APP_PATHS = {
   root: "/app",
 
   dashboard: "dashboard",
+  users: "users",
   module1Root: "models/module-1",
   ferraillage: "models/module-1/ferraillage",
 
@@ -12,6 +13,7 @@ export const APP_PATHS = {
 export const APP_HREFS = {
   appRoot: APP_PATHS.root,
   dashboard: `${APP_PATHS.root}/${APP_PATHS.dashboard}`,
+  users: `${APP_PATHS.root}/${APP_PATHS.users}`,
   module1Root: `${APP_PATHS.root}/${APP_PATHS.module1Root}`,
   ferraillage: `${APP_PATHS.root}/${APP_PATHS.ferraillage}`,
   ferraillageRapports: `${APP_PATHS.root}/${APP_PATHS.ferraillageRapports}`,

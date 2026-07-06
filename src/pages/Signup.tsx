@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { useAuth } from "@/auth/useAuth";
+import type { AccountType } from "@/lib/api";
 import signinImg from "@/assets/signin.jpg";
 
 export default function Signup() {
@@ -9,7 +10,8 @@ export default function Signup() {
   const nav = useNavigate();
   const [params] = useSearchParams();
 
-  // UI fields (backend currently uses only email + password)
+  const [accountType, setAccountType] = useState<AccountType>("INDIVIDUAL");
+  const [companyName, setCompanyName] = useState("");
   const [username, setUsername] = useState("");
   const [phone, setPhone] = useState("");
 
@@ -26,7 +28,14 @@ export default function Signup() {
     setIsSubmitting(true);
 
     try {
-      await signup(email, password);
+      await signup({
+        name: username.trim() || undefined,
+        phone: phone.trim() || undefined,
+        email: email.trim(),
+        password,
+        accountType,
+        companyName: accountType === "ENTERPRISE" ? companyName.trim() || undefined : undefined,
+      });
       const redirectTo = params.get("redirectTo") || "/app";
       nav(redirectTo);
     } catch (e: unknown) {
@@ -37,9 +46,9 @@ export default function Signup() {
   }
 
   return (
-    <div className="relative w-full h-screen bg-(--background) text-(--foreground)">
-      <div className="w-[60%] max-lg:w-full flex justify-center items-center h-screen">
-        <div className="px-8 flex flex-col w-150 max-w-[92vw] h-175 max-md:h-auto max-md:py-10 bg-white/90 rounded-xl justify-center gap-4 z-10 shadow">
+    <div className="relative w-full min-h-screen bg-(--background) text-(--foreground)">
+      <div className="w-[60%] max-lg:w-full flex justify-center items-center min-h-screen py-8">
+        <div className="px-8 flex flex-col w-150 max-w-[92vw] max-md:h-auto max-md:py-10 bg-white/90 rounded-xl justify-center gap-4 z-10 shadow">
           <div className="flex flex-col gap-2 items-center">
             <h1 className="text-4xl font-bold mb-2 text-gray-900">Bienvenu Client</h1>
             <p className="text-lg text-gray-600">Create an account.</p>
@@ -63,7 +72,49 @@ export default function Signup() {
           {err && <p className="text-red-600 text-center font-semibold">{err}</p>}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-            {/* Username (UI only for now) */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setAccountType("INDIVIDUAL")}
+                className={[
+                  "rounded-md border px-4 py-3 text-left text-sm font-semibold transition",
+                  accountType === "INDIVIDUAL"
+                    ? "border-(--primary) bg-white text-gray-900 shadow"
+                    : "border-gray-300 bg-white/70 text-gray-600 hover:border-(--primary)",
+                ].join(" ")}
+              >
+                Single user
+              </button>
+              <button
+                type="button"
+                onClick={() => setAccountType("ENTERPRISE")}
+                className={[
+                  "rounded-md border px-4 py-3 text-left text-sm font-semibold transition",
+                  accountType === "ENTERPRISE"
+                    ? "border-(--primary) bg-white text-gray-900 shadow"
+                    : "border-gray-300 bg-white/70 text-gray-600 hover:border-(--primary)",
+                ].join(" ")}
+              >
+                Company
+              </button>
+            </div>
+
+            {accountType === "ENTERPRISE" ? (
+              <div className="flex flex-col gap-1">
+                <label htmlFor="companyName" className="text-lg font-medium text-gray-900">
+                  Company name
+                </label>
+                <input
+                  id="companyName"
+                  placeholder="Company name"
+                  type="text"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  className="w-full h-12.5 border px-4 border-(--primary) rounded-md focus:outline-none text-sm font-semibold bg-white"
+                />
+              </div>
+            ) : null}
+
             <div className="flex flex-col gap-1">
               <label htmlFor="username" className="text-lg font-medium text-gray-900">
                 Username
@@ -78,7 +129,6 @@ export default function Signup() {
               />
             </div>
 
-            {/* Phone (UI only for now) */}
             <div className="flex flex-col gap-1">
               <label htmlFor="phone" className="text-lg font-medium text-gray-900">
                 Phone (optional)

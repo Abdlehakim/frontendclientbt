@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { api, isApiError, type MeResponse } from "@/lib/api";
+import { api, isApiError, type MeResponse, type SignupPayload } from "@/lib/api";
 import { AuthContext } from "@/auth/auth.context";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -67,8 +67,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [refresh]);
 
   const signup = useCallback(
-    async (email: string, password: string) => {
-      await api.signup(email, password);
+    async (payload: SignupPayload) => {
+      await api.signup(payload);
       await refresh();
     },
     [refresh]

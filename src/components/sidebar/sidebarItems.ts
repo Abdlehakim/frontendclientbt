@@ -1,5 +1,5 @@
 import type { IconType } from "react-icons";
-import { FiGrid, FiFileText } from "react-icons/fi";
+import { FiGrid, FiFileText, FiUsers } from "react-icons/fi";
 import { APP_HREFS } from "@/routes/paths";
 
 export type SidebarItem = {
@@ -16,6 +16,13 @@ export const sidebarItems: SidebarItem[] = [
     name: "Dashboard",
     to: APP_HREFS.dashboard,
     icon: FiGrid,
+  },
+
+  {
+    name: "Users",
+    to: APP_HREFS.users,
+    icon: FiUsers,
+    permission: "company-owner",
   },
 
   {

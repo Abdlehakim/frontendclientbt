@@ -1,6 +1,8 @@
 import { API_BASE } from "./apiBase";
 
 export type Plan = "INDIVIDUAL" | "ENTERPRISE";
+export type AccountType = "INDIVIDUAL" | "ENTERPRISE";
+export type UserRole = "OWNER" | "MEMBER";
 export type BillingCycle = "MONTHLY" | "YEARLY";
 export type ModuleKey = "MODULE_1" | "MODULE_2";
 export type SubModuleKey = "FERRAILLAGE";
@@ -8,6 +10,18 @@ export type SubModuleKey = "FERRAILLAGE";
 export type UserDTO = {
   id: string;
   email: string;
+  name?: string | null;
+  phone?: string | null;
+  role?: UserRole;
+};
+
+export type SignupPayload = {
+  name?: string;
+  phone?: string;
+  email: string;
+  password: string;
+  accountType: AccountType;
+  companyName?: string;
 };
 
 export type SubscriptionDTO = {
@@ -15,9 +29,26 @@ export type SubscriptionDTO = {
   plan: Plan | null;
   billingCycle: BillingCycle | null;
   seats: number | null;
+  accountName?: string | null;
   currentPeriodEnd: string | null;
   expired: boolean;
   valid: boolean;
+};
+
+export type CompanyUserDTO = {
+  id: string;
+  email: string;
+  name: string | null;
+  phone: string | null;
+  role: UserRole;
+  createdAt: string;
+};
+
+export type CreateCompanyUserPayload = {
+  name?: string;
+  phone?: string;
+  email: string;
+  password: string;
 };
 
 export type SubModuleDTO = {
@@ -97,10 +128,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 export const api = {
   me: () => request<MeResponse>("/me"),
 
-  signup: (email: string, password: string) =>
+  signup: (payload: SignupPayload) =>
     request<{ user: UserDTO }>("/auth/signup", {
       method: "POST",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify(payload),
     }),
 
   login: (email: string, password: string) =>
@@ -126,6 +157,17 @@ export const api = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+
+  listUsers: () => request<{ users: CompanyUserDTO[] }>("/users"),
+
+  createUser: (payload: CreateCompanyUserPayload) =>
+    request<{ user: CompanyUserDTO }>("/users", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  deleteUser: (userId: string) =>
+    request<{ ok: true }>(`/users/${encodeURIComponent(userId)}`, { method: "DELETE" }),
 };
 
 export function isApiError(err: unknown): err is ApiError {

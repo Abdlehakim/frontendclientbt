@@ -1,5 +1,5 @@
 import React from "react";
-import type { BillingCycle, ModuleKey, Plan, SubModuleKey, UserDTO } from "@/lib/api";
+import type { BillingCycle, ModuleKey, Plan, SignupPayload, SubModuleKey, UserDTO } from "@/lib/api";
 
 export type AuthUser = UserDTO | null;
 
@@ -14,6 +14,7 @@ export type AuthState = {
     plan: Plan | null;
     billingCycle: BillingCycle | null;
     seats: number | null;
+    accountName?: string | null;
     currentPeriodEnd: string | null;
     expired: boolean;
     valid: boolean;
@@ -25,7 +26,7 @@ export type AuthState = {
   onboardingComplete: boolean;
 
   refresh: () => Promise<void>;
-  signup: (email: string, password: string) => Promise<void>;
+  signup: (payload: SignupPayload) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 };

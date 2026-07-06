@@ -20,6 +20,7 @@ import AppGuard from "@/pages/AppGuard";
 import FerraillagePage from "@/pages/FerraillagePage";
 import FerRapportViewPage from "@/pages/FerRapportViewPage";
 import DashboardPage from "@/pages/DashboardPage";
+import UsersPage from "@/pages/UsersPage";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -60,6 +61,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 
             <Route element={<AppGuard />}>
               <Route path={APP_PATHS.dashboard} element={<DashboardPage />} />
+              <Route path={APP_PATHS.users} element={<UsersPage />} />
               <Route path={APP_PATHS.ferraillage} element={<FerraillagePage />} />
               <Route
                 path={`${APP_PATHS.ferraillage}/rapports/:rapportId`}

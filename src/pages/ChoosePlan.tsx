@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, type BillingCycle, type Plan } from "@/lib/api";
 import { useAuth } from "@/auth/useAuth";
@@ -8,7 +8,7 @@ export default function ChoosePlan() {
   const nav = useNavigate();
   const [params] = useSearchParams();
 
-  const [plan, setPlan] = useState<Plan>("INDIVIDUAL");
+  const [plan, setPlan] = useState<Plan>(subscription?.plan ?? "INDIVIDUAL");
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("MONTHLY");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
@@ -20,6 +20,10 @@ export default function ChoosePlan() {
   }, []);
 
   const price = billingCycle === "MONTHLY" ? PRICES.monthly : PRICES.yearly;
+
+  useEffect(() => {
+    if (subscription?.plan) setPlan(subscription.plan);
+  }, [subscription?.plan]);
 
   const planLabel = plan === "INDIVIDUAL" ? "Individuel" : "Entreprise";
   const cycleLabel = billingCycle === "MONTHLY" ? "Mensuel" : "Annuel";
