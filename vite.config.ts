@@ -5,7 +5,7 @@ import path from "node:path";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  const backendTarget = env.VITE_API_URL || env.VITE_BACKEND_URL || "http://localhost:4000";
+  const backendTarget = env.VITE_API_URL || env.VITE_BACKEND_URL || "http://localhost:5000";
 
   return {
     plugins: [react(), tailwindcss()],

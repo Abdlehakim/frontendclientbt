@@ -6,7 +6,7 @@ Frontend client for PROJECTBT.
 
 - Node.js 20+
 - npm
-- Backend running on `http://localhost:4000` (default)
+- Backend running on `http://localhost:5000` (default)
 
 ## Start Backend (from monorepo root)
 
@@ -47,7 +47,7 @@ Copy-Item .env.example .env
 
 2. Adjust if needed:
 ```dotenv
-VITE_API_URL=http://localhost:4000
+VITE_API_URL=http://localhost:5000
 ```
 
 ## Build
