@@ -8,8 +8,8 @@ import type { AccountType } from "@/lib/api";
 import signinImg from "@/assets/signin.jpg";
 
 const accountTypeOptions: Array<{ label: string; value: AccountType }> = [
-  { label: "Personne physique", value: "INDIVIDUAL" },
-  { label: "Société / personne morale", value: "ENTERPRISE" },
+  { label: "Utilisateur individuel", value: "INDIVIDUAL" },
+  { label: "Entreprise", value: "ENTERPRISE" },
 ];
 
 function FormInput({
@@ -87,7 +87,7 @@ function AccountTypeDropdown({
   return (
     <div ref={wrapperRef} className="relative flex flex-col gap-1.5">
       <label className="text-[15px] font-bold text-gray-900">
-        Type de client
+        Type de compte
       </label>
 
       <button
