@@ -11,13 +11,15 @@ export type UserDTO = {
   id: string;
   email: string;
   name?: string | null;
+  countryCode?: string | null;
   phone?: string | null;
   role?: UserRole;
 };
 
 export type SignupPayload = {
   name?: string;
-  phone?: string;
+  countryCode: string;
+  phone: string;
   email: string;
   password: string;
   accountType: AccountType;
@@ -39,6 +41,7 @@ export type CompanyUserDTO = {
   id: string;
   email: string;
   name: string | null;
+  countryCode: string | null;
   phone: string | null;
   role: UserRole;
   createdAt: string;
@@ -46,7 +49,8 @@ export type CompanyUserDTO = {
 
 export type CreateCompanyUserPayload = {
   name?: string;
-  phone?: string;
+  countryCode: string;
+  phone: string;
   email: string;
   password: string;
 };
@@ -134,10 +138,10 @@ export const api = {
       body: JSON.stringify(payload),
     }),
 
-  login: (email: string, password: string) =>
+  login: (countryCode: string, phone: string, password: string) =>
     request<{ ok: true }>("/auth/login", {
       method: "POST",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ countryCode, phone, password }),
     }),
 
   logout: () => request<{ ok: true }>("/auth/logout", { method: "POST" }),

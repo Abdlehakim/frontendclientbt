@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, type CompanyUserDTO } from "@/lib/api";
 import { useAuth } from "@/auth/useAuth";
+import { CountryCodeSelect } from "@/components/CountryCodeSelect";
 
 export default function UsersPage() {
   const { user, subscription } = useAuth();
@@ -9,6 +10,7 @@ export default function UsersPage() {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
   const [name, setName] = useState("");
+  const [countryCode, setCountryCode] = useState("+1");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,11 +45,13 @@ export default function UsersPage() {
     try {
       await api.createUser({
         name: name.trim() || undefined,
-        phone: phone.trim() || undefined,
+        countryCode,
+        phone: phone.trim(),
         email: email.trim(),
         password,
       });
       setName("");
+      setCountryCode("+1");
       setPhone("");
       setEmail("");
       setPassword("");
@@ -93,10 +97,18 @@ export default function UsersPage() {
           placeholder="Name"
           className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
         />
+        <CountryCodeSelect
+          value={countryCode}
+          onChange={setCountryCode}
+          label="Country code"
+        />
         <input
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           placeholder="Phone"
+          type="tel"
+          required
+          autoComplete="tel-national"
           className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
         />
         <input

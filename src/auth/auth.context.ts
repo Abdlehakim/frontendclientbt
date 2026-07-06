@@ -27,7 +27,7 @@ export type AuthState = {
 
   refresh: () => Promise<void>;
   signup: (payload: SignupPayload) => Promise<void>;
-  login: (email: string, password: string) => Promise<void>;
+  login: (countryCode: string, phone: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 };
 

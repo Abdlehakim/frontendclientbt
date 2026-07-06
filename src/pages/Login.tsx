@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { useAuth } from "@/auth/useAuth";
+import { CountryCodeSelect } from "@/components/CountryCodeSelect";
 import signinImg from "@/assets/signin.jpg";
 
 export default function Login() {
@@ -10,7 +11,8 @@ export default function Login() {
   const nav = useNavigate();
   const [params] = useSearchParams();
 
-  const [email, setEmail] = useState("");
+  const [countryCode, setCountryCode] = useState("+1");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
 
   const [err, setErr] = useState("");
@@ -23,7 +25,7 @@ export default function Login() {
     setIsSubmitting(true);
 
     try {
-      await login(email.trim(), password);
+      await login(countryCode, phone.trim(), password);
 
       const redirectTo = params.get("redirectTo") || "/app";
       nav(redirectTo);
@@ -75,24 +77,32 @@ export default function Login() {
           ) : null}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="email"
-                className="text-[15px] font-bold text-gray-900"
-              >
-                Email
-              </label>
-
-              <input
-                id="email"
-                type="email"
-                placeholder="votreemail@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-                className="h-12 w-full rounded-[5px] border border-[#b9d3ff] bg-white px-4 text-[16px] font-medium text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-[#6ea8ff] focus:ring-2 focus:ring-[#d9eaff]"
+            <div className="grid grid-cols-[220px_1fr] gap-4 max-sm:grid-cols-1">
+              <CountryCodeSelect
+                value={countryCode}
+                onChange={setCountryCode}
+                label="Country code"
               />
+
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor="phone"
+                  className="text-[15px] font-bold text-gray-900"
+                >
+                  Numéro de téléphone
+                </label>
+
+                <input
+                  id="phone"
+                  type="tel"
+                  placeholder="Numéro de téléphone"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                  autoComplete="tel-national"
+                  className="h-12 w-full rounded-[5px] border border-[#b9d3ff] bg-white px-4 text-[16px] font-medium text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-[#6ea8ff] focus:ring-2 focus:ring-[#d9eaff]"
+                />
+              </div>
             </div>
 
             <div className="flex flex-col gap-1.5">

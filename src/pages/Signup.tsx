@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { MdOutlineArrowDropDownCircle } from "react-icons/md";
 import { useAuth } from "@/auth/useAuth";
+import { CountryCodeSelect } from "@/components/CountryCodeSelect";
 import type { AccountType } from "@/lib/api";
 import signinImg from "@/assets/signin.jpg";
 
@@ -154,6 +155,7 @@ export default function Signup() {
   const [accountType, setAccountType] = useState<AccountType>("INDIVIDUAL");
   const [companyName, setCompanyName] = useState("");
   const [username, setUsername] = useState("");
+  const [countryCode, setCountryCode] = useState("+1");
   const [phone, setPhone] = useState("");
 
   const [email, setEmail] = useState("");
@@ -171,7 +173,8 @@ export default function Signup() {
     try {
       await signup({
         name: username.trim() || undefined,
-        phone: phone.trim() || undefined,
+        countryCode,
+        phone: phone.trim(),
         email: email.trim(),
         password,
         accountType,
@@ -270,18 +273,26 @@ export default function Signup() {
               />
             )}
 
-            <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
+            <div className="grid grid-cols-[220px_1fr] gap-4 max-sm:grid-cols-1">
+              <CountryCodeSelect
+                value={countryCode}
+                onChange={setCountryCode}
+                label="Code pays"
+              />
+
               <FormInput
                 id="phone"
                 label="Téléphone"
-                optional
                 placeholder="Numéro de téléphone"
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                autoComplete="tel"
+                required
+                autoComplete="tel-national"
               />
+            </div>
 
+            <div className="grid grid-cols-1 gap-4">
               <FormInput
                 id="email"
                 label="Email"
