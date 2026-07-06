@@ -1,9 +1,150 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { FormEvent, InputHTMLAttributes } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
+import { FiEye, FiEyeOff } from "react-icons/fi";
+import { MdOutlineArrowDropDownCircle } from "react-icons/md";
 import { useAuth } from "@/auth/useAuth";
 import type { AccountType } from "@/lib/api";
 import signinImg from "@/assets/signin.jpg";
+
+const accountTypeOptions: Array<{ label: string; value: AccountType }> = [
+  { label: "Personne physique", value: "INDIVIDUAL" },
+  { label: "Société / personne morale", value: "ENTERPRISE" },
+];
+
+function FormInput({
+  id,
+  label,
+  optional,
+  className = "",
+  ...props
+}: InputHTMLAttributes<HTMLInputElement> & {
+  id: string;
+  label: string;
+  optional?: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-[15px] font-bold text-gray-900">
+        {label}{" "}
+        {optional ? (
+          <span className="font-medium text-gray-500">(optionnel)</span>
+        ) : null}
+      </label>
+
+      <input
+        id={id}
+        {...props}
+        className={[
+          "h-12 w-full rounded-[5px] border border-[#b9d3ff] bg-white px-4",
+          "text-[16px] font-medium text-gray-900 shadow-sm",
+          "placeholder:text-gray-400",
+          "outline-none transition",
+          "focus:border-[#6ea8ff] focus:ring-2 focus:ring-[#d9eaff]",
+          className,
+        ].join(" ")}
+      />
+    </div>
+  );
+}
+
+function AccountTypeDropdown({
+  value,
+  onChange,
+}: {
+  value: AccountType;
+  onChange: (value: AccountType) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+
+  const selected =
+    accountTypeOptions.find((option) => option.value === value) ??
+    accountTypeOptions[0];
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (!wrapperRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
+
+  return (
+    <div ref={wrapperRef} className="relative flex flex-col gap-1.5">
+      <label className="text-[15px] font-bold text-gray-900">
+        Type de client
+      </label>
+
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        className={[
+          "flex h-12 w-full items-center justify-between rounded-[5px]",
+          "border border-[#b9d3ff] bg-white px-4 text-left",
+          "text-[16px] font-medium text-gray-900 shadow-sm",
+          "outline-none transition",
+          open
+            ? "border-[#6ea8ff] ring-2 ring-[#d9eaff]"
+            : "hover:border-[#8bbcff]",
+        ].join(" ")}
+      >
+        <span>{selected.label}</span>
+
+        <span className="flex h-7 w-7 items-center justify-center text-gray-800">
+          <MdOutlineArrowDropDownCircle
+            size={24}
+            className={[
+              "transition-transform duration-200",
+              open ? "rotate-180" : "rotate-0",
+            ].join(" ")}
+          />
+        </span>
+      </button>
+
+      {open ? (
+        <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-md border border-gray-200 bg-white p-1.5 shadow-xl">
+          {accountTypeOptions.map((option) => {
+            const isSelected = option.value === value;
+
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => {
+                  onChange(option.value);
+                  setOpen(false);
+                }}
+                className={[
+                  "w-full rounded-sm px-3.5 py-2.5 text-left text-[15px] font-medium transition",
+                  isSelected
+                    ? "bg-[#d7e8ff] text-[#163d6d]"
+                    : "text-gray-800 hover:bg-gray-100",
+                ].join(" ")}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 export default function Signup() {
   const { signup } = useAuth();
@@ -22,7 +163,7 @@ export default function Signup() {
   const [err, setErr] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setErr("");
     setIsSubmitting(true);
@@ -34,8 +175,12 @@ export default function Signup() {
         email: email.trim(),
         password,
         accountType,
-        companyName: accountType === "ENTERPRISE" ? companyName.trim() || undefined : undefined,
+        companyName:
+          accountType === "ENTERPRISE"
+            ? companyName.trim() || undefined
+            : undefined,
       });
+
       const redirectTo = params.get("redirectTo") || "/app";
       nav(redirectTo);
     } catch (e: unknown) {
@@ -46,145 +191,140 @@ export default function Signup() {
   }
 
   return (
-    <div className="relative w-full min-h-screen bg-(--background) text-(--foreground)">
-      <div className="w-[60%] max-lg:w-full flex justify-center items-center min-h-screen py-8">
-        <div className="px-8 flex flex-col w-150 max-w-[92vw] max-md:h-auto max-md:py-10 bg-white/90 rounded-xl justify-center gap-4 z-10 shadow">
-          <div className="flex flex-col gap-2 items-center">
-            <h1 className="text-4xl font-bold mb-2 text-gray-900">Bienvenu Client</h1>
-            <p className="text-lg text-gray-600">Create an account.</p>
+    <main className="relative min-h-screen overflow-hidden bg-[#050814] text-gray-900">
+      <div className="fixed inset-0 z-0">
+        <img
+          src={signinImg}
+          alt="Signup background"
+          className="h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-black/55" />
+        <div className="absolute inset-0 bg-linear-to-r from-black/50 via-black/20 to-transparent" />
+      </div>
 
-            <div className="text-sm text-gray-600">
-              Vous avez deja un compte ?{" "}
-              <Link to="/login" className="text-(--primary) font-semibold hover:underline">
+      <section className="relative z-10 flex min-h-screen w-full items-center justify-center px-4 py-8 lg:justify-start lg:px-20">
+        <div className="w-full max-w-155 rounded-[18px] bg-white/95 px-10 py-9 shadow-2xl backdrop-blur-md max-sm:px-5 max-sm:py-6">
+          <div className="mb-7 text-center">
+            <h1 className="text-[38px] font-extrabold leading-tight text-gray-950 max-sm:text-3xl">
+              Bienvenue Client
+            </h1>
+
+            <p className="mt-3 text-[17px] font-medium text-gray-500 max-sm:text-sm">
+              Créez votre compte pour accéder à votre espace client.
+            </p>
+
+            <p className="mt-5 text-[15px] font-medium text-gray-600">
+              Vous avez déjà un compte ?{" "}
+              <Link
+                to="/login"
+                className="font-bold text-[#173d6b] transition hover:underline"
+              >
                 Connectez-vous
               </Link>
-            </div>
-
-            <div className="flex items-center w-75 gap-2">
-              <div className="grow border-t border-gray-300" />
-              <Link to="/login" className="text-(--primary) text-sm font-semibold hover:underline">
-                Click here pour connectez a votre compte
-              </Link>
-              <div className="grow border-t border-gray-300" />
-            </div>
+            </p>
           </div>
 
-          {err && <p className="text-red-600 text-center font-semibold">{err}</p>}
-
-          <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setAccountType("INDIVIDUAL")}
-                className={[
-                  "rounded-md border px-4 py-3 text-left text-sm font-semibold transition",
-                  accountType === "INDIVIDUAL"
-                    ? "border-(--primary) bg-white text-gray-900 shadow"
-                    : "border-gray-300 bg-white/70 text-gray-600 hover:border-(--primary)",
-                ].join(" ")}
-              >
-                Single user
-              </button>
-              <button
-                type="button"
-                onClick={() => setAccountType("ENTERPRISE")}
-                className={[
-                  "rounded-md border px-4 py-3 text-left text-sm font-semibold transition",
-                  accountType === "ENTERPRISE"
-                    ? "border-(--primary) bg-white text-gray-900 shadow"
-                    : "border-gray-300 bg-white/70 text-gray-600 hover:border-(--primary)",
-                ].join(" ")}
-              >
-                Company
-              </button>
+          {err ? (
+            <div className="mb-4 rounded-[5px] border border-red-200 bg-red-50 px-4 py-3 text-center text-sm font-semibold text-red-600">
+              {err}
             </div>
+          ) : null}
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <AccountTypeDropdown
+              value={accountType}
+              onChange={setAccountType}
+            />
 
             {accountType === "ENTERPRISE" ? (
-              <div className="flex flex-col gap-1">
-                <label htmlFor="companyName" className="text-lg font-medium text-gray-900">
-                  Company name
-                </label>
-                <input
+              <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
+                <FormInput
                   id="companyName"
-                  placeholder="Company name"
+                  label="Nom de l’entreprise"
+                  placeholder="Nom de l’entreprise"
                   type="text"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  className="w-full h-12.5 border px-4 border-(--primary) rounded-md focus:outline-none text-sm font-semibold bg-white"
+                  required
+                />
+
+                <FormInput
+                  id="username"
+                  label="Nom complet"
+                  placeholder="Votre nom"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  autoComplete="name"
                 />
               </div>
-            ) : null}
-
-            <div className="flex flex-col gap-1">
-              <label htmlFor="username" className="text-lg font-medium text-gray-900">
-                Username
-              </label>
-              <input
+            ) : (
+              <FormInput
                 id="username"
-                placeholder="Votre name"
+                label="Nom complet"
+                placeholder="Votre nom"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full h-12.5 border px-4 border-(--primary) rounded-md focus:outline-none text-sm font-semibold bg-white"
+                autoComplete="name"
               />
-            </div>
+            )}
 
-            <div className="flex flex-col gap-1">
-              <label htmlFor="phone" className="text-lg font-medium text-gray-900">
-                Phone (optional)
-              </label>
-              <input
+            <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
+              <FormInput
                 id="phone"
-                placeholder="Numero de telephone"
+                label="Téléphone"
+                optional
+                placeholder="Numéro de téléphone"
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full h-12.5 border px-4 border-(--primary) rounded-md focus:outline-none text-sm font-semibold bg-white"
+                autoComplete="tel"
               />
-            </div>
 
-            {/* Email */}
-            <div className="flex flex-col gap-1">
-              <label htmlFor="email" className="text-lg font-medium text-gray-900">
-                Email
-              </label>
-              <input
+              <FormInput
                 id="email"
-                placeholder="Votremail@email.com"
+                label="Email"
+                placeholder="votreemail@email.com"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                className="w-full h-12.5 border px-4 border-(--primary) rounded-md focus:outline-none text-sm font-semibold bg-white"
               />
             </div>
 
-            {/* Password */}
-            <div className="flex flex-col gap-1 relative">
-              <label htmlFor="password" className="text-lg font-medium text-gray-900">
-                Password
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="password"
+                className="text-[15px] font-bold text-gray-900"
+              >
+                Mot de passe
               </label>
 
               <div className="relative">
                 <input
                   id="password"
-                  placeholder="*******"
+                  placeholder="••••••••"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="new-password"
-                  className="w-full border border-(--primary) rounded-md px-3 py-2 pr-10 focus:outline-none text-lg font-semibold bg-white"
+                  className="h-12 w-full rounded-[5px] border border-[#b9d3ff] bg-white px-4 pr-12 text-[16px] font-medium text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-[#6ea8ff] focus:ring-2 focus:ring-[#d9eaff]"
                 />
 
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute inset-y-0 right-3 flex items-center text-gray-500"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute inset-y-0 right-4 flex items-center text-gray-500 transition hover:text-gray-900"
+                  aria-label={
+                    showPassword
+                      ? "Masquer le mot de passe"
+                      : "Afficher le mot de passe"
+                  }
                 >
-                  {showPassword ? <AiOutlineEyeInvisible size={22} /> : <AiOutlineEye size={22} />}
+                  {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
                 </button>
               </div>
             </div>
@@ -192,18 +332,13 @@ export default function Signup() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="h-12.5 w-full text-white text-lg font-semibold py-2 rounded-md bg-(--primary) transition duration-200 mt-4 hover:bg-(--secondary) disabled:opacity-60"
+              className="mt-3 h-13 w-full rounded-md bg-[#173d6b] text-[17px] font-bold text-white shadow-lg transition hover:bg-[#0f2f55] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSubmitting ? "Signing up..." : "Sign up"}
+              {isSubmitting ? "Création du compte..." : "Créer un compte"}
             </button>
           </form>
         </div>
-      </div>
-
-      {/* Background Image */}
-    <div className="fixed inset-0 z-1">
-        <img src={signinImg} alt="signin background" className="w-full h-full object-cover" />
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

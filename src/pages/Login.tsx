@@ -1,9 +1,9 @@
 import { useState } from "react";
+import type { FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 import { useAuth } from "@/auth/useAuth";
 import signinImg from "@/assets/signin.jpg";
-
 
 export default function Login() {
   const { login } = useAuth();
@@ -12,17 +12,19 @@ export default function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [err, setErr] = useState<string>("");
+
+  const [err, setErr] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setErr("");
     setIsSubmitting(true);
 
     try {
-      await login(email, password);
+      await login(email.trim(), password);
+
       const redirectTo = params.get("redirectTo") || "/app";
       nav(redirectTo);
     } catch (e: unknown) {
@@ -33,94 +35,128 @@ export default function Login() {
   }
 
   return (
-    <div className="relative w-full h-screen bg-(--background) text-(--foreground)">
-      <div className="w-[60%] max-lg:w-full flex justify-center items-center h-screen">
-        <div className="px-8 flex flex-col w-150 max-w-[92vw] h-175 max-md:h-auto max-md:py-10 bg-white/90 rounded-xl justify-center gap-4 z-10 shadow">
-          <div className="flex flex-col gap-2 items-center">
-            <h1 className="text-4xl font-bold mb-2 text-gray-900">Bienvenu</h1>
-            <p className="text-lg text-gray-600">Login to your account.</p>
+    <main className="relative min-h-screen overflow-hidden bg-[#050814] text-gray-900">
+      <div className="fixed inset-0 z-0">
+        <img
+          src={signinImg}
+          alt="Signin background"
+          className="h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-black/55" />
+        <div className="absolute inset-0 bg-linear-to-r from-black/50 via-black/20 to-transparent" />
+      </div>
 
-            <div className="flex items-center w-75 gap-2">
-              <div className="grow border-t border-gray-300" />
-              <Link to="/signup" className="text-(--primary) text-sm font-semibold hover:underline">
-                Click here to create an account
+      <section className="relative z-10 flex min-h-screen w-full items-center justify-center px-4 py-8 lg:justify-start lg:px-20">
+        <div className="w-full max-w-155 rounded-[18px] bg-white/95 px-10 py-10 shadow-2xl backdrop-blur-md max-sm:px-5 max-sm:py-6">
+          <div className="mb-8 text-center">
+            <h1 className="text-[38px] font-extrabold leading-tight text-gray-950 max-sm:text-3xl">
+              Bienvenue
+            </h1>
+
+            <p className="mt-3 text-[17px] font-medium text-gray-500 max-sm:text-sm">
+              Connectez-vous à votre espace client.
+            </p>
+
+            <p className="mt-5 text-[15px] font-medium text-gray-600">
+              Vous n’avez pas encore de compte ?{" "}
+              <Link
+                to="/signup"
+                className="font-bold text-[#173d6b] transition hover:underline"
+              >
+                Créer un compte
               </Link>
-              <div className="grow border-t border-gray-300" />
-            </div>
+            </p>
           </div>
 
-          {err && <p className="text-red-600 font-medium">{err}</p>}
+          {err ? (
+            <div className="mb-4 rounded-[5px] border border-red-200 bg-red-50 px-4 py-3 text-center text-sm font-semibold text-red-600">
+              {err}
+            </div>
+          ) : null}
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-            <div className="flex flex-col gap-1">
-              <label htmlFor="email" className="text-lg font-medium text-gray-900">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="email"
+                className="text-[15px] font-bold text-gray-900"
+              >
                 Email
               </label>
+
               <input
                 id="email"
                 type="email"
-                placeholder="Votremail@email.com"
+                placeholder="votreemail@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                className="w-full h-12.5 border px-4 border-(--primary) rounded-md focus:outline-none text-sm font-semibold bg-white"
+                className="h-12 w-full rounded-[5px] border border-[#b9d3ff] bg-white px-4 text-[16px] font-medium text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-[#6ea8ff] focus:ring-2 focus:ring-[#d9eaff]"
               />
             </div>
 
-            <div className="flex flex-col gap-1 relative">
-              <label htmlFor="password" className="text-lg font-medium text-gray-900">
-                Password
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="password"
+                className="text-[15px] font-bold text-gray-900"
+              >
+                Mot de passe
               </label>
 
               <div className="relative">
                 <input
                   id="password"
-                  placeholder="*******"
+                  placeholder="••••••••"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="current-password"
-                  className="w-full border border-(--primary) rounded-md px-3 py-2 pr-10 focus:outline-none text-lg font-semibold bg-white"
+                  className="h-12 w-full rounded-[5px] border border-[#b9d3ff] bg-white px-4 pr-12 text-[16px] font-medium text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-[#6ea8ff] focus:ring-2 focus:ring-[#d9eaff]"
                 />
 
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute inset-y-0 right-3 flex items-center text-gray-500"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute inset-y-0 right-4 flex items-center text-gray-500 transition hover:text-gray-900"
+                  aria-label={
+                    showPassword
+                      ? "Masquer le mot de passe"
+                      : "Afficher le mot de passe"
+                  }
                 >
-                  {showPassword ? <AiOutlineEyeInvisible size={22} /> : <AiOutlineEye size={22} />}
+                  {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
                 </button>
               </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-4 text-sm font-semibold max-sm:flex-col max-sm:items-start">
+              <label className="inline-flex cursor-pointer items-center text-gray-600">
+                <input
+                  type="checkbox"
+                  className="mr-2 h-4 w-4 rounded border-gray-300"
+                />
+                <span>Se souvenir de moi</span>
+              </label>
+
+              <Link
+                to="/forgot-password"
+                className="text-[#173d6b] transition hover:underline"
+              >
+                Mot de passe oublié ?
+              </Link>
             </div>
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="h-12.5 w-full text-white text-lg font-semibold py-2 rounded-md bg-(--primary) transition duration-200 mt-4 hover:bg-(--secondary) disabled:opacity-60"
+              className="mt-3 h-13 w-full rounded-md bg-[#173d6b] text-[17px] font-bold text-white shadow-lg transition hover:bg-[#0f2f55] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSubmitting ? "Signing in..." : "Sign in to your account"}
+              {isSubmitting ? "Connexion..." : "Se connecter"}
             </button>
-
-            <div className="flex items-center justify-between m-4 text-sm font-semibold">
-              <label className="inline-flex items-center text-gray-600">
-                <input type="checkbox" className="mr-2 w-4 h-4" />
-                <span>Remember me</span>
-              </label>
-
-              <Link to="/forgot-password" className="text-sm text-(--primary) hover:underline">
-                Forgot password?
-              </Link>
-            </div>
           </form>
         </div>
-      </div>
-
-      <div className="fixed inset-0 z-1">
-        <img src={signinImg} alt="signin background" className="w-full h-full object-cover" />
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
