@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import { CiCircleRemove } from "react-icons/ci";
 import { FaSpinner } from "react-icons/fa6";
@@ -19,7 +19,6 @@ export default function UsersPage() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const createModalRef = useRef<HTMLFormElement | null>(null);
 
   const isCompany = subscription?.plan === "ENTERPRISE";
   const isOwner = user?.role === "OWNER";
@@ -52,29 +51,9 @@ export default function UsersPage() {
     loadUsers();
   }, [canManage]);
 
-  useEffect(() => {
-    if (!createOpen) return;
-
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape" && !saving) {
-        setCreateOpen(false);
-      }
-    }
-
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [createOpen, saving]);
-
   function closeCreateModal() {
     if (saving) return;
     setCreateOpen(false);
-  }
-
-  function closeOnBackdrop(e: MouseEvent<HTMLDivElement>) {
-    if (saving) return;
-    if (createModalRef.current && !createModalRef.current.contains(e.target as Node)) {
-      setCreateOpen(false);
-    }
   }
 
   async function handleCreate(e: FormEvent<HTMLFormElement>) {
@@ -115,7 +94,7 @@ export default function UsersPage() {
   }
 
   const inputClass =
-    "form-control w-full rounded-md border text-xs font-medium truncate " +
+    "form-control h-10 w-full rounded-md border px-3 text-xs font-medium truncate " +
     "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 " +
     "border-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 " +
     "placeholder:text-emerald-800/60";
@@ -126,11 +105,10 @@ export default function UsersPage() {
           <div className="fixed inset-0 z-99">
             <div className="absolute inset-0 bg-black/40" />
 
-            <div className="absolute inset-0 flex items-center justify-center p-4" onMouseDown={closeOnBackdrop}>
+            <div className="absolute inset-0 flex items-center justify-center p-4">
               <form
-                ref={createModalRef}
                 onSubmit={handleCreate}
-                className="w-full max-w-3xl max-h-[95vh] rounded-xl bg-white shadow-xl border border-gray-200 flex flex-col"
+                className="w-full max-w-2xl max-h-[95vh] rounded-xl bg-white shadow-xl border border-gray-200 flex flex-col"
               >
                 <div className="px-5 py-2 bg-gray-50 rounded-t-xl border-b border-gray-200 flex items-center justify-between">
                   <div className="text-sm font-semibold text-gray-900">Ajouter User</div>
@@ -150,27 +128,15 @@ export default function UsersPage() {
                 {err ? <div className="px-5 pt-3 text-sm text-red-600">{err}</div> : null}
 
                 <div className="px-5 py-4 overflow-auto">
-                  <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-3">
                     <div className="text-sm font-semibold text-gray-800">Informations utilisateur</div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex flex-col">
-                        <label className="text-xs font-semibold text-gray-700 mb-1" htmlFor="create-user-name">
-                          Name
-                        </label>
-                        <input
-                          id="create-user-name"
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          placeholder="Name"
-                          className={inputClass}
-                        />
-                      </div>
-
                       <CountryCodeSelect
                         value={countryCode}
                         onChange={setCountryCode}
                         label="Country code"
+                        variant="emerald"
                         className="[&>label]:text-xs [&>label]:font-semibold [&>label]:text-gray-700"
                         buttonClassName="h-10"
                       />
@@ -187,6 +153,21 @@ export default function UsersPage() {
                           type="tel"
                           required
                           autoComplete="tel-national"
+                          className={inputClass}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3">
+                      <div className="flex flex-col">
+                        <label className="text-xs font-semibold text-gray-700 mb-1" htmlFor="create-user-name">
+                          Name
+                        </label>
+                        <input
+                          id="create-user-name"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          placeholder="Name"
                           className={inputClass}
                         />
                       </div>
@@ -207,7 +188,7 @@ export default function UsersPage() {
                         />
                       </div>
 
-                      <div className="flex flex-col md:col-span-2">
+                      <div className="flex flex-col">
                         <label className="text-xs font-semibold text-gray-700 mb-1" htmlFor="create-user-password">
                           Password
                         </label>
