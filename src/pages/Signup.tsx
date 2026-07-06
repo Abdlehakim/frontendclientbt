@@ -6,7 +6,7 @@ import { MdOutlineArrowDropDownCircle } from "react-icons/md";
 import { useAuth } from "@/auth/useAuth";
 import { CountryCodeSelect } from "@/components/CountryCodeSelect";
 import type { AccountType } from "@/lib/api";
-import signinImg from "@/assets/signin.jpg";
+import signinImg from "@/assets/real_estate_futuristic_bg_high_quality.webp";
 
 const accountTypeOptions: Array<{ label: string; value: AccountType }> = [
   { label: "Utilisateur individuel", value: "INDIVIDUAL" },

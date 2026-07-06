@@ -4,7 +4,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { useAuth } from "@/auth/useAuth";
 import { CountryCodeSelect } from "@/components/CountryCodeSelect";
-import signinImg from "@/assets/signin.jpg";
+import signinImg from "@/assets/real_estate_futuristic_bg_high_quality.webp";
 
 const REMEMBER_COUNTRY_CODE_KEY = "projectbt.login.countryCode";
 const REMEMBER_PHONE_KEY = "projectbt.login.phone";
