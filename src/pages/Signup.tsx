@@ -37,7 +37,7 @@ function FormInput({
         id={id}
         {...props}
         className={[
-          "h-12 w-full rounded-[5px] border border-[#b9d3ff] bg-white px-4",
+          "h-11 w-full rounded-[5px] border border-[#b9d3ff] bg-white px-4",
           "text-[16px] font-medium text-gray-900 shadow-sm",
           "placeholder:text-gray-400",
           "outline-none transition",
@@ -95,7 +95,7 @@ function AccountTypeDropdown({
         type="button"
         onClick={() => setOpen((current) => !current)}
         className={[
-          "flex h-12 w-full items-center justify-between rounded-[5px]",
+          "flex h-11 w-full items-center justify-between rounded-[5px]",
           "border border-[#b9d3ff] bg-white px-4 text-left",
           "text-[16px] font-medium text-gray-900 shadow-sm",
           "outline-none transition",
@@ -201,22 +201,22 @@ export default function Signup() {
           alt="Signup background"
           className="h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-black/55" />
+        <div className="absolute inset-0" />
         <div className="absolute inset-0 bg-linear-to-r from-black/50 via-black/20 to-transparent" />
       </div>
 
       <section className="relative z-10 flex min-h-screen w-full items-center justify-center px-4 py-8 lg:justify-start lg:px-20">
-        <div className="w-full max-w-155 rounded-[18px] bg-white/95 px-10 py-9 shadow-2xl backdrop-blur-md max-sm:px-5 max-sm:py-6">
-          <div className="mb-7 text-center">
-            <h1 className="text-[38px] font-extrabold leading-tight text-gray-950 max-sm:text-3xl">
+        <div className="w-full max-w-[520px] rounded-[18px] bg-white/95 px-7 py-7 shadow-2xl backdrop-blur-md max-sm:px-4 max-sm:py-5">
+          <div className="mb-5 text-center">
+            <h1 className="text-[32px] font-extrabold leading-tight text-gray-950 max-sm:text-3xl">
               Bienvenue Client
             </h1>
 
-            <p className="mt-3 text-[17px] font-medium text-gray-500 max-sm:text-sm">
+            <p className="mt-2 text-[17px] font-medium text-gray-500 max-sm:text-sm">
               Créez votre compte pour accéder à votre espace client.
             </p>
 
-            <p className="mt-5 text-[15px] font-medium text-gray-600">
+            <p className="mt-3 text-[15px] font-medium text-gray-600">
               Vous avez déjà un compte ?{" "}
               <Link
                 to="/login"
@@ -233,7 +233,7 @@ export default function Signup() {
             </div>
           ) : null}
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <AccountTypeDropdown
               value={accountType}
               onChange={setAccountType}
@@ -322,7 +322,7 @@ export default function Signup() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="new-password"
-                  className="h-12 w-full rounded-[5px] border border-[#b9d3ff] bg-white px-4 pr-12 text-[16px] font-medium text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-[#6ea8ff] focus:ring-2 focus:ring-[#d9eaff]"
+                  className="h-11 w-full rounded-[5px] border border-[#b9d3ff] bg-white px-4 pr-12 text-[16px] font-medium text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-[#6ea8ff] focus:ring-2 focus:ring-[#d9eaff]"
                 />
 
                 <button
@@ -343,7 +343,7 @@ export default function Signup() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="mt-3 h-13 w-full rounded-md bg-[#173d6b] text-[17px] font-bold text-white shadow-lg transition hover:bg-[#0f2f55] disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-3 h-12 w-full rounded-md bg-[#173d6b] text-[17px] font-bold text-white shadow-lg transition hover:bg-[#0f2f55] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting ? "Création du compte..." : "Créer un compte"}
             </button>

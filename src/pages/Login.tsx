@@ -1,10 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { useAuth } from "@/auth/useAuth";
 import { CountryCodeSelect } from "@/components/CountryCodeSelect";
 import signinImg from "@/assets/signin.jpg";
+
+const REMEMBER_COUNTRY_CODE_KEY = "projectbt.login.countryCode";
+const REMEMBER_PHONE_KEY = "projectbt.login.phone";
+const REMEMBER_ENABLED_KEY = "projectbt.login.remember";
 
 export default function Login() {
   const { login } = useAuth();
@@ -18,6 +22,21 @@ export default function Login() {
   const [err, setErr] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const remembered = window.localStorage.getItem(REMEMBER_ENABLED_KEY) === "true";
+    if (!remembered) return;
+
+    const savedCountryCode = window.localStorage.getItem(REMEMBER_COUNTRY_CODE_KEY);
+    const savedPhone = window.localStorage.getItem(REMEMBER_PHONE_KEY);
+
+    setRememberMe(true);
+    setCountryCode(savedCountryCode || "+1");
+    setPhone(savedPhone || "");
+  }, []);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -25,7 +44,18 @@ export default function Login() {
     setIsSubmitting(true);
 
     try {
-      await login(countryCode, phone.trim(), password);
+      const trimmedPhone = phone.trim();
+      await login(countryCode, trimmedPhone, password);
+
+      if (rememberMe) {
+        window.localStorage.setItem(REMEMBER_ENABLED_KEY, "true");
+        window.localStorage.setItem(REMEMBER_COUNTRY_CODE_KEY, countryCode);
+        window.localStorage.setItem(REMEMBER_PHONE_KEY, trimmedPhone);
+      } else {
+        window.localStorage.removeItem(REMEMBER_ENABLED_KEY);
+        window.localStorage.removeItem(REMEMBER_COUNTRY_CODE_KEY);
+        window.localStorage.removeItem(REMEMBER_PHONE_KEY);
+      }
 
       const redirectTo = params.get("redirectTo") || "/app";
       nav(redirectTo);
@@ -44,22 +74,22 @@ export default function Login() {
           alt="Signin background"
           className="h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-black/55" />
+        <div className="absolute inset-0 " />
         <div className="absolute inset-0 bg-linear-to-r from-black/50 via-black/20 to-transparent" />
       </div>
 
       <section className="relative z-10 flex min-h-screen w-full items-center justify-center px-4 py-8 lg:justify-start lg:px-20">
-        <div className="w-full max-w-155 rounded-[18px] bg-white/95 px-10 py-10 shadow-2xl backdrop-blur-md max-sm:px-5 max-sm:py-6">
-          <div className="mb-8 text-center">
-            <h1 className="text-[38px] font-extrabold leading-tight text-gray-950 max-sm:text-3xl">
+        <div className="w-full max-w-[520px] rounded-[18px] bg-white/95 px-7 py-7 shadow-2xl backdrop-blur-md max-sm:px-4 max-sm:py-5">
+          <div className="mb-5 text-center">
+            <h1 className="text-[32px] font-extrabold leading-tight text-gray-950 max-sm:text-3xl">
               Bienvenue
             </h1>
 
-            <p className="mt-3 text-[17px] font-medium text-gray-500 max-sm:text-sm">
+            <p className="mt-2 text-[17px] font-medium text-gray-500 max-sm:text-sm">
               Connectez-vous à votre espace client.
             </p>
 
-            <p className="mt-5 text-[15px] font-medium text-gray-600">
+            <p className="mt-3 text-[15px] font-medium text-gray-600">
               Vous n’avez pas encore de compte ?{" "}
               <Link
                 to="/signup"
@@ -76,12 +106,13 @@ export default function Login() {
             </div>
           ) : null}
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <div className="grid grid-cols-[220px_1fr] gap-4 max-sm:grid-cols-1">
               <CountryCodeSelect
                 value={countryCode}
                 onChange={setCountryCode}
                 label="Country code"
+                buttonClassName="h-11"
               />
 
               <div className="flex flex-col gap-1.5">
@@ -100,7 +131,7 @@ export default function Login() {
                   onChange={(e) => setPhone(e.target.value)}
                   required
                   autoComplete="tel-national"
-                  className="h-12 w-full rounded-[5px] border border-[#b9d3ff] bg-white px-4 text-[16px] font-medium text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-[#6ea8ff] focus:ring-2 focus:ring-[#d9eaff]"
+                  className="h-11 w-full rounded-[5px] border border-[#b9d3ff] bg-white px-4 text-[16px] font-medium text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-[#6ea8ff] focus:ring-2 focus:ring-[#d9eaff]"
                 />
               </div>
             </div>
@@ -122,7 +153,7 @@ export default function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="current-password"
-                  className="h-12 w-full rounded-[5px] border border-[#b9d3ff] bg-white px-4 pr-12 text-[16px] font-medium text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-[#6ea8ff] focus:ring-2 focus:ring-[#d9eaff]"
+                  className="h-11 w-full rounded-[5px] border border-[#b9d3ff] bg-white px-4 pr-12 text-[16px] font-medium text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-[#6ea8ff] focus:ring-2 focus:ring-[#d9eaff]"
                 />
 
                 <button
@@ -144,6 +175,8 @@ export default function Login() {
               <label className="inline-flex cursor-pointer items-center text-gray-600">
                 <input
                   type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
                   className="mr-2 h-4 w-4 rounded border-gray-300"
                 />
                 <span>Se souvenir de moi</span>
@@ -160,7 +193,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="mt-3 h-13 w-full rounded-md bg-[#173d6b] text-[17px] font-bold text-white shadow-lg transition hover:bg-[#0f2f55] disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-3 h-12 w-full rounded-md bg-[#173d6b] text-[17px] font-bold text-white shadow-lg transition hover:bg-[#0f2f55] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting ? "Connexion..." : "Se connecter"}
             </button>
