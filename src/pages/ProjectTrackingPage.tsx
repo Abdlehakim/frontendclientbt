@@ -197,7 +197,7 @@ export default function ProjectTrackingPage() {
                 Date
               </th>
               <th className="py-2 text-center text-sm font-medium">
-                Projet / Chantier
+                Chantier
               </th>
               <th className="py-2 text-center text-sm font-medium">
                 Titre
@@ -238,9 +238,6 @@ export default function ProjectTrackingPage() {
                   <td className="px-2 py-2 text-center">
                     <div className="truncate font-semibold">
                       {report.project.chantierName}
-                    </div>
-                    <div className="truncate text-xs text-slate-500">
-                      {report.project.responsable ?? "—"}
                     </div>
                   </td>
                   <td className="truncate px-2 py-2 text-center">
