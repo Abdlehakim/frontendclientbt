@@ -22,6 +22,98 @@ const fieldClass =
   "border-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 " +
   "placeholder:text-emerald-800/60";
 
+const DAY_IN_MILLISECONDS = 86_400_000;
+
+function dateOnlyMilliseconds(
+  value: string,
+): number | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return null;
+  }
+
+  const match =
+    /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+
+  const milliseconds = Date.UTC(
+    year,
+    month - 1,
+    day,
+  );
+
+  const date = new Date(milliseconds);
+
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return milliseconds;
+}
+
+function millisecondsToDateOnly(
+  milliseconds: number,
+): string {
+  return new Date(milliseconds)
+    .toISOString()
+    .slice(0, 10);
+}
+
+function addDaysToDateOnly(
+  value: string,
+  days: number,
+): string | null {
+  const start =
+    dateOnlyMilliseconds(value);
+
+  if (
+    start === null ||
+    !Number.isInteger(days) ||
+    days < 0
+  ) {
+    return null;
+  }
+
+  return millisecondsToDateOnly(
+    start +
+      days * DAY_IN_MILLISECONDS,
+  );
+}
+
+function calculateMaturityDays(
+  startDate: string,
+  endDate: string,
+): number | null {
+  const start =
+    dateOnlyMilliseconds(startDate);
+  const end =
+    dateOnlyMilliseconds(endDate);
+
+  if (
+    start === null ||
+    end === null ||
+    end < start
+  ) {
+    return null;
+  }
+
+  const difference =
+    (end - start) /
+    DAY_IN_MILLISECONDS;
+
+  return Number.isInteger(difference)
+    ? difference
+    : null;
+}
+
 type CompressionSeriesModalProps = {
   open: boolean;
   mode: "create" | "edit";
@@ -29,6 +121,7 @@ type CompressionSeriesModalProps = {
     | CompressionSeriesInput
     | null;
   initialSpecimenCount: number;
+  pourDate: string;
   onClose: () => void;
   onSubmit: (
     payload: CompressionSeriesModalPayload,
@@ -112,6 +205,7 @@ export default function CompressionSeriesModal({
   mode,
   initialValue,
   initialSpecimenCount,
+  pourDate,
   onClose,
   onSubmit,
 }: CompressionSeriesModalProps) {
@@ -128,26 +222,41 @@ export default function CompressionSeriesModal({
         ? String(initialSpecimenCount)
         : "6",
     );
+  const [maturityDays, setMaturityDays] =
+    useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!open) return;
 
-    setSeries(
-      normalizeSeries(
-        initialValue,
-      ),
-    );
+    const normalizedSeries =
+      normalizeSeries(initialValue);
+
+    setSeries(normalizedSeries);
     setSpecimenCount(
       initialSpecimenCount > 0
         ? String(initialSpecimenCount)
         : "6",
     );
+
+    const existingMaturity =
+      calculateMaturityDays(
+        pourDate,
+        normalizedSeries.crushingDate,
+      );
+
+    setMaturityDays(
+      existingMaturity === null
+        ? ""
+        : String(existingMaturity),
+    );
+
     setError("");
   }, [
     initialSpecimenCount,
     initialValue,
     open,
+    pourDate,
   ]);
 
   useEffect(() => {
@@ -220,13 +329,124 @@ export default function CompressionSeriesModal({
     setError("");
   };
 
+  const updateMaturityDays = (
+    value: string,
+  ) => {
+    setMaturityDays(value);
+    setError("");
+
+    if (value === "") {
+      setSeries((current) => ({
+        ...current,
+        crushingDate: "",
+      }));
+      return;
+    }
+
+    const parsedValue = Number(value);
+
+    if (
+      !Number.isInteger(parsedValue) ||
+      parsedValue < 0
+    ) {
+      return;
+    }
+
+    const calculatedDate =
+      addDaysToDateOnly(
+        pourDate,
+        parsedValue,
+      );
+
+    if (!calculatedDate) {
+      return;
+    }
+
+    setSeries((current) => ({
+      ...current,
+      crushingDate:
+        calculatedDate,
+    }));
+  };
+
+  const updateCrushingDate = (
+    value: string,
+  ) => {
+    setSeries((current) => ({
+      ...current,
+      crushingDate: value,
+    }));
+
+    if (value === "") {
+      setMaturityDays("");
+      setError("");
+      return;
+    }
+
+    const calculatedMaturity =
+      calculateMaturityDays(
+        pourDate,
+        value,
+      );
+
+    setMaturityDays(
+      calculatedMaturity === null
+        ? ""
+        : String(calculatedMaturity),
+    );
+
+    setError("");
+  };
+
   const submit = (
     event: FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
 
+    const parsedMaturity =
+      Number(maturityDays);
+
+    if (
+      dateOnlyMilliseconds(pourDate) === null
+    ) {
+      setError(
+        "La date de coulage / prélèvement est invalide.",
+      );
+      return;
+    }
+
+    if (
+      maturityDays === "" ||
+      !Number.isInteger(parsedMaturity) ||
+      parsedMaturity < 0
+    ) {
+      setError(
+        "La maturité doit être un nombre entier supérieur ou égal à zéro.",
+      );
+      return;
+    }
+
+    const calculatedCrushingDate =
+      addDaysToDateOnly(
+        pourDate,
+        parsedMaturity,
+      );
+
+    if (!calculatedCrushingDate) {
+      setError(
+        "Impossible de calculer la date d’écrasement.",
+      );
+      return;
+    }
+
+    const normalizedSeries: CompressionSeriesInput = {
+      ...series,
+      crushingDate:
+        calculatedCrushingDate,
+    };
+
     const validationError =
-      validateSeries(series);
+      validateSeries(normalizedSeries);
 
     if (validationError) {
       setError(validationError);
@@ -254,12 +474,13 @@ export default function CompressionSeriesModal({
         normalizedSpecimenCount,
       series: {
         crushingDate:
-          series.crushingDate,
+          calculatedCrushingDate,
         reference:
-          series.reference?.trim() || null,
+          normalizedSeries.reference
+            ?.trim() || null,
         sortOrder:
-          series.sortOrder,
-        results: series.results.map(
+          normalizedSeries.sortOrder,
+        results: normalizedSeries.results.map(
           (result, index) => ({
             specimenNumber: index + 1,
             value: result.value,
@@ -312,7 +533,25 @@ export default function CompressionSeriesModal({
           </div>
 
           <div className="max-h-[75vh] overflow-y-auto p-5">
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div className="flex flex-col">
+                <label className="mb-1 text-xs font-semibold text-gray-700">
+                  Maturité JRS
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={maturityDays}
+                  onChange={(event) => {
+                    updateMaturityDays(
+                      event.target.value,
+                    );
+                  }}
+                  className={fieldClass}
+                />
+              </div>
+
               <div className="flex flex-col">
                 <label className="mb-1 text-xs font-semibold text-gray-700">
                   Date d’écrasement
@@ -321,12 +560,9 @@ export default function CompressionSeriesModal({
                   type="date"
                   value={series.crushingDate}
                   onChange={(event) => {
-                    setSeries((current) => ({
-                      ...current,
-                      crushingDate:
-                        event.target.value,
-                    }));
-                    setError("");
+                    updateCrushingDate(
+                      event.target.value,
+                    );
                   }}
                   className={fieldClass}
                 />

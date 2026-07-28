@@ -43,6 +43,7 @@ type SeriesModalState = {
   seriesIndex: number;
   initialValue: CompressionSeriesInput;
   initialSpecimenCount: number;
+  pourDate: string;
 } | null;
 
 export function createEmptyCompressionResults(
@@ -317,6 +318,7 @@ export default function CompressionSamplesTable({
         sample.specimenCount > 0
           ? sample.specimenCount
           : 6,
+      pourDate: sample.pourDate,
     });
   };
 
@@ -348,6 +350,7 @@ export default function CompressionSamplesTable({
         sample.specimenCount > 0
           ? sample.specimenCount
           : 6,
+      pourDate: sample.pourDate,
     });
   };
 
@@ -473,6 +476,9 @@ export default function CompressionSamplesTable({
         initialSpecimenCount={
           seriesModalState
             ?.initialSpecimenCount ?? 6
+        }
+        pourDate={
+          seriesModalState?.pourDate ?? ""
         }
         onClose={() => {
           setSeriesModalState(null);
