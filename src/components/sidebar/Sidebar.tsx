@@ -81,6 +81,26 @@ export default function Sidebar() {
 
   const visibleItems = useMemo(() => filterSidebarItems(sidebarItems, hasPermission), [hasPermission]);
 
+  const activeHref = useMemo(() => {
+    const current = normalizePath(pathname || "/");
+
+    const matchingHrefs = Array.from(
+      new Set(
+        collectHrefs(visibleItems)
+          .map(normalizePath)
+          .filter(Boolean),
+      ),
+    )
+      .filter((href) =>
+        href === "/app"
+          ? current === href
+          : current === href || current.startsWith(`${href}/`),
+      )
+      .sort((left, right) => right.length - left.length);
+
+    return matchingHrefs[0] ?? "";
+  }, [pathname, visibleItems]);
+
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window === "undefined") return true;
 
@@ -112,12 +132,10 @@ export default function Sidebar() {
   const isHrefActive = useCallback(
     (to?: string) => {
       if (!to) return false;
-      const cur = normalizePath(pathname || "/");
-      const target = normalizePath(to);
-      if (target === "/app") return cur === target;
-      return cur === target || cur.startsWith(target + "/");
+
+      return normalizePath(to) === activeHref;
     },
-    [pathname]
+    [activeHref]
   );
 
   const isSectionActive = useCallback(

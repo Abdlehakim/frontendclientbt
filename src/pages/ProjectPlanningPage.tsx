@@ -27,122 +27,138 @@ type PlanningEvent = {
 
 const START_HOUR = 8;
 const END_HOUR = 18;
-const HOUR_HEIGHT = 56;
+const HOUR_HEIGHT = 62;
 const TOTAL_HOURS = END_HOUR - START_HOUR;
 const CALENDAR_HEIGHT = TOTAL_HOURS * HOUR_HEIGHT;
 
 const PLANNING_EVENTS: PlanningEvent[] = [
   {
-    id: "monday-client-meeting",
+    id: "monday-site-meeting",
     dayIndex: 0,
     start: "09:00",
-    end: "10:00",
-    title: "Réunion client",
+    end: "10:30",
+    title: "Réunion de chantier",
     category: "CALL",
   },
   {
-    id: "monday-quote-preparation",
+    id: "monday-concrete-study",
     dayIndex: 0,
     start: "11:00",
-    end: "12:00",
-    title: "Préparation devis",
-    category: "DEVIS",
+    end: "12:30",
+    title: "Étude béton",
+    category: "CHANTIER",
   },
   {
-    id: "monday-project-follow-up",
+    id: "monday-plan-check",
     dayIndex: 0,
     start: "14:00",
     end: "15:30",
-    title: "Suivi projet",
-    category: "SUIVI",
+    title: "Vérification plans",
+    category: "DEVIS",
   },
   {
     id: "monday-supplier-call",
     dayIndex: 0,
-    start: "16:30",
-    end: "17:30",
-    title: "Appel fournisseur",
-    category: "ACHAT",
-  },
-  {
-    id: "tuesday-site-visit",
-    dayIndex: 1,
-    start: "10:00",
-    end: "11:30",
-    title: "Visite chantier",
-    category: "CHANTIER",
-  },
-  {
-    id: "tuesday-material-purchase",
-    dayIndex: 1,
-    start: "15:00",
-    end: "16:00",
-    title: "Achat matériaux",
-    category: "CALL",
-  },
-  {
-    id: "wednesday-quote-preparation",
-    dayIndex: 2,
-    start: "09:00",
-    end: "10:30",
-    title: "Préparation devis",
-    category: "DEVIS",
-  },
-  {
-    id: "wednesday-project-follow-up",
-    dayIndex: 2,
-    start: "14:00",
-    end: "15:00",
-    title: "Suivi projet",
-    category: "SUIVI",
-  },
-  {
-    id: "thursday-client-meeting",
-    dayIndex: 3,
-    start: "11:00",
-    end: "12:00",
-    title: "Réunion client",
-    category: "CALL",
-  },
-  {
-    id: "thursday-plan-approval",
-    dayIndex: 3,
-    start: "15:00",
-    end: "16:30",
-    title: "Validation plan",
-    category: "CHANTIER",
-  },
-  {
-    id: "friday-project-follow-up",
-    dayIndex: 4,
-    start: "09:30",
-    end: "10:30",
-    title: "Suivi projet",
-    category: "SUIVI",
-  },
-  {
-    id: "friday-site-visit",
-    dayIndex: 4,
-    start: "13:30",
-    end: "14:30",
-    title: "Visite chantier",
-    category: "CHANTIER",
-  },
-  {
-    id: "friday-supplier-call",
-    dayIndex: 4,
     start: "16:00",
     end: "17:00",
     title: "Appel fournisseur",
     category: "ACHAT",
   },
   {
-    id: "saturday-quote-preparation",
-    dayIndex: 5,
+    id: "tuesday-supply-follow-up",
+    dayIndex: 1,
     start: "10:00",
     end: "11:30",
-    title: "Préparation devis",
+    title: "Suivi approvisionnement",
+    category: "ACHAT",
+  },
+  {
+    id: "tuesday-formwork-preparation",
+    dayIndex: 1,
+    start: "13:30",
+    end: "15:30",
+    title: "Préparation coffrage",
+    category: "SUIVI",
+  },
+  {
+    id: "tuesday-progress-point",
+    dayIndex: 1,
+    start: "16:00",
+    end: "17:00",
+    title: "Point d’avancement",
+    category: "CALL",
+  },
+  {
+    id: "wednesday-quality-control",
+    dayIndex: 2,
+    start: "09:00",
+    end: "10:30",
+    title: "Contrôle qualité",
     category: "DEVIS",
+  },
+  {
+    id: "wednesday-team-meeting",
+    dayIndex: 2,
+    start: "11:00",
+    end: "12:00",
+    title: "Réunion équipe",
+    category: "CALL",
+  },
+  {
+    id: "wednesday-rebar-study",
+    dayIndex: 2,
+    start: "14:00",
+    end: "16:00",
+    title: "Étude ferraillage",
+    category: "CHANTIER",
+  },
+  {
+    id: "thursday-material-delivery",
+    dayIndex: 3,
+    start: "08:30",
+    end: "10:00",
+    title: "Livraison matériel",
+    category: "ACHAT",
+  },
+  {
+    id: "thursday-site-follow-up",
+    dayIndex: 3,
+    start: "11:00",
+    end: "12:30",
+    title: "Suivi chantier",
+    category: "SUIVI",
+  },
+  {
+    id: "thursday-client-meeting",
+    dayIndex: 3,
+    start: "15:00",
+    end: "16:30",
+    title: "Réunion client",
+    category: "CALL",
+  },
+  {
+    id: "friday-concrete-quantity",
+    dayIndex: 4,
+    start: "09:00",
+    end: "10:30",
+    title: "Métré béton",
+    category: "CHANTIER",
+  },
+  {
+    id: "friday-technical-analysis",
+    dayIndex: 4,
+    start: "13:30",
+    end: "15:00",
+    title: "Analyse technique",
+    category: "DEVIS",
+  },
+  {
+    id: "friday-weekly-report",
+    dayIndex: 4,
+    start: "16:00",
+    end: "17:00",
+    title: "Rapport hebdo",
+    category: "ACHAT",
   },
 ];
 
@@ -218,18 +234,20 @@ function capitalize(value: string): string {
 }
 
 function formatDayName(value: Date): string {
-  return capitalize(
-    new Intl.DateTimeFormat("fr-FR", {
-      weekday: "long",
-    }).format(value),
-  );
+  const shortDay = new Intl.DateTimeFormat("fr-FR", {
+    weekday: "short",
+  })
+    .format(value)
+    .replace(/\.$/, "");
+
+  return capitalize(shortDay);
 }
 
 function formatDayDate(value: Date): string {
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "numeric",
-    month: "short",
-  }).format(value);
+  const day = String(value.getDate()).padStart(2, "0");
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+
+  return `${day}/${month}`;
 }
 
 function formatWeekRange(weekStart: Date): string {
@@ -337,9 +355,9 @@ export default function ProjectPlanningPage() {
   }
 
   return (
-    <div className="mx-auto px-4 py-4 flex flex-col gap-4 min-h-full bg-green-50 rounded-xl">
+    <div className="mx-auto px-4 py-4 flex flex-col gap-4 min-h-full rounded-xl bg-[#f5fbf7]">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-3xl font-bold uppercase">
+        <h1 className="text-4xl font-bold uppercase leading-none">
           Planification
         </h1>
 
@@ -348,21 +366,21 @@ export default function ProjectPlanningPage() {
           disabled
           aria-disabled="true"
           title="Ajout de tâche bientôt disponible"
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-(--primary) px-4 font-semibold text-white opacity-100 shadow-sm transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-100"
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-(--primary) px-5 font-medium text-white opacity-100 shadow-sm transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-100"
         >
           <FiPlus aria-hidden="true" size={18} />
           Ajouter une tâche
         </button>
       </div>
 
-      <div className="grid grid-cols-1 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm lg:grid-cols-[1fr_auto_1fr]">
+      <div className="grid grid-cols-1 items-center gap-3 px-0 py-1 lg:grid-cols-[1fr_auto_1fr]">
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             aria-label="Afficher la semaine précédente"
             title="Semaine précédente"
             onClick={goToPreviousWeek}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-800 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
           >
             <FiChevronLeft aria-hidden="true" size={20} />
           </button>
@@ -372,7 +390,7 @@ export default function ProjectPlanningPage() {
             aria-label="Afficher la semaine suivante"
             title="Semaine suivante"
             onClick={goToNextWeek}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-800 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
           >
             <FiChevronRight aria-hidden="true" size={20} />
           </button>
@@ -382,13 +400,13 @@ export default function ProjectPlanningPage() {
             aria-label="Revenir à la semaine actuelle"
             title="Aujourd'hui"
             onClick={goToToday}
-            className="inline-flex h-10 items-center justify-center rounded-md border border-slate-200 bg-white px-4 font-medium text-slate-800 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
+            className="inline-flex h-10 items-center justify-center rounded-md border border-slate-200 bg-white px-4 font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
           >
             Aujourd&apos;hui
           </button>
         </div>
 
-        <div className="flex items-center justify-center gap-2 whitespace-nowrap text-lg font-bold text-slate-800">
+        <div className="flex items-center justify-center gap-2 whitespace-nowrap text-lg font-bold text-slate-900">
           <span>{formatWeekRange(weekStart)}</span>
           <FiChevronDown
             aria-hidden="true"
@@ -403,7 +421,7 @@ export default function ProjectPlanningPage() {
             disabled
             aria-disabled="true"
             title="Sélection de vue bientôt disponible"
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-4 font-medium text-slate-800 opacity-100 shadow-sm disabled:cursor-not-allowed disabled:opacity-100"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-4 font-medium text-slate-700 opacity-100 shadow-sm disabled:cursor-not-allowed disabled:opacity-100"
           >
             <FiCalendar
               aria-hidden="true"
@@ -433,7 +451,7 @@ export default function ProjectPlanningPage() {
                 "72px repeat(7, minmax(145px, 1fr))",
             }}
           >
-            <div className="h-24 border-r border-slate-200 bg-white" />
+            <div className="h-16 border-r border-slate-200 bg-white" />
             {weekDays.map((day, index) => {
               const isCurrentDay = isSameLocalDay(day, today);
               const weekend = isWeekend(day);
@@ -442,9 +460,9 @@ export default function ProjectPlanningPage() {
                 <div
                   key={day.toISOString()}
                   className={[
-                    "flex h-24 flex-col items-center justify-center px-2 text-center",
+                    "flex h-16 flex-col items-center justify-center px-2 text-center",
                     isCurrentDay
-                      ? "bg-emerald-100/80"
+                      ? "bg-emerald-50"
                       : "bg-white",
                     index < weekDays.length - 1
                       ? "border-r border-slate-200"
@@ -453,26 +471,16 @@ export default function ProjectPlanningPage() {
                 >
                   <div
                     className={[
-                      "font-semibold",
+                      "whitespace-nowrap text-sm font-semibold",
                       weekend
-                        ? "text-red-600"
+                        ? "text-red-500"
                         : "text-slate-900",
                     ].join(" ")}
                   >
-                    {formatDayName(day)}
-                  </div>
-                  <div
-                    className={[
-                      "mt-1 text-sm",
-                      weekend
-                        ? "text-red-500"
-                        : "text-slate-500",
-                    ].join(" ")}
-                  >
-                    {formatDayDate(day)}
+                    {formatDayName(day)} {formatDayDate(day)}
                   </div>
                   {isCurrentDay ? (
-                    <span className="mt-1 rounded-full bg-green-500 px-2.5 py-0.5 text-[10px] font-bold uppercase text-white">
+                    <span className="mt-1 rounded-full bg-green-500 px-2.5 py-0.5 text-[10px] font-bold uppercase leading-none text-white">
                       Aujourd&apos;hui
                     </span>
                   ) : null}
@@ -528,7 +536,7 @@ export default function ProjectPlanningPage() {
                   className={[
                     "relative overflow-hidden",
                     isCurrentDay
-                      ? "bg-emerald-50/40"
+                      ? "bg-emerald-50/50"
                       : "bg-white",
                     dayIndex < weekDays.length - 1
                       ? "border-r border-slate-200"
@@ -577,7 +585,7 @@ export default function ProjectPlanningPage() {
                         key={event.id}
                         aria-label={`${event.title}, ${event.start} à ${event.end}`}
                         className={[
-                          "absolute z-10 overflow-hidden rounded-md border border-l-4 px-2 py-1 pr-6 text-xs shadow-sm",
+                          "absolute z-10 overflow-hidden rounded-md border border-l-4 px-2.5 py-2 pr-7 text-xs shadow-sm",
                           config.cardClass,
                           config.accentClass,
                         ].join(" ")}
@@ -596,11 +604,11 @@ export default function ProjectPlanningPage() {
                             aria-hidden="true"
                             className={`mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full ${config.dotClass}`}
                           />
-                          <div className="min-w-0 text-[11px] font-semibold leading-3 text-slate-900">
+                          <div className="min-w-0 text-xs font-semibold leading-tight text-slate-900">
                             {event.title}
                           </div>
                         </div>
-                        <div className="mt-0.5 text-[10px] font-medium leading-3 text-slate-600">
+                        <div className="mt-1 text-[11px] font-medium leading-tight text-slate-600">
                           {event.start} – {event.end}
                         </div>
                         <FiMoreHorizontal
@@ -619,7 +627,7 @@ export default function ProjectPlanningPage() {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
-        <div className="flex flex-1 flex-wrap items-center justify-center gap-x-7 gap-y-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm sm:justify-start">
+        <div className="flex flex-1 flex-wrap items-center justify-around gap-x-6 gap-y-3 rounded-md border border-slate-200 bg-white px-5 py-3 text-sm text-slate-700">
           {LEGEND_CATEGORIES.map((category) => {
             const config = CATEGORY_CONFIG[category];
 
@@ -630,7 +638,7 @@ export default function ProjectPlanningPage() {
               >
                 <span
                   aria-hidden="true"
-                  className={`h-3 w-3 shrink-0 rounded-sm ${config.dotClass}`}
+                  className={`h-3.5 w-3.5 shrink-0 rounded-sm ${config.dotClass}`}
                 />
                 <span>{config.label}</span>
               </div>
@@ -643,7 +651,7 @@ export default function ProjectPlanningPage() {
           disabled
           aria-disabled="true"
           title="Gestion des catégories bientôt disponible"
-          className="inline-flex h-11 items-center justify-center gap-2 self-stretch rounded-xl border border-slate-200 bg-white px-4 font-medium text-slate-800 opacity-100 shadow-sm disabled:cursor-not-allowed disabled:opacity-100 sm:self-auto"
+          className="inline-flex h-12 items-center justify-center gap-2 self-stretch rounded-md border border-slate-200 bg-white px-5 font-medium text-slate-700 opacity-100 disabled:cursor-not-allowed disabled:opacity-100 sm:self-auto"
         >
           <FiSettings
             aria-hidden="true"
