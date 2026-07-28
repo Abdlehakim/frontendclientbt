@@ -24,7 +24,7 @@ const numberFormatter = new Intl.NumberFormat("fr-FR", {
 });
 
 const inputClassName =
-  "w-full min-w-20 rounded border border-slate-300 bg-white px-1.5 py-1 text-xs text-slate-900";
+  "h-7 w-full min-w-0 rounded border border-slate-300 bg-white px-1 py-0.5 text-[10px] leading-tight text-slate-900";
 
 export type CompressionSamplesTableProps = {
   readOnly: boolean;
@@ -194,6 +194,9 @@ export default function CompressionSamplesTable({
   const [actionError, setActionError] = useState("");
   const [sampleModalOpen, setSampleModalOpen] =
     useState(false);
+  const useCompactLayout = resultColumnCount <= 4;
+  const resultColumnWidth =
+    20 / Math.max(resultColumnCount, 1);
 
   const replaceSample = (
     sampleIndex: number,
@@ -431,34 +434,76 @@ export default function CompressionSamplesTable({
         </div>
       ) : null}
 
-      <div className="overflow-x-auto rounded-lg border border-slate-300 bg-white">
+      <div
+        className={[
+          useCompactLayout
+            ? "overflow-x-hidden"
+            : "overflow-x-auto",
+          "rounded-lg border border-slate-300 bg-white",
+        ].join(" ")}
+      >
         <table
-          className="w-full table-fixed border-collapse text-xs"
-          style={{
-            minWidth: Math.max(
-              1650,
-              1290 + resultColumnCount * 145,
-            ),
-          }}
+          className="w-full table-fixed border-collapse text-[10px] leading-tight"
+          style={
+            useCompactLayout
+              ? undefined
+              : {
+                  minWidth: Math.max(
+                    1650,
+                    1290 + resultColumnCount * 145,
+                  ),
+                }
+          }
         >
+          <colgroup>
+            <col style={{ width: "3%" }} />
+            <col style={{ width: "5%" }} />
+            <col style={{ width: "5%" }} />
+            <col style={{ width: "5%" }} />
+            <col style={{ width: "10%" }} />
+
+            <col style={{ width: "7%" }} />
+            <col style={{ width: "7%" }} />
+            <col style={{ width: "7%" }} />
+
+            <col style={{ width: "5%" }} />
+            <col style={{ width: "7%" }} />
+            <col style={{ width: "5%" }} />
+
+            {Array.from(
+              { length: resultColumnCount },
+              (_, index) => (
+                <col
+                  key={`ep-column-${index + 1}`}
+                  style={{
+                    width: `${resultColumnWidth}%`,
+                  }}
+                />
+              ),
+            )}
+
+            <col style={{ width: "5%" }} />
+            <col style={{ width: "9%" }} />
+          </colgroup>
+
           <thead className="bg-(--primary) text-white">
             <tr>
-              <th rowSpan={2} className="w-14 border border-white/30 px-2 py-2">N°</th>
-              <th rowSpan={2} className="w-28 border border-white/30 px-2 py-2">Dosage</th>
-              <th rowSpan={2} className="w-28 border border-white/30 px-2 py-2">Ciment</th>
-              <th rowSpan={2} className="w-28 border border-white/30 px-2 py-2">Adjuvant</th>
-              <th rowSpan={2} className="w-44 border border-white/30 px-2 py-2">Désignation</th>
-              <th rowSpan={2} className="w-32 border border-white/30 px-2 py-2">Date coulage / prélèvement</th>
-              <th rowSpan={2} className="w-32 border border-white/30 px-2 py-2">Date d’envoi éprouvette</th>
-              <th rowSpan={2} className="w-32 border border-white/30 px-2 py-2">Date d’écrasement</th>
-              <th rowSpan={2} className="w-24 border border-white/30 px-2 py-2">Nbr éprouvettes</th>
-              <th rowSpan={2} className="w-32 border border-white/30 px-2 py-2">Réf</th>
-              <th rowSpan={2} className="w-24 border border-white/30 px-2 py-2">Maturité jours</th>
-              <th colSpan={resultColumnCount} className="border border-white/30 px-2 py-2">
+              <th rowSpan={2} className="border border-white/30 px-1 py-1">N°</th>
+              <th rowSpan={2} className="border border-white/30 px-1 py-1">Dosage</th>
+              <th rowSpan={2} className="border border-white/30 px-1 py-1">Ciment</th>
+              <th rowSpan={2} className="border border-white/30 px-1 py-1">Adjuvant</th>
+              <th rowSpan={2} className="border border-white/30 px-1 py-1">Désignation</th>
+              <th rowSpan={2} className="border border-white/30 px-1 py-1 whitespace-normal break-words leading-tight">Date coulage / prélèvement</th>
+              <th rowSpan={2} className="border border-white/30 px-1 py-1 whitespace-normal break-words leading-tight">Date d’envoi éprouvette</th>
+              <th rowSpan={2} className="border border-white/30 px-1 py-1 whitespace-normal break-words leading-tight">Date d’écrasement</th>
+              <th rowSpan={2} className="border border-white/30 px-1 py-1 whitespace-normal break-words leading-tight">Nbr éprouvettes</th>
+              <th rowSpan={2} className="border border-white/30 px-1 py-1">Réf</th>
+              <th rowSpan={2} className="border border-white/30 px-1 py-1 whitespace-normal break-words leading-tight">Maturité jours</th>
+              <th colSpan={resultColumnCount} className="border border-white/30 px-1 py-1">
                 Résultat
               </th>
-              <th rowSpan={2} className="w-24 border border-white/30 px-2 py-2">Moyenne</th>
-              <th rowSpan={2} className="no-print w-44 border border-white/30 px-2 py-2">Actions</th>
+              <th rowSpan={2} className="border border-white/30 px-1 py-1">Moyenne</th>
+              <th rowSpan={2} className="no-print border border-white/30 px-1 py-1">Actions</th>
             </tr>
             <tr>
               {Array.from(
@@ -466,7 +511,7 @@ export default function CompressionSamplesTable({
                 (_, index) => (
                   <th
                     key={`ep-header-${index + 1}`}
-                    className="w-36 border border-white/30 px-2 py-2"
+                    className="border border-white/30 px-1 py-1"
                   >
                     EP{index + 1}
                   </th>
@@ -493,7 +538,7 @@ export default function CompressionSamplesTable({
                   >
                     {seriesIndex === 0 ? (
                       <>
-                        <td rowSpan={sample.series.length} className="border border-slate-300 p-1 text-center">
+                        <td rowSpan={sample.series.length} className="border border-slate-300 p-0.5 text-center">
                           {readOnly ? (
                             sample.sequenceNumber
                           ) : (
@@ -513,7 +558,7 @@ export default function CompressionSamplesTable({
                             />
                           )}
                         </td>
-                        <td rowSpan={sample.series.length} className="border border-slate-300 p-1">
+                        <td rowSpan={sample.series.length} className="border border-slate-300 p-0.5">
                           {readOnly ? (
                             sample.dosage || "—"
                           ) : (
@@ -530,7 +575,7 @@ export default function CompressionSamplesTable({
                             />
                           )}
                         </td>
-                        <td rowSpan={sample.series.length} className="border border-slate-300 p-1">
+                        <td rowSpan={sample.series.length} className="border border-slate-300 p-0.5">
                           {readOnly ? (
                             sample.cement || "—"
                           ) : (
@@ -547,7 +592,7 @@ export default function CompressionSamplesTable({
                             />
                           )}
                         </td>
-                        <td rowSpan={sample.series.length} className="border border-slate-300 p-1">
+                        <td rowSpan={sample.series.length} className="border border-slate-300 p-0.5">
                           {readOnly ? (
                             sample.admixture?.trim() || "—"
                           ) : (
@@ -564,7 +609,7 @@ export default function CompressionSamplesTable({
                             />
                           )}
                         </td>
-                        <td rowSpan={sample.series.length} className="border border-slate-300 p-1">
+                        <td rowSpan={sample.series.length} className="border border-slate-300 p-0.5">
                           {readOnly ? (
                             sample.designation || "—"
                           ) : (
@@ -576,11 +621,11 @@ export default function CompressionSamplesTable({
                                   designation: event.target.value,
                                 })
                               }
-                              className={`${inputClassName} min-h-16 resize-y`}
+                              className={`${inputClassName} h-8 min-h-8 resize-y`}
                             />
                           )}
                         </td>
-                        <td rowSpan={sample.series.length} className="border border-slate-300 p-1 text-center">
+                        <td rowSpan={sample.series.length} className="border border-slate-300 p-0.5 text-center">
                           {readOnly ? (
                             sample.pourDate || "—"
                           ) : (
@@ -597,7 +642,7 @@ export default function CompressionSamplesTable({
                             />
                           )}
                         </td>
-                        <td rowSpan={sample.series.length} className="border border-slate-300 p-1 text-center">
+                        <td rowSpan={sample.series.length} className="border border-slate-300 p-0.5 text-center">
                           {readOnly ? (
                             sample.specimenSendDate || "—"
                           ) : (
@@ -618,7 +663,7 @@ export default function CompressionSamplesTable({
                       </>
                     ) : null}
 
-                    <td className="border border-slate-300 p-1 text-center">
+                    <td className="border border-slate-300 p-0.5 text-center">
                       {readOnly ? (
                         series.crushingDate || "—"
                       ) : (
@@ -641,7 +686,7 @@ export default function CompressionSamplesTable({
                     </td>
 
                     {seriesIndex === 0 ? (
-                      <td rowSpan={sample.series.length} className="border border-slate-300 p-1 text-center">
+                      <td rowSpan={sample.series.length} className="border border-slate-300 p-0.5 text-center">
                         {readOnly ? (
                           sample.specimenCount
                         ) : (
@@ -664,7 +709,7 @@ export default function CompressionSamplesTable({
                       </td>
                     ) : null}
 
-                    <td className="border border-slate-300 p-1">
+                    <td className="border border-slate-300 p-0.5">
                       {readOnly ? (
                         series.reference?.trim() || "—"
                       ) : (
@@ -685,19 +730,19 @@ export default function CompressionSamplesTable({
                         />
                       )}
                     </td>
-                    <td className="border border-slate-300 p-1 text-center font-semibold">
+                    <td className="border border-slate-300 p-0.5 text-center font-semibold">
                       {maturity === null ? "—" : maturity}
                     </td>
 
                     {series.results.map((result, resultIndex) => (
                       <td
                         key={`${sampleIndex}-${seriesIndex}-${result.specimenNumber}`}
-                        className="border border-slate-300 p-1 text-center"
+                        className="border border-slate-300 p-0.5 text-center"
                       >
                         {readOnly ? (
                           displayResult(result)
                         ) : (
-                          <div className="space-y-1">
+                          <div className="space-y-0.5">
                             <select
                               value={result.status}
                               onChange={(event) => {
@@ -780,17 +825,17 @@ export default function CompressionSamplesTable({
                       </td>
                     ))}
 
-                    <td className="border border-slate-300 p-1 text-center font-semibold">
+                    <td className="border border-slate-300 p-0.5 text-center font-semibold">
                       {formatCompressionNumber(average)}
                     </td>
-                    <td className="no-print border border-slate-300 p-1">
+                    <td className="no-print border border-slate-300 p-0.5">
                       {!readOnly ? (
                         <div className="flex flex-col gap-1">
                           {seriesIndex === 0 ? (
                             <>
                               <button
                                 type="button"
-                                className="rounded border border-slate-300 bg-white px-2 py-1 text-[11px] hover:bg-slate-50"
+                                className="rounded border border-slate-300 bg-white px-1 py-0.5 text-[9px] leading-tight hover:bg-slate-50"
                                 onClick={() =>
                                   addSeries(sampleIndex)
                                 }
@@ -799,7 +844,7 @@ export default function CompressionSamplesTable({
                               </button>
                               <button
                                 type="button"
-                                className="rounded border border-red-200 bg-white px-2 py-1 text-[11px] text-red-700 hover:bg-red-50"
+                                className="rounded border border-red-200 bg-white px-1 py-0.5 text-[9px] leading-tight text-red-700 hover:bg-red-50"
                                 onClick={() =>
                                   removeSample(sampleIndex)
                                 }
@@ -810,7 +855,7 @@ export default function CompressionSamplesTable({
                           ) : null}
                           <button
                             type="button"
-                            className="rounded border border-slate-300 bg-white px-2 py-1 text-[11px] hover:bg-slate-50"
+                            className="rounded border border-slate-300 bg-white px-1 py-0.5 text-[9px] leading-tight hover:bg-slate-50"
                             onClick={() =>
                               removeSeries(
                                 sampleIndex,
