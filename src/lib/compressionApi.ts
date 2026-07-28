@@ -108,6 +108,11 @@ export type CompressionReportInput = {
 export type CompressionReportCreateInput = CompressionReportInput;
 export type CompressionReportUpdateInput = CompressionReportInput;
 
+export type CompressionReportDraftCreateInput = {
+  projectId: string;
+  name: string;
+};
+
 export class CompressionApiError extends Error {
   status: number;
 
@@ -359,6 +364,16 @@ export const compressionApi = {
 
   createReport: async (payload: CompressionReportCreateInput) => {
     const response = await request(BASE, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    return parseDetailResponse(response);
+  },
+
+  createDraft: async (
+    payload: CompressionReportDraftCreateInput,
+  ) => {
+    const response = await request(`${BASE}/drafts`, {
       method: "POST",
       body: JSON.stringify(payload),
     });

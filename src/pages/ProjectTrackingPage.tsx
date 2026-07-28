@@ -3,6 +3,7 @@ import { FaRegEdit, FaRegEye, FaTrashAlt } from "react-icons/fa";
 import { FaSpinner } from "react-icons/fa6";
 import DeleteConfirmModal from "@/components/common/DeleteConfirmModal";
 import CompressionReportEditor from "@/components/compression/CompressionReportEditor";
+import CreateCompressionReportModal from "@/components/compression/CreateCompressionReportModal";
 import TablePagination from "@/components/tablePagination";
 import {
   compressionApi,
@@ -40,6 +41,7 @@ export default function ProjectTrackingPage() {
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [createOpen, setCreateOpen] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorMode, setEditorMode] =
     useState<EditorMode>("create");
@@ -119,6 +121,14 @@ export default function ProjectTrackingPage() {
     setSelectedReportId(null);
   };
 
+  const handleDraftCreated = async (
+    _item: CompressionReportDetailDTO,
+  ) => {
+    setCurrentPage(1);
+    setCreateOpen(false);
+    await loadReports();
+  };
+
   const handleSaved = async (
     _item: CompressionReportDetailDTO,
   ) => {
@@ -160,7 +170,7 @@ export default function ProjectTrackingPage() {
         <button
           type="button"
           className="btn-fit-white-outline"
-          onClick={() => openEditor("create", null)}
+          onClick={() => setCreateOpen(true)}
         >
           Nouvel essai
         </button>
@@ -328,6 +338,12 @@ export default function ProjectTrackingPage() {
         reportId={selectedReportId}
         onClose={closeEditor}
         onSaved={handleSaved}
+      />
+
+      <CreateCompressionReportModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={handleDraftCreated}
       />
 
       <DeleteConfirmModal
