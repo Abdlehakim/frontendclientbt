@@ -21,6 +21,8 @@ import FerraillagePage from "@/pages/FerraillagePage";
 import FerRapportViewPage from "@/pages/FerRapportViewPage";
 import DashboardPage from "@/pages/DashboardPage";
 import UsersPage from "@/pages/UsersPage";
+import ProjectPlanningPage from "@/pages/ProjectPlanningPage";
+import ProjectTrackingPage from "@/pages/ProjectTrackingPage";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -63,6 +65,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               <Route path={APP_PATHS.dashboard} element={<DashboardPage />} />
               <Route path={APP_PATHS.users} element={<UsersPage />} />
               <Route path={APP_PATHS.projects} element={<FerraillagePage mode="projects" />} />
+              <Route path={APP_PATHS.projectsList} element={<FerraillagePage mode="projects" />} />
+              <Route path={APP_PATHS.projectsPlanning} element={<ProjectPlanningPage />} />
+              <Route path={APP_PATHS.projectsTracking} element={<ProjectTrackingPage />} />
               <Route path={APP_PATHS.ferraillage} element={<FerraillagePage />} />
               <Route
                 path={`${APP_PATHS.ferraillage}/rapports/:rapportId`}

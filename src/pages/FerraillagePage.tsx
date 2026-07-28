@@ -6,7 +6,6 @@ import DeleteConfirmModal from "@/components/common/DeleteConfirmModal";
 import ViewProjectData from "@/components/ferraillage/ViewProjectData";
 import TablePagination from "@/components/tablePagination";
 import { ferraillageApi, type FerRapportDTO, isApiError as isFerApiError } from "@/lib/ferraillageApi";
-import CreateRapportWizard from "@/components/ferraillage/CreateRapportWizard";
 import CreateProjetWizard from "@/components/ferraillage/CreateProjetWizard";
 import EditRapportWizard from "@/components/ferraillage/EditProjectData";
 
@@ -41,7 +40,6 @@ export default function FerraillagePage({
   const [currentPage, setCurrentPage] = useState(1);
   const debounceRef = useRef<number | null>(null);
 
-  const [wizardOpen, setWizardOpen] = useState(false);
   const [projectWizardOpen, setProjectWizardOpen] = useState(false);
 
   const [editOpen, setEditOpen] = useState(false);
@@ -211,17 +209,13 @@ export default function FerraillagePage({
           {isProjectsPage ? "Projets" : "Ferraillage"}
         </h1>
 
-        <div className="flex items-center gap-2">
-          {isProjectsPage ? (
+        {isProjectsPage ? (
+          <div className="flex items-center gap-2">
             <button className="btn-fit-white-outline" type="button" onClick={() => setProjectWizardOpen(true)}>
               Créer Projet
             </button>
-          ) : (
-            <button className="btn-fit-white-outline" type="button" onClick={() => setWizardOpen(true)}>
-              Créer Rapport
-            </button>
-          )}
-        </div>
+          </div>
+        ) : null}
       </div>
 
       <div className="flex justify-between items-end gap-6 h-17.5">
@@ -300,9 +294,6 @@ export default function FerraillagePage({
         <TablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </div>
 
-      {!isProjectsPage ? (
-        <CreateRapportWizard open={wizardOpen} onClose={() => setWizardOpen(false)} />
-      ) : null}
       {isProjectsPage ? (
         <CreateProjetWizard
           open={projectWizardOpen}

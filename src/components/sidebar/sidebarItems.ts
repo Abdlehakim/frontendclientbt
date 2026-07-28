@@ -1,5 +1,12 @@
 import type { IconType } from "react-icons";
-import { FiFolder, FiGrid, FiFileText, FiUsers } from "react-icons/fi";
+import {
+  FiActivity,
+  FiCalendar,
+  FiFileText,
+  FiFolder,
+  FiGrid,
+  FiUsers,
+} from "react-icons/fi";
 import { APP_HREFS } from "@/routes/paths";
 
 export type SidebarItem = {
@@ -29,6 +36,20 @@ export const sidebarItems: SidebarItem[] = [
     name: "Projets",
     to: APP_HREFS.projects,
     icon: FiFolder,
+    permission: "submodule:FERRAILLAGE",
+  },
+
+  {
+    name: "Planification",
+    to: APP_HREFS.projectsPlanning,
+    icon: FiCalendar,
+    permission: "submodule:FERRAILLAGE",
+  },
+
+  {
+    name: "Suivi",
+    to: APP_HREFS.projectsTracking,
+    icon: FiActivity,
     permission: "submodule:FERRAILLAGE",
   },
 
