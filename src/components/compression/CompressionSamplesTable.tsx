@@ -1,4 +1,7 @@
 import { useState } from "react";
+import CompressionSampleModal, {
+  type CompressionSampleModalPayload,
+} from "@/components/compression/CompressionSampleModal";
 import type {
   CompressionResultInput,
   CompressionResultStatus,
@@ -189,6 +192,8 @@ export default function CompressionSamplesTable({
   onResultColumnCountChange,
 }: CompressionSamplesTableProps) {
   const [actionError, setActionError] = useState("");
+  const [sampleModalOpen, setSampleModalOpen] =
+    useState(false);
 
   const replaceSample = (
     sampleIndex: number,
@@ -234,21 +239,56 @@ export default function CompressionSamplesTable({
     });
   };
 
-  const addSample = () => {
+  const openSampleModal = () => {
+    setActionError("");
+    setSampleModalOpen(true);
+  };
+
+  const addSampleFromModal = (
+    payload: CompressionSampleModalPayload,
+  ) => {
     const nextSequenceNumber =
       Math.max(
         0,
         ...samples.map((sample) => sample.sequenceNumber),
       ) + 1;
+
+    const initialSeries =
+      createEmptyCompressionSeries(
+        resultColumnCount,
+        0,
+      );
+
+    const newSample: CompressionSampleInput = {
+      sequenceNumber: nextSequenceNumber,
+      dosage: payload.dosage,
+      cement: payload.cement,
+      admixture:
+        payload.admixture.trim() || null,
+      designation: payload.designation,
+      pourDate: payload.pourDate,
+      specimenSendDate:
+        payload.specimenSendDate || null,
+      specimenCount: payload.specimenCount,
+      sortOrder: samples.length,
+      series: [
+        {
+          ...initialSeries,
+          crushingDate: payload.crushingDate,
+          reference:
+            payload.reference.trim() || null,
+        },
+      ],
+    };
+
     setActionError("");
+
     onSamplesChange([
       ...samples,
-      createEmptyCompressionSample(
-        nextSequenceNumber,
-        samples.length,
-        resultColumnCount,
-      ),
+      newSample,
     ]);
+
+    setSampleModalOpen(false);
   };
 
   const removeSample = (sampleIndex: number) => {
@@ -346,12 +386,20 @@ export default function CompressionSamplesTable({
 
   return (
     <div className="space-y-3">
+      <CompressionSampleModal
+        open={sampleModalOpen}
+        onClose={() => {
+          setSampleModalOpen(false);
+        }}
+        onSubmit={addSampleFromModal}
+      />
+
       {!readOnly ? (
         <div className="flex flex-wrap items-center justify-between gap-2">
           <button
             type="button"
             className="btn-fit-white-outline"
-            onClick={addSample}
+            onClick={openSampleModal}
           >
             Ajouter un prélèvement
           </button>
