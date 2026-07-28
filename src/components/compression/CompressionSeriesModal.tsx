@@ -8,22 +8,12 @@ import { createPortal } from "react-dom";
 import { CiCircleRemove } from "react-icons/ci";
 import type {
   CompressionResultInput,
-  CompressionResultStatus,
   CompressionSeriesInput,
 } from "@/lib/compressionApi";
 
 export type CompressionSeriesModalPayload = {
   series: CompressionSeriesInput;
   specimenCount: number;
-};
-
-const RESULT_STATUS_LABELS: Record<
-  CompressionResultStatus,
-  string
-> = {
-  VALID: "Valide",
-  INVALID: "Invalide",
-  NOT_TESTED: "Non testé",
 };
 
 const fieldClass =
@@ -39,22 +29,11 @@ type CompressionSeriesModalProps = {
     | CompressionSeriesInput
     | null;
   initialSpecimenCount: number;
-  resultColumnCount: number;
   onClose: () => void;
   onSubmit: (
     payload: CompressionSeriesModalPayload,
   ) => void;
 };
-
-function isResultStatus(
-  value: string,
-): value is CompressionResultStatus {
-  return (
-    value === "VALID" ||
-    value === "INVALID" ||
-    value === "NOT_TESTED"
-  );
-}
 
 function createResult(
   specimenNumber: number,
@@ -69,17 +48,29 @@ function createResult(
 
 function normalizeSeries(
   initialValue: CompressionSeriesInput | null,
-  resultColumnCount: number,
 ): CompressionSeriesInput {
   const sourceResults =
     initialValue?.results ?? [];
 
-  const resultsByNumber = new Map(
-    sourceResults.map((result) => [
-      result.specimenNumber,
-      result,
-    ]),
-  );
+  const normalizedResults =
+    sourceResults.length > 0
+      ? sourceResults.map(
+          (result, index) => ({
+            specimenNumber: index + 1,
+            value:
+              typeof result.value === "number" &&
+              Number.isFinite(result.value)
+                ? result.value
+                : null,
+            status: "VALID" as const,
+            note: null,
+          }),
+        )
+      : Array.from(
+          { length: 4 },
+          (_, index) =>
+            createResult(index + 1),
+        );
 
   return {
     crushingDate:
@@ -88,21 +79,7 @@ function normalizeSeries(
       initialValue?.reference ?? "",
     sortOrder:
       initialValue?.sortOrder ?? 0,
-    results: Array.from(
-      { length: resultColumnCount },
-      (_, index) => {
-        const specimenNumber = index + 1;
-        const existing =
-          resultsByNumber.get(specimenNumber);
-
-        return existing
-          ? {
-              ...existing,
-              specimenNumber,
-            }
-          : createResult(specimenNumber);
-      },
-    ),
+    results: normalizedResults,
   };
 }
 
@@ -113,22 +90,17 @@ function validateSeries(
     return "La date d’écrasement est obligatoire.";
   }
 
-  for (const result of series.results) {
-    if (result.status === "VALID") {
-      if (
-        typeof result.value !== "number" ||
-        !Number.isFinite(result.value) ||
-        result.value < 0
-      ) {
-        return `EP${result.specimenNumber} doit contenir une valeur valide.`;
-      }
-    }
+  if (series.results.length === 0) {
+    return "Ajoutez au moins un résultat.";
+  }
 
+  for (const result of series.results) {
     if (
-      result.status === "INVALID" &&
-      !result.note?.trim()
+      typeof result.value !== "number" ||
+      !Number.isFinite(result.value) ||
+      result.value < 0
     ) {
-      return `EP${result.specimenNumber} invalide doit contenir une note.`;
+      return `EP${result.specimenNumber} doit contenir une valeur valide.`;
     }
   }
 
@@ -140,7 +112,6 @@ export default function CompressionSeriesModal({
   mode,
   initialValue,
   initialSpecimenCount,
-  resultColumnCount,
   onClose,
   onSubmit,
 }: CompressionSeriesModalProps) {
@@ -149,7 +120,6 @@ export default function CompressionSeriesModal({
       () =>
         normalizeSeries(
           initialValue,
-          resultColumnCount,
         ),
     );
   const [specimenCount, setSpecimenCount] =
@@ -166,7 +136,6 @@ export default function CompressionSeriesModal({
     setSeries(
       normalizeSeries(
         initialValue,
-        resultColumnCount,
       ),
     );
     setSpecimenCount(
@@ -179,7 +148,6 @@ export default function CompressionSeriesModal({
     initialSpecimenCount,
     initialValue,
     open,
-    resultColumnCount,
   ]);
 
   useEffect(() => {
@@ -210,6 +178,46 @@ export default function CompressionSeriesModal({
             : existing,
       ),
     }));
+  };
+
+  const addResult = () => {
+    setSeries((current) => {
+      if (current.results.length >= 12) {
+        return current;
+      }
+
+      return {
+        ...current,
+        results: [
+          ...current.results,
+          createResult(
+            current.results.length + 1,
+          ),
+        ],
+      };
+    });
+
+    setError("");
+  };
+
+  const removeResult = () => {
+    setSeries((current) => {
+      if (current.results.length <= 1) {
+        return current;
+      }
+
+      return {
+        ...current,
+        results: current.results
+          .slice(0, -1)
+          .map((result, index) => ({
+            ...result,
+            specimenNumber: index + 1,
+          })),
+      };
+    });
+
+    setError("");
   };
 
   const submit = (
@@ -252,14 +260,11 @@ export default function CompressionSeriesModal({
         sortOrder:
           series.sortOrder,
         results: series.results.map(
-          (result) => ({
-            ...result,
-            value:
-              result.status === "VALID"
-                ? result.value
-                : null,
-            note:
-              result.note?.trim() || null,
+          (result, index) => ({
+            specimenNumber: index + 1,
+            value: result.value,
+            status: "VALID",
+            note: null,
           }),
         ),
       },
@@ -368,6 +373,32 @@ export default function CompressionSeriesModal({
               </div>
             </div>
 
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+              <div className="text-sm font-semibold text-slate-700">
+                Résultats des éprouvettes
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="btn-fit-white-outline"
+                  onClick={removeResult}
+                  disabled={series.results.length <= 1}
+                >
+                  Retirer EP
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-fit-white-outline"
+                  onClick={addResult}
+                  disabled={series.results.length >= 12}
+                >
+                  Ajouter EP
+                </button>
+              </div>
+            </div>
+
             <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
               {series.results.map(
                 (result, resultIndex) => (
@@ -379,86 +410,31 @@ export default function CompressionSeriesModal({
                       EP{result.specimenNumber}
                     </div>
 
-                    <div className="space-y-2">
-                      <select
-                        value={result.status}
-                        onChange={(event) => {
-                          const status =
-                            event.target.value;
-                          if (!isResultStatus(status)) {
-                            return;
-                          }
-
-                          updateResult(
-                            resultIndex,
-                            {
-                              ...result,
-                              status,
-                              value:
-                                status === "VALID"
-                                  ? result.value
-                                  : null,
-                            },
-                          );
-                          setError("");
-                        }}
-                        className={fieldClass}
-                      >
-                        {Object.entries(
-                          RESULT_STATUS_LABELS,
-                        ).map(([status, label]) => (
-                          <option key={status} value={status}>
-                            {label}
-                          </option>
-                        ))}
-                      </select>
-
-                      {result.status === "VALID" ? (
-                        <input
-                          type="number"
-                          min={0}
-                          step="0.001"
-                          value={result.value ?? ""}
-                          onChange={(event) => {
-                            updateResult(
-                              resultIndex,
-                              {
-                                ...result,
-                                value:
-                                  event.target.value === ""
-                                    ? null
-                                    : Number(
-                                        event.target.value,
-                                      ),
-                              },
-                            );
-                            setError("");
-                          }}
-                          className={fieldClass}
-                        />
-                      ) : (
-                        <input
-                          type="text"
-                          value={result.note ?? ""}
-                          placeholder={
-                            result.status === "INVALID"
-                              ? "Ex. Mal faite"
-                              : "Note optionnelle"
-                          }
-                          onChange={(event) => {
-                            updateResult(
-                              resultIndex,
-                              {
-                                ...result,
-                                note: event.target.value,
-                              },
-                            );
-                            setError("");
-                          }}
-                          className={fieldClass}
-                        />
-                      )}
-                    </div>
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.001"
+                      value={result.value ?? ""}
+                      onChange={(event) => {
+                        updateResult(
+                          resultIndex,
+                          {
+                            specimenNumber:
+                              result.specimenNumber,
+                            value:
+                              event.target.value === ""
+                                ? null
+                                : Number(
+                                    event.target.value,
+                                  ),
+                            status: "VALID",
+                            note: null,
+                          },
+                        );
+                        setError("");
+                      }}
+                      className={fieldClass}
+                    />
                   </div>
                 ),
               )}

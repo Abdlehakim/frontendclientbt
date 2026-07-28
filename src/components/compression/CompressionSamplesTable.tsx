@@ -24,9 +24,7 @@ const numberFormatter = new Intl.NumberFormat("fr-FR", {
 export type CompressionSamplesTableProps = {
   readOnly: boolean;
   samples: CompressionSampleInput[];
-  resultColumnCount: number;
   onSamplesChange: (samples: CompressionSampleInput[]) => void;
-  onResultColumnCountChange: (count: number) => void;
 };
 
 type SampleModalState =
@@ -91,45 +89,6 @@ export function createEmptyCompressionSample(
   };
 }
 
-export function normalizeCompressionSamples(
-  samples: CompressionSampleInput[],
-  resultColumnCount: number,
-): CompressionSampleInput[] {
-  return samples.map((sample) => ({
-    ...sample,
-    series: sample.series.map((series) => {
-      const resultsByNumber = new Map(
-        series.results.map((result) => [
-          result.specimenNumber,
-          result,
-        ]),
-      );
-
-      return {
-        ...series,
-        results: Array.from(
-          { length: resultColumnCount },
-          (_, index) => {
-            const specimenNumber = index + 1;
-            const existing = resultsByNumber.get(specimenNumber);
-            return existing
-              ? {
-                  ...existing,
-                  specimenNumber,
-                }
-              : {
-                  specimenNumber,
-                  value: null,
-                  status: "VALID" as const,
-                  note: null,
-                };
-          },
-        ),
-      };
-    }),
-  }));
-}
-
 function dateOnlyMilliseconds(value: string): number | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
   const milliseconds = Date.parse(`${value}T00:00:00.000Z`);
@@ -153,23 +112,28 @@ export function calculatePreviewMaturity(
 export function calculatePreviewAverage(
   results: CompressionResultInput[],
 ): number | null {
-  const values: number[] = [];
+  const values = results
+    .map((result) => result.value)
+    .filter(
+      (value): value is number =>
+        typeof value === "number" &&
+        Number.isFinite(value),
+    );
 
-  for (const result of results) {
-    if (
-      result.status === "VALID" &&
-      typeof result.value === "number" &&
-      Number.isFinite(result.value)
-    ) {
-      values.push(result.value);
-    }
+  if (values.length === 0) {
+    return null;
   }
 
-  if (values.length === 0) return null;
-  const average =
-    values.reduce((sum, value) => sum + value, 0) /
-    values.length;
-  return Math.round(average * 1000) / 1000;
+  return (
+    Math.round(
+      (values.reduce(
+        (sum, value) => sum + value,
+        0,
+      ) /
+        values.length) *
+        1000,
+    ) / 1000
+  );
 }
 
 export function formatCompressionNumber(
@@ -196,11 +160,9 @@ function formatDateOnly(
 function displayResult(
   result: CompressionResultInput | undefined,
 ): string {
-  if (!result) return "—";
-  if (result.status === "VALID") {
-    return formatCompressionNumber(result.value);
-  }
-  return result.note?.trim() || "—";
+  return formatCompressionNumber(
+    result?.value,
+  );
 }
 
 const sampleToModalPayload = (
@@ -218,9 +180,7 @@ const sampleToModalPayload = (
 export default function CompressionSamplesTable({
   readOnly,
   samples,
-  resultColumnCount,
   onSamplesChange,
-  onResultColumnCountChange,
 }: CompressionSamplesTableProps) {
   const [actionError, setActionError] = useState("");
   const [sampleModalState, setSampleModalState] =
@@ -350,7 +310,7 @@ export default function CompressionSamplesTable({
       seriesIndex: sample.series.length,
       initialValue:
         createEmptyCompressionSeries(
-          resultColumnCount,
+          4,
           sample.series.length,
         ),
       initialSpecimenCount:
@@ -478,38 +438,6 @@ export default function CompressionSamplesTable({
     });
   };
 
-  const addResultColumn = () => {
-    if (resultColumnCount >= 12) {
-      setActionError(
-        "Le nombre maximal de colonnes EP est 12.",
-      );
-      return;
-    }
-
-    const nextCount = resultColumnCount + 1;
-    setActionError("");
-    onSamplesChange(
-      normalizeCompressionSamples(samples, nextCount),
-    );
-    onResultColumnCountChange(nextCount);
-  };
-
-  const removeResultColumn = () => {
-    if (resultColumnCount <= 1) {
-      setActionError(
-        "Le rapport doit contenir au moins une colonne EP.",
-      );
-      return;
-    }
-
-    const nextCount = resultColumnCount - 1;
-    setActionError("");
-    onSamplesChange(
-      normalizeCompressionSamples(samples, nextCount),
-    );
-    onResultColumnCountChange(nextCount);
-  };
-
   const editingSample =
     sampleModalState?.mode === "edit"
       ? samples[sampleModalState.sampleIndex] ??
@@ -546,7 +474,6 @@ export default function CompressionSamplesTable({
           seriesModalState
             ?.initialSpecimenCount ?? 6
         }
-        resultColumnCount={resultColumnCount}
         onClose={() => {
           setSeriesModalState(null);
         }}
@@ -554,7 +481,7 @@ export default function CompressionSamplesTable({
       />
 
       {!readOnly ? (
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-start gap-2">
           <button
             type="button"
             className="btn-fit-white-outline"
@@ -562,25 +489,6 @@ export default function CompressionSamplesTable({
           >
             Ajouter un prélèvement
           </button>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className="btn-fit-white-outline"
-              onClick={removeResultColumn}
-              disabled={resultColumnCount <= 1}
-            >
-              Retirer EP
-            </button>
-            <button
-              type="button"
-              className="btn-fit-white-outline"
-              onClick={addResultColumn}
-              disabled={resultColumnCount >= 12}
-            >
-              Ajouter EP
-            </button>
-          </div>
         </div>
       ) : null}
 
@@ -772,11 +680,12 @@ export default function CompressionSamplesTable({
                   const average = calculatePreviewAverage(
                     series.results,
                   );
-                  const resultsByNumber = new Map(
-                    series.results.map((result) => [
-                      result.specimenNumber,
-                      result,
-                    ]),
+                  const orderedResults = [
+                    ...series.results,
+                  ].sort(
+                    (first, second) =>
+                      first.specimenNumber -
+                      second.specimenNumber,
                   );
 
                   void maturity;
@@ -816,21 +725,20 @@ export default function CompressionSamplesTable({
                           className="w-full table-fixed border-collapse text-xs"
                           style={{
                             minWidth:
-                              resultColumnCount > 4
-                                ? resultColumnCount * 80
+                              orderedResults.length > 4
+                                ? orderedResults.length * 80
                                 : undefined,
                           }}
                         >
                           <thead className="bg-(--primary) text-white">
                             <tr>
-                              {Array.from(
-                                { length: resultColumnCount },
-                                (_, index) => (
+                              {orderedResults.map(
+                                (result) => (
                                   <th
-                                    key={`ep-header-${sampleIndex}-${seriesIndex}-${index + 1}`}
+                                    key={`ep-header-${sampleIndex}-${seriesIndex}-${result.specimenNumber}`}
                                     className="border border-white/30 px-2 py-2"
                                   >
-                                    EP{index + 1}
+                                    EP{result.specimenNumber}
                                   </th>
                                 ),
                               )}
@@ -838,18 +746,13 @@ export default function CompressionSamplesTable({
                           </thead>
                           <tbody>
                             <tr>
-                              {Array.from(
-                                { length: resultColumnCount },
-                                (_, index) => (
+                              {orderedResults.map(
+                                (result) => (
                                   <td
-                                    key={`ep-value-${sampleIndex}-${seriesIndex}-${index + 1}`}
+                                    key={`ep-value-${sampleIndex}-${seriesIndex}-${result.specimenNumber}`}
                                     className="border border-slate-300 px-2 py-2 text-center"
                                   >
-                                    {displayResult(
-                                      resultsByNumber.get(
-                                        index + 1,
-                                      ),
-                                    )}
+                                    {displayResult(result)}
                                   </td>
                                 ),
                               )}

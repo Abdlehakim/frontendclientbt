@@ -12,7 +12,6 @@ import type {
 type CompressionReportPrintViewProps = {
   report: CompressionReportInput;
   project: CompressionProjectDTO | null;
-  resultColumnCount: number;
 };
 
 function formatDate(value: string | null | undefined): string {
@@ -25,18 +24,29 @@ function formatDate(value: string | null | undefined): string {
 function displayResult(
   result: CompressionResultInput | undefined,
 ): string {
-  if (!result) return "—";
-  if (result.status === "VALID") {
-    return formatCompressionNumber(result.value);
-  }
-  return result.note?.trim() || "—";
+  return formatCompressionNumber(
+    result?.value,
+  );
 }
 
 export default function CompressionReportPrintView({
   report,
   project,
-  resultColumnCount,
 }: CompressionReportPrintViewProps) {
+  const resultColumnCount = Math.max(
+    1,
+    ...report.samples.flatMap(
+      (sample) =>
+        sample.series.flatMap(
+          (series) =>
+            series.results.map(
+              (result) =>
+                result.specimenNumber,
+            ),
+        ),
+    ),
+  );
+
   const projectTitle =
     report.title?.trim() ||
     project?.chantierName.trim() ||

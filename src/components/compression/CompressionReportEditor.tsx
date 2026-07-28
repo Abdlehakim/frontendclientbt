@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { FaSpinner } from "react-icons/fa6";
-import {
-  normalizeCompressionSamples,
-} from "@/components/compression/CompressionSamplesTable";
 import CompressionSamplesTable from "@/components/compression/CompressionSamplesTable";
 import CompressionReportPrintView from "@/components/compression/CompressionReportPrintView";
 import ProjectModalShell from "@/components/ferraillage/ProjectModalShell";
@@ -82,24 +79,8 @@ function createInitialForm(): CompressionEditorForm {
   };
 }
 
-function highestResultColumn(
-  report: CompressionReportDetailDTO,
-): number {
-  let highest = 0;
-  for (const sample of report.samples) {
-    for (const series of sample.series) {
-      highest = Math.max(highest, series.results.length);
-      for (const result of series.results) {
-        highest = Math.max(highest, result.specimenNumber);
-      }
-    }
-  }
-  return Math.max(4, highest);
-}
-
 function mapReportToForm(
   report: CompressionReportDetailDTO,
-  resultColumnCount: number,
 ): CompressionEditorForm {
   const samples: CompressionSampleInput[] = report.samples.map(
     (sample) => ({
@@ -118,9 +99,13 @@ function mapReportToForm(
         sortOrder: series.sortOrder,
         results: series.results.map((result) => ({
           specimenNumber: result.specimenNumber,
-          value: result.value,
-          status: result.status,
-          note: result.note,
+          value:
+            typeof result.value === "number" &&
+            Number.isFinite(result.value)
+              ? result.value
+              : null,
+          status: "VALID",
+          note: null,
         })),
       })),
     }),
@@ -131,10 +116,7 @@ function mapReportToForm(
     reportDate: toDateInput(report.reportDate),
     title: report.title ?? "",
     companyName: report.companyName ?? "",
-    samples: normalizeCompressionSamples(
-      samples,
-      resultColumnCount,
-    ),
+    samples,
   };
 }
 
@@ -193,18 +175,11 @@ function validateForm(form: CompressionEditorForm): string {
 
       for (const result of series.results) {
         if (
-          result.status === "VALID" &&
           (typeof result.value !== "number" ||
             !Number.isFinite(result.value) ||
             result.value < 0)
         ) {
           return `${prefix}, EP${result.specimenNumber} : saisissez une valeur numérique valide.`;
-        }
-        if (
-          result.status === "INVALID" &&
-          !result.note?.trim()
-        ) {
-          return `${prefix}, EP${result.specimenNumber} : indiquez la raison du résultat invalide.`;
         }
       }
     }
@@ -235,14 +210,11 @@ function buildPayload(
         crushingDate: series.crushingDate,
         reference: series.reference?.trim() || null,
         sortOrder: series.sortOrder,
-        results: series.results.map((result) => ({
-          specimenNumber: result.specimenNumber,
-          status: result.status,
-          value:
-            result.status === "VALID"
-              ? result.value ?? null
-              : null,
-          note: result.note?.trim() || null,
+        results: series.results.map((result, index) => ({
+          specimenNumber: index + 1,
+          value: result.value ?? null,
+          status: "VALID",
+          note: null,
         })),
       })),
     })),
@@ -261,7 +233,6 @@ function CompressionReportEditorPanel({
   const [form, setForm] = useState<CompressionEditorForm>(
     createInitialForm,
   );
-  const [resultColumnCount, setResultColumnCount] = useState(4);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -278,7 +249,6 @@ function CompressionReportEditorPanel({
     setProjects([]);
     setLoadedProject(null);
     setForm(createInitialForm());
-    setResultColumnCount(4);
 
     void (async () => {
       try {
@@ -294,9 +264,11 @@ function CompressionReportEditorPanel({
         setProjects(projectsResponse.items ?? []);
 
         if (reportResponse) {
-          const count = highestResultColumn(reportResponse.item);
-          setResultColumnCount(count);
-          setForm(mapReportToForm(reportResponse.item, count));
+          setForm(
+            mapReportToForm(
+              reportResponse.item,
+            ),
+          );
           setLoadedProject(reportResponse.item.project);
         }
       } catch (loadError: unknown) {
@@ -603,14 +575,12 @@ function CompressionReportEditorPanel({
                 <CompressionSamplesTable
                   readOnly={readOnly || saving}
                   samples={form.samples}
-                  resultColumnCount={resultColumnCount}
                   onSamplesChange={(samples) =>
                     setForm((current) => ({
                       ...current,
                       samples,
                     }))
                   }
-                  onResultColumnCountChange={setResultColumnCount}
                 />
               </div>
             )}
@@ -619,7 +589,6 @@ function CompressionReportEditorPanel({
           <CompressionReportPrintView
             report={buildPayload(form)}
             project={selectedProject}
-            resultColumnCount={resultColumnCount}
           />
         </>
       )}
