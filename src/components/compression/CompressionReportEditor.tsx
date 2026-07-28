@@ -14,7 +14,6 @@ import {
   type CompressionProjectDTO,
   type CompressionReportDetailDTO,
   type CompressionReportInput,
-  type CompressionReportStatus,
   type CompressionSampleInput,
 } from "@/lib/compressionApi";
 import {
@@ -33,12 +32,7 @@ export type CompressionReportEditorProps = {
   ) => void | Promise<void>;
 };
 
-type CompressionEditorForm = Omit<
-  CompressionReportInput,
-  "status"
-> & {
-  status: CompressionReportStatus;
-};
+type CompressionEditorForm = CompressionReportInput;
 
 const MODE_TITLES = {
   create: "Nouvel essai à la compression",
@@ -64,7 +58,6 @@ function createInitialForm(): CompressionEditorForm {
     reportDate: todayDateInput(),
     title: "",
     companyName: "",
-    status: "DRAFT",
     samples: [
       createEmptyCompressionSample(1, 0, 4),
     ],
@@ -120,7 +113,6 @@ function mapReportToForm(
     reportDate: toDateInput(report.reportDate),
     title: report.title ?? "",
     companyName: report.companyName ?? "",
-    status: report.status,
     samples: normalizeCompressionSamples(
       samples,
       resultColumnCount,
@@ -211,7 +203,6 @@ function buildPayload(
     reportDate: form.reportDate,
     title: form.title?.trim() || null,
     companyName: form.companyName?.trim() || null,
-    status: form.status,
     samples: form.samples.map((sample) => ({
       sequenceNumber: sample.sequenceNumber,
       dosage: sample.dosage.trim(),
@@ -519,30 +510,6 @@ function CompressionReportEditorPanel({
                 />
               </label>
 
-              <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
-                Statut
-                <select
-                  value={form.status}
-                  disabled={readOnly || saving}
-                  onChange={(event) => {
-                    const status = event.target.value;
-                    if (
-                      status !== "DRAFT" &&
-                      status !== "FINALIZED"
-                    ) {
-                      return;
-                    }
-                    setForm((current) => ({
-                      ...current,
-                      status,
-                    }));
-                  }}
-                  className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 disabled:bg-slate-100"
-                >
-                  <option value="DRAFT">Brouillon</option>
-                  <option value="FINALIZED">Finalisé</option>
-                </select>
-              </label>
             </div>
 
             <CompressionSamplesTable

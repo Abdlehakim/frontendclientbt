@@ -28,12 +28,6 @@ function formatDate(value: string | null | undefined): string {
   return date.toLocaleDateString("fr-FR");
 }
 
-function statusLabel(
-  status: CompressionReportSummaryDTO["status"],
-): string {
-  return status === "FINALIZED" ? "Finalisé" : "Brouillon";
-}
-
 export default function ProjectTrackingPage() {
   const [reports, setReports] =
     useState<CompressionReportSummaryDTO[]>([]);
@@ -212,9 +206,6 @@ export default function ProjectTrackingPage() {
                 Prélèvements
               </th>
               <th className="w-28 py-2 text-center text-sm font-medium">
-                Statut
-              </th>
-              <th className="w-28 py-2 text-center text-sm font-medium">
                 MàJ le
               </th>
               <th className="w-36 py-2 text-center text-sm font-medium">
@@ -227,7 +218,7 @@ export default function ProjectTrackingPage() {
             <tbody>
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={6}
                   className="bg-white py-8 text-center text-gray-600"
                 >
                   Aucun essai à la compression trouvé.
@@ -257,17 +248,6 @@ export default function ProjectTrackingPage() {
                   </td>
                   <td className="px-2 py-2 text-center">
                     {report.sampleCount}
-                  </td>
-                  <td className="px-2 py-2 text-center">
-                    <span
-                      className={
-                        report.status === "FINALIZED"
-                          ? "rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800"
-                          : "rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800"
-                      }
-                    >
-                      {statusLabel(report.status)}
-                    </span>
                   </td>
                   <td className="px-2 py-2 text-center">
                     {formatDate(report.updatedAt)}

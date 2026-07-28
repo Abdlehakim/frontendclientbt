@@ -2,10 +2,6 @@ import { API_BASE } from "./apiBase";
 
 const BASE = "/compression-reports";
 
-export type CompressionReportStatus =
-  | "DRAFT"
-  | "FINALIZED";
-
 export type CompressionResultStatus =
   | "VALID"
   | "INVALID"
@@ -23,7 +19,6 @@ export type CompressionReportSummaryDTO = {
   reportDate: string;
   title: string | null;
   companyName: string | null;
-  status: CompressionReportStatus;
   createdById: string | null;
   createdByName: string;
   sampleCount: number;
@@ -101,7 +96,6 @@ export type CompressionReportInput = {
   reportDate: string;
   title?: string | null;
   companyName?: string | null;
-  status?: CompressionReportStatus;
   samples: CompressionSampleInput[];
 };
 
@@ -144,12 +138,6 @@ function isNullableNumber(
     value === null ||
     (typeof value === "number" && Number.isFinite(value))
   );
-}
-
-function isReportStatus(
-  value: unknown,
-): value is CompressionReportStatus {
-  return value === "DRAFT" || value === "FINALIZED";
 }
 
 function isResultStatus(
@@ -221,7 +209,6 @@ function isCompressionReportSummaryDTO(
     typeof value.reportDate === "string" &&
     isNullableString(value.title) &&
     isNullableString(value.companyName) &&
-    isReportStatus(value.status) &&
     isNullableString(value.createdById) &&
     typeof value.createdByName === "string" &&
     typeof value.sampleCount === "number" &&
