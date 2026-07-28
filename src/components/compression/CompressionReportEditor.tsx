@@ -47,7 +47,7 @@ type CompressionEditorProject =
 const TABS: { key: TabKey; label: string }[] = [
   {
     key: "DETAILS_CHANTIER",
-    label: "Détails du chantier",
+    label: "Détails de l’essai",
   },
   {
     key: "ESSAI_COMPRESSION",
