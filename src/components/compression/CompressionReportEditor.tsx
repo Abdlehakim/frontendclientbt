@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { FaSpinner } from "react-icons/fa6";
 import CompressionSamplesTable from "@/components/compression/CompressionSamplesTable";
-import CompressionReportPrintView from "@/components/compression/CompressionReportPrintView";
 import ProjectModalShell from "@/components/ferraillage/ProjectModalShell";
 import {
   compressionApi,
@@ -284,12 +283,6 @@ function CompressionReportEditorPanel({
     };
   }, [mode, reportId]);
 
-  useEffect(() => {
-    return () => {
-      document.body.classList.remove("project-print-active");
-    };
-  }, []);
-
   const selectedProject = useMemo<CompressionEditorProject | null>(
     () => {
       const project = projects.find(
@@ -310,14 +303,6 @@ function CompressionReportEditorPanel({
     },
     [form.projectId, loadedProject, projects],
   );
-
-  const handlePrint = () => {
-    document.body.classList.add("project-print-active");
-    const cleanup = () =>
-      document.body.classList.remove("project-print-active");
-    window.addEventListener("afterprint", cleanup, { once: true });
-    window.requestAnimationFrame(() => window.print());
-  };
 
   const handleSave = async () => {
     if (readOnly || saving) return;
@@ -396,16 +381,6 @@ function CompressionReportEditorPanel({
       onClose={safeClose}
       panelClassName="w-full max-w-[99%] h-[98%] rounded-xl bg-white shadow-xl border border-gray-200 flex flex-col"
       bodyClassName="p-4 flex-1 overflow-auto bg-green-50"
-      headerActions={
-        <button
-          type="button"
-          className="btn-fit-white-outline no-print"
-          onClick={handlePrint}
-          disabled={loading || saving}
-        >
-          Imprimer
-        </button>
-      }
       footer={footer}
     >
       {loading ? (
@@ -586,10 +561,6 @@ function CompressionReportEditorPanel({
             )}
           </div>
 
-          <CompressionReportPrintView
-            report={buildPayload(form)}
-            project={selectedProject}
-          />
         </>
       )}
     </ProjectModalShell>

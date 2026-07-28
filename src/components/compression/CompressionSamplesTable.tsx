@@ -487,7 +487,7 @@ export default function CompressionSamplesTable({
       />
 
       {!readOnly ? (
-        <div className="flex flex-wrap items-center justify-start gap-2">
+        <div className="flex w-full flex-wrap items-center justify-end gap-2">
           <button
             type="button"
             className="btn-fit-white-outline"
