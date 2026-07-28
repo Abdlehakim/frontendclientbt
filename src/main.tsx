@@ -62,6 +62,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route element={<AppGuard />}>
               <Route path={APP_PATHS.dashboard} element={<DashboardPage />} />
               <Route path={APP_PATHS.users} element={<UsersPage />} />
+              <Route path={APP_PATHS.projects} element={<FerraillagePage mode="projects" />} />
               <Route path={APP_PATHS.ferraillage} element={<FerraillagePage />} />
               <Route
                 path={`${APP_PATHS.ferraillage}/rapports/:rapportId`}

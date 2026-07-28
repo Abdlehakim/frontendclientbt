@@ -1,5 +1,5 @@
 import type { IconType } from "react-icons";
-import { FiGrid, FiFileText, FiUsers } from "react-icons/fi";
+import { FiFolder, FiGrid, FiFileText, FiUsers } from "react-icons/fi";
 import { APP_HREFS } from "@/routes/paths";
 
 export type SidebarItem = {
@@ -26,7 +26,14 @@ export const sidebarItems: SidebarItem[] = [
   },
 
   {
-    name: "Calculateur",
+    name: "Projets",
+    to: APP_HREFS.projects,
+    icon: FiFolder,
+    permission: "submodule:FERRAILLAGE",
+  },
+
+  {
+    name: "Métré",
     to: APP_HREFS.module1Root,
     icon: FiFileText,
     permission: "module:MODULE_1",

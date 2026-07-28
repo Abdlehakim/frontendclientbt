@@ -17,11 +17,6 @@ const MODULE_META: Partial<Record<ModuleKey, ModuleMeta>> = {
     features: ["Accès au module", "Fonctions principales", "Configuration"],
     badge: "Recommandé",
   },
-  MODULE_2: {
-    title: "Module 2",
-    desc: "Deuxième module (à définir).",
-    features: ["Fonctionnalité C", "Fonctionnalité D", "Support inclus"],
-  },
 };
 
 export default function ChooseModules() {
@@ -33,6 +28,7 @@ export default function ChooseModules() {
 
   const [catalog, setCatalog] = useState<ModuleDTO[]>([]);
   const [loadingCatalog, setLoadingCatalog] = useState(true);
+  const [catalogError, setCatalogError] = useState("");
 
   // ✅ No default module selected for new users
   const [selected, setSelected] = useState<ModuleKey[]>(enabledModules?.length ? enabledModules : []);
@@ -45,16 +41,35 @@ export default function ChooseModules() {
 
   useEffect(() => {
     let mounted = true;
-    (async () => {
+
+    void (async () => {
+      if (mounted) {
+        setLoadingCatalog(true);
+        setCatalogError("");
+      }
+
       try {
-        const res = await api.listModules();
-        if (mounted) setCatalog(res.modules ?? []);
-      } catch (e) {
-        void e;
+        const response = await api.listModules();
+
+        if (mounted) {
+          setCatalog(response.modules ?? []);
+        }
+      } catch (error: unknown) {
+        if (mounted) {
+          setCatalog([]);
+          setCatalogError(
+            error instanceof Error
+              ? error.message
+              : "Unable to load the module catalog.",
+          );
+        }
       } finally {
-        if (mounted) setLoadingCatalog(false);
+        if (mounted) {
+          setLoadingCatalog(false);
+        }
       }
     })();
+
     return () => {
       mounted = false;
     };
@@ -74,6 +89,11 @@ export default function ChooseModules() {
     for (const mod of catalog) m.set(mod.key, mod);
     return m;
   }, [catalog]);
+
+  const invalidSelectedModuleKeys = useMemo(
+    () => selected.filter((moduleKey) => !catalogByKey.has(moduleKey)),
+    [selected, catalogByKey],
+  );
 
   const subModulesByModule = useMemo(() => {
     const map = new Map<ModuleKey, { key: SubModuleKey; name: string }[]>();
@@ -117,7 +137,14 @@ export default function ChooseModules() {
     return missing;
   }, [selected, subModulesByModule, selectedSubByModule]);
 
-  const canContinue = selected.length > 0 && !saving && !loadingCatalog && missingSubModulesFor.length === 0;
+  const canContinue =
+    !loadingCatalog &&
+    !catalogError &&
+    catalog.length > 0 &&
+    selected.length > 0 &&
+    invalidSelectedModuleKeys.length === 0 &&
+    missingSubModulesFor.length === 0 &&
+    !saving;
 
   function toggleModule(m: ModuleKey) {
     setSelected((prev) => {
@@ -146,8 +173,30 @@ export default function ChooseModules() {
   async function handleSave() {
     setErr("");
 
+    if (loadingCatalog) {
+      setErr("The module catalog is still loading.");
+      return;
+    }
+
+    if (catalogError) {
+      setErr("The module catalog could not be loaded.");
+      return;
+    }
+
+    if (catalog.length === 0) {
+      setErr("No modules are currently available.");
+      return;
+    }
+
     if (selected.length === 0) {
       setErr("Please select at least one module.");
+      return;
+    }
+
+    if (invalidSelectedModuleKeys.length > 0) {
+      setErr(
+        `The following modules are no longer available: ${invalidSelectedModuleKeys.join(", ")}`,
+      );
       return;
     }
 
@@ -170,15 +219,6 @@ export default function ChooseModules() {
       setSaving(false);
     }
   }
-
-  // Prefer DB catalog; fallback (only if API failed)
-  const modulesToRender = useMemo(() => {
-    if (catalog.length > 0) return catalog;
-    return [
-      { key: "MODULE_1", name: "Calculateur", subModules: [] },
-      { key: "MODULE_2", name: "Module 2", subModules: [] },
-    ] as ModuleDTO[];
-  }, [catalog]);
 
   // ✅ Preserve redirect chain: plan -> modules -> redirectTo (ex: /app)
   const goUpdateSubscription = () => {
@@ -223,10 +263,18 @@ export default function ChooseModules() {
 
         {loadingCatalog ? (
           <div className="mt-8 text-slate-600">Loading modules...</div>
+        ) : catalogError ? (
+          <div className="mt-8 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+            {catalogError}
+          </div>
+        ) : catalog.length === 0 ? (
+          <div className="mt-8 rounded-xl border border-slate-200 bg-white px-4 py-6 text-slate-600">
+            No modules are currently available.
+          </div>
         ) : (
           <div className="mt-8 grid gap-6 lg:grid-cols-3">
             <div className="lg:col-span-2 grid gap-4 sm:grid-cols-2">
-              {modulesToRender.map((m) => {
+              {catalog.map((m) => {
                 const meta = MODULE_META[m.key];
                 const title = meta?.title ?? m.name ?? m.key;
                 const desc = meta?.desc ?? "";

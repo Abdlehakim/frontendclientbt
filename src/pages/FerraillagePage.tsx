@@ -17,6 +17,10 @@ type DeleteTarget = {
   chantierName: string;
 };
 
+type FerraillagePageProps = {
+  mode?: "ferraillage" | "projects";
+};
+
 function fmtDate(iso: string | null | undefined) {
   if (!iso) return "—";
   const d = new Date(iso);
@@ -24,7 +28,11 @@ function fmtDate(iso: string | null | undefined) {
   return d.toLocaleDateString();
 }
 
-export default function FerraillagePage() {
+export default function FerraillagePage({
+  mode = "ferraillage",
+}: FerraillagePageProps) {
+  const isProjectsPage = mode === "projects";
+
   const [items, setItems] = useState<FerRapportDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -199,16 +207,20 @@ export default function FerraillagePage() {
   return (
     <div className="mx-auto px-4 py-4 flex flex-col gap-4 h-full bg-green-50 rounded-xl">
       <div className="flex h-16 justify-between items-start">
-        <h1 className="text-3xl font-bold uppercase">Ferraillage</h1>
+        <h1 className="text-3xl font-bold uppercase">
+          {isProjectsPage ? "Projets" : "Ferraillage"}
+        </h1>
 
         <div className="flex items-center gap-2">
-          <button className="btn-fit-white-outline" type="button" onClick={() => setProjectWizardOpen(true)}>
-            Créer Projet
-          </button>
-
-          <button className="btn-fit-white-outline" type="button" onClick={() => setWizardOpen(true)}>
-            Créer Rapport
-          </button>
+          {isProjectsPage ? (
+            <button className="btn-fit-white-outline" type="button" onClick={() => setProjectWizardOpen(true)}>
+              Créer Projet
+            </button>
+          ) : (
+            <button className="btn-fit-white-outline" type="button" onClick={() => setWizardOpen(true)}>
+              Créer Rapport
+            </button>
+          )}
         </div>
       </div>
 
@@ -245,7 +257,7 @@ export default function FerraillagePage() {
               <tbody>
                 <tr>
                   <td colSpan={5} className="py-6 text-center text-gray-600">
-                    Aucun rapport trouvé.
+                    {isProjectsPage ? "Aucun projet trouvé." : "Aucun rapport trouvé."}
                   </td>
                 </tr>
               </tbody>
@@ -288,8 +300,16 @@ export default function FerraillagePage() {
         <TablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </div>
 
-      <CreateRapportWizard open={wizardOpen} onClose={() => setWizardOpen(false)} />
-      <CreateProjetWizard open={projectWizardOpen} onClose={() => setProjectWizardOpen(false)} onCreated={onProjectCreated} />
+      {!isProjectsPage ? (
+        <CreateRapportWizard open={wizardOpen} onClose={() => setWizardOpen(false)} />
+      ) : null}
+      {isProjectsPage ? (
+        <CreateProjetWizard
+          open={projectWizardOpen}
+          onClose={() => setProjectWizardOpen(false)}
+          onCreated={onProjectCreated}
+        />
+      ) : null}
       <DeleteConfirmModal
         open={Boolean(deleteTarget)}
         itemName={deleteTarget?.chantierName ?? ""}
