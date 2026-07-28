@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { FaSpinner } from "react-icons/fa6";
 import {
-  createEmptyCompressionSample,
   normalizeCompressionSamples,
 } from "@/components/compression/CompressionSamplesTable";
 import CompressionSamplesTable from "@/components/compression/CompressionSamplesTable";
@@ -79,9 +78,7 @@ function createInitialForm(): CompressionEditorForm {
     reportDate: todayDateInput(),
     title: "",
     companyName: "",
-    samples: [
-      createEmptyCompressionSample(1, 0, 4),
-    ],
+    samples: [],
   };
 }
 

@@ -15,8 +15,6 @@ export type CompressionSampleModalPayload = {
   pourDate: string;
   specimenSendDate: string;
   specimenCount: number;
-  crushingDate: string;
-  reference: string;
 };
 
 export type CompressionSampleModalMode =
@@ -43,8 +41,6 @@ type CompressionSampleModalForm = {
   pourDate: string;
   specimenSendDate: string;
   specimenCount: string;
-  crushingDate: string;
-  reference: string;
 };
 
 const EMPTY_FORM: CompressionSampleModalForm = {
@@ -55,8 +51,6 @@ const EMPTY_FORM: CompressionSampleModalForm = {
   pourDate: "",
   specimenSendDate: "",
   specimenCount: "6",
-  crushingDate: "",
-  reference: "",
 };
 
 function payloadToForm(
@@ -73,8 +67,6 @@ function payloadToForm(
     specimenCount: String(
       payload.specimenCount,
     ),
-    crushingDate: payload.crushingDate,
-    reference: payload.reference,
   };
 }
 
@@ -107,19 +99,6 @@ function validateForm(
     specimenCount > 100
   ) {
     return "Le nombre d’éprouvettes doit être compris entre 1 et 100.";
-  }
-
-  if (!form.crushingDate) {
-    return "La date d’écrasement est obligatoire.";
-  }
-
-  const dateOnlyPattern = /^\d{4}-\d{2}-\d{2}$/;
-  if (
-    dateOnlyPattern.test(form.pourDate) &&
-    dateOnlyPattern.test(form.crushingDate) &&
-    form.crushingDate < form.pourDate
-  ) {
-    return "La date d’écrasement ne peut pas précéder la date de coulage.";
   }
 
   return "";
@@ -184,8 +163,6 @@ export default function CompressionSampleModal({
       pourDate: form.pourDate,
       specimenSendDate: form.specimenSendDate,
       specimenCount,
-      crushingDate: form.crushingDate,
-      reference: form.reference.trim(),
     });
   };
 
@@ -363,42 +340,6 @@ export default function CompressionSampleModal({
                 />
               </div>
 
-              <div className="flex flex-col">
-                <label className="mb-1 text-xs font-semibold text-gray-700">
-                  Date d’écrasement
-                </label>
-                <input
-                  type="date"
-                  value={form.crushingDate}
-                  onChange={(event) => {
-                    setForm((current) => ({
-                      ...current,
-                      crushingDate: event.target.value,
-                    }));
-                    setError("");
-                  }}
-                  className={fieldClass}
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <label className="mb-1 text-xs font-semibold text-gray-700">
-                  Référence
-                </label>
-                <input
-                  type="text"
-                  value={form.reference}
-                  onChange={(event) => {
-                    setForm((current) => ({
-                      ...current,
-                      reference: event.target.value,
-                    }));
-                    setError("");
-                  }}
-                  placeholder="Optionnel"
-                  className={fieldClass}
-                />
-              </div>
             </div>
 
             {error ? (
