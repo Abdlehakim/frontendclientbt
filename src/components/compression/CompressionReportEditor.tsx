@@ -34,6 +34,27 @@ export type CompressionReportEditorProps = {
 
 type CompressionEditorForm = CompressionReportInput;
 
+type TabKey =
+  | "DETAILS_CHANTIER"
+  | "ESSAI_COMPRESSION";
+
+type CompressionEditorProject =
+  CompressionProjectDTO & {
+    acierType?: FerRapportDTO["acierType"];
+    note?: FerRapportDTO["note"];
+  };
+
+const TABS: { key: TabKey; label: string }[] = [
+  {
+    key: "DETAILS_CHANTIER",
+    label: "Détails du chantier",
+  },
+  {
+    key: "ESSAI_COMPRESSION",
+    label: "Essai à la compression",
+  },
+];
+
 const MODE_TITLES = {
   create: "Nouvel essai à la compression",
   edit: "Modifier l’essai à la compression",
@@ -247,6 +268,8 @@ function CompressionReportEditorPanel({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [tab, setTab] =
+    useState<TabKey>("DETAILS_CHANTIER");
 
   const readOnly = mode === "view";
 
@@ -298,7 +321,7 @@ function CompressionReportEditorPanel({
     };
   }, []);
 
-  const selectedProject = useMemo<CompressionProjectDTO | null>(
+  const selectedProject = useMemo<CompressionEditorProject | null>(
     () => {
       const project = projects.find(
         (item) => item.id === form.projectId,
@@ -308,6 +331,8 @@ function CompressionReportEditorPanel({
           id: project.id,
           chantierName: project.chantierName,
           responsable: project.responsable,
+          acierType: project.acierType,
+          note: project.note,
         };
       }
       return loadedProject?.id === form.projectId
@@ -427,103 +452,168 @@ function CompressionReportEditorPanel({
               </div>
             ) : null}
 
-            <div className="grid grid-cols-1 gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-2 xl:grid-cols-3">
-              <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
-                Projet
-                <select
-                  value={form.projectId}
-                  disabled={readOnly || saving}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      projectId: event.target.value,
-                    }))
-                  }
-                  className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 disabled:bg-slate-100"
-                >
-                  <option value="">Sélectionner un projet</option>
-                  {projects.map((project) => (
-                    <option key={project.id} value={project.id}>
-                      {project.chantierName} —{" "}
-                      {project.responsable?.trim() || "—"}
-                    </option>
-                  ))}
-                </select>
-              </label>
+            <div className="flex flex-wrap justify-center gap-2 border-b-transparent p-3">
+              {TABS.map((item) => {
+                const active = item.key === tab;
 
-              <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
-                Chantier
-                <div className="min-h-10 rounded border border-slate-300 bg-slate-50 px-3 py-2 text-slate-900">
-                  {selectedProject
-                    ? `${selectedProject.chantierName} — ${
-                        selectedProject.responsable?.trim() || "—"
-                      }`
-                    : "—"}
-                </div>
-              </label>
-
-              <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
-                Date du rapport
-                <input
-                  type="date"
-                  value={form.reportDate}
-                  disabled={readOnly || saving}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      reportDate: event.target.value,
-                    }))
-                  }
-                  className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 disabled:bg-slate-100"
-                />
-              </label>
-
-              <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
-                Titre
-                <input
-                  type="text"
-                  value={form.title ?? ""}
-                  disabled={readOnly || saving}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      title: event.target.value,
-                    }))
-                  }
-                  className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 disabled:bg-slate-100"
-                />
-              </label>
-
-              <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
-                Entreprise
-                <input
-                  type="text"
-                  value={form.companyName ?? ""}
-                  disabled={readOnly || saving}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      companyName: event.target.value,
-                    }))
-                  }
-                  className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 disabled:bg-slate-100"
-                />
-              </label>
-
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => setTab(item.key)}
+                    className={
+                      active
+                        ? "px-4 py-2 rounded bg-(--primary) text-white font-semibold"
+                        : "px-4 py-2 rounded bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+                    }
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
             </div>
 
-            <CompressionSamplesTable
-              readOnly={readOnly || saving}
-              samples={form.samples}
-              resultColumnCount={resultColumnCount}
-              onSamplesChange={(samples) =>
-                setForm((current) => ({
-                  ...current,
-                  samples,
-                }))
-              }
-              onResultColumnCountChange={setResultColumnCount}
-            />
+            {tab === "DETAILS_CHANTIER" ? (
+              <div className="rounded bg-white p-4 shadow">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <div>
+                    <div className="text-xs text-gray-500">
+                      Chantier
+                    </div>
+                    <div className="font-semibold text-gray-900">
+                      {selectedProject?.chantierName?.trim() || "—"}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs text-gray-500">
+                      Responsable
+                    </div>
+                    <div className="font-semibold text-gray-900">
+                      {selectedProject?.responsable?.trim() || "—"}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs text-gray-500">
+                      Type d&apos;acier
+                    </div>
+                    <div className="font-semibold text-gray-900">
+                      {selectedProject?.acierType ?? "—"}
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-3">
+                    <div className="text-xs text-gray-500">
+                      Note
+                    </div>
+                    <div className="whitespace-pre-wrap text-gray-900">
+                      {selectedProject?.note?.trim() || "—"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-2 xl:grid-cols-3">
+                  <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+                    Projet
+                    <select
+                      value={form.projectId}
+                      disabled={readOnly || saving}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          projectId: event.target.value,
+                        }))
+                      }
+                      className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 disabled:bg-slate-100"
+                    >
+                      <option value="">Sélectionner un projet</option>
+                      {projects.map((project) => (
+                        <option key={project.id} value={project.id}>
+                          {project.chantierName} —{" "}
+                          {project.responsable?.trim() || "—"}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+                    Chantier
+                    <div className="min-h-10 rounded border border-slate-300 bg-slate-50 px-3 py-2 text-slate-900">
+                      {selectedProject
+                        ? `${selectedProject.chantierName} — ${
+                            selectedProject.responsable?.trim() || "—"
+                          }`
+                        : "—"}
+                    </div>
+                  </label>
+
+                  <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+                    Date du rapport
+                    <input
+                      type="date"
+                      value={form.reportDate}
+                      disabled={readOnly || saving}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          reportDate: event.target.value,
+                        }))
+                      }
+                      className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 disabled:bg-slate-100"
+                    />
+                  </label>
+
+                  <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+                    Titre
+                    <input
+                      type="text"
+                      value={form.title ?? ""}
+                      disabled={readOnly || saving}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          title: event.target.value,
+                        }))
+                      }
+                      className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 disabled:bg-slate-100"
+                    />
+                  </label>
+
+                  <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+                    Entreprise
+                    <input
+                      type="text"
+                      value={form.companyName ?? ""}
+                      disabled={readOnly || saving}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          companyName: event.target.value,
+                        }))
+                      }
+                      className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 disabled:bg-slate-100"
+                    />
+                  </label>
+
+                </div>
+
+                <CompressionSamplesTable
+                  readOnly={readOnly || saving}
+                  samples={form.samples}
+                  resultColumnCount={resultColumnCount}
+                  onSamplesChange={(samples) =>
+                    setForm((current) => ({
+                      ...current,
+                      samples,
+                    }))
+                  }
+                  onResultColumnCountChange={setResultColumnCount}
+                />
+              </div>
+            )}
           </div>
 
           <CompressionReportPrintView
