@@ -14,13 +14,23 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+coverage
+.cache
+.vite
 *.local
+*.tsbuildinfo
+*.cookies.txt
+*.cookie.txt
+*.dump
+*.sql.gz
+prisma-debug.log*
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj

@@ -1,6 +1,6 @@
-# frontendclientbt
+# ProjectBT Customer
 
-Frontend client for PROJECTBT.
+React/Vite customer application for ProjectBT.
 
 ## Prerequisites
 
@@ -8,24 +8,25 @@ Frontend client for PROJECTBT.
 - npm
 - Backend running on `http://localhost:5000` (default)
 
-## Start Backend (from monorepo root)
+## Start the API (from the ProjectBT root)
 
 ```bash
-cd backendbt/docker
-docker compose up --build
+docker compose -f docker-compose.yml -f compose.local.yaml up -d db
+cd services/api
+npm run start:dev
 ```
 
 ## Frontend Setup
 
 ```bash
-cd frontendclientbt
+cd apps/customer
 npm install
 ```
 
 ## Run Frontend (dev)
 
 ```bash
-cd frontendclientbt
+cd apps/customer
 npm run dev
 ```
 
@@ -37,7 +38,7 @@ The frontend API origin is configurable with `VITE_API_URL`.
 
 1. Create `.env` from `.env.example`:
 ```bash
-cd frontendclientbt
+cd apps/customer
 copy .env.example .env
 ```
 PowerShell alternative:
@@ -53,6 +54,6 @@ VITE_API_URL=http://localhost:5000
 ## Build
 
 ```bash
-cd frontendclientbt
+cd apps/customer
 npm run build
 ```
