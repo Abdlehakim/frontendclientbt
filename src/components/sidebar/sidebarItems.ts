@@ -48,9 +48,15 @@ export const sidebarItems: SidebarItem[] = [
 
   {
     name: "Suivi",
-    to: APP_HREFS.projectsTracking,
     icon: FiActivity,
     permission: "submodule:FERRAILLAGE",
+    children: [
+      {
+        name: "Essai à la compression",
+        to: APP_HREFS.projectsTracking,
+        permission: "submodule:FERRAILLAGE",
+      },
+    ],
   },
 
   {

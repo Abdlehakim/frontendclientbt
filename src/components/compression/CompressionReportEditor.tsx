@@ -1,0 +1,592 @@
+import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
+import { FaSpinner } from "react-icons/fa6";
+import {
+  createEmptyCompressionSample,
+  normalizeCompressionSamples,
+} from "@/components/compression/CompressionSamplesTable";
+import CompressionSamplesTable from "@/components/compression/CompressionSamplesTable";
+import CompressionReportPrintView from "@/components/compression/CompressionReportPrintView";
+import ProjectModalShell from "@/components/ferraillage/ProjectModalShell";
+import {
+  compressionApi,
+  isCompressionApiError,
+  type CompressionProjectDTO,
+  type CompressionReportDetailDTO,
+  type CompressionReportInput,
+  type CompressionReportStatus,
+  type CompressionSampleInput,
+} from "@/lib/compressionApi";
+import {
+  ferraillageApi,
+  isApiError as isFerraillageApiError,
+  type FerRapportDTO,
+} from "@/lib/ferraillageApi";
+
+export type CompressionReportEditorProps = {
+  open: boolean;
+  mode: "create" | "edit" | "view";
+  reportId?: string | null;
+  onClose: () => void;
+  onSaved?: (
+    item: CompressionReportDetailDTO,
+  ) => void | Promise<void>;
+};
+
+type CompressionEditorForm = Omit<
+  CompressionReportInput,
+  "status"
+> & {
+  status: CompressionReportStatus;
+};
+
+const MODE_TITLES = {
+  create: "Nouvel essai à la compression",
+  edit: "Modifier l’essai à la compression",
+  view: "Consulter l’essai à la compression",
+} as const;
+
+function todayDateInput(): string {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function toDateInput(value: string | null | undefined): string {
+  return value?.slice(0, 10) ?? "";
+}
+
+function createInitialForm(): CompressionEditorForm {
+  return {
+    projectId: "",
+    reportDate: todayDateInput(),
+    title: "",
+    companyName: "",
+    status: "DRAFT",
+    samples: [
+      createEmptyCompressionSample(1, 0, 4),
+    ],
+  };
+}
+
+function highestResultColumn(
+  report: CompressionReportDetailDTO,
+): number {
+  let highest = 0;
+  for (const sample of report.samples) {
+    for (const series of sample.series) {
+      highest = Math.max(highest, series.results.length);
+      for (const result of series.results) {
+        highest = Math.max(highest, result.specimenNumber);
+      }
+    }
+  }
+  return Math.max(4, highest);
+}
+
+function mapReportToForm(
+  report: CompressionReportDetailDTO,
+  resultColumnCount: number,
+): CompressionEditorForm {
+  const samples: CompressionSampleInput[] = report.samples.map(
+    (sample) => ({
+      sequenceNumber: sample.sequenceNumber,
+      dosage: sample.dosage,
+      cement: sample.cement,
+      admixture: sample.admixture ?? "",
+      designation: sample.designation,
+      pourDate: toDateInput(sample.pourDate),
+      specimenSendDate: toDateInput(sample.specimenSendDate),
+      specimenCount: sample.specimenCount,
+      sortOrder: sample.sortOrder,
+      series: sample.series.map((series) => ({
+        crushingDate: toDateInput(series.crushingDate),
+        reference: series.reference ?? "",
+        sortOrder: series.sortOrder,
+        results: series.results.map((result) => ({
+          specimenNumber: result.specimenNumber,
+          value: result.value,
+          status: result.status,
+          note: result.note,
+        })),
+      })),
+    }),
+  );
+
+  return {
+    projectId: report.projectId,
+    reportDate: toDateInput(report.reportDate),
+    title: report.title ?? "",
+    companyName: report.companyName ?? "",
+    status: report.status,
+    samples: normalizeCompressionSamples(
+      samples,
+      resultColumnCount,
+    ),
+  };
+}
+
+function readableError(error: unknown): string {
+  if (
+    isCompressionApiError(error) ||
+    isFerraillageApiError(error)
+  ) {
+    return error.message;
+  }
+  return "Une erreur inattendue est survenue.";
+}
+
+function validateForm(form: CompressionEditorForm): string {
+  if (!form.projectId.trim()) {
+    return "Sélectionnez un projet.";
+  }
+  if (!form.reportDate) {
+    return "La date du rapport est obligatoire.";
+  }
+  if (form.samples.length === 0) {
+    return "Ajoutez au moins un prélèvement.";
+  }
+
+  for (const sample of form.samples) {
+    const prefix = `Prélèvement ${sample.sequenceNumber}`;
+    if (!sample.dosage.trim()) {
+      return `${prefix} : le dosage est obligatoire.`;
+    }
+    if (!sample.cement.trim()) {
+      return `${prefix} : le ciment est obligatoire.`;
+    }
+    if (!sample.designation.trim()) {
+      return `${prefix} : la désignation est obligatoire.`;
+    }
+    if (!sample.pourDate) {
+      return `${prefix} : la date de coulage est obligatoire.`;
+    }
+    if (
+      !Number.isInteger(sample.specimenCount) ||
+      sample.specimenCount <= 0
+    ) {
+      return `${prefix} : le nombre d’éprouvettes doit être supérieur à zéro.`;
+    }
+    if (sample.series.length === 0) {
+      return `${prefix} : ajoutez au moins une série.`;
+    }
+
+    for (const series of sample.series) {
+      if (!series.crushingDate) {
+        return `${prefix} : la date d’écrasement est obligatoire.`;
+      }
+      if (series.results.length === 0) {
+        return `${prefix} : ajoutez au moins un résultat.`;
+      }
+
+      for (const result of series.results) {
+        if (
+          result.status === "VALID" &&
+          (typeof result.value !== "number" ||
+            !Number.isFinite(result.value) ||
+            result.value < 0)
+        ) {
+          return `${prefix}, EP${result.specimenNumber} : saisissez une valeur numérique valide.`;
+        }
+        if (
+          result.status === "INVALID" &&
+          !result.note?.trim()
+        ) {
+          return `${prefix}, EP${result.specimenNumber} : indiquez la raison du résultat invalide.`;
+        }
+      }
+    }
+  }
+
+  return "";
+}
+
+function buildPayload(
+  form: CompressionEditorForm,
+): CompressionReportInput {
+  return {
+    projectId: form.projectId.trim(),
+    reportDate: form.reportDate,
+    title: form.title?.trim() || null,
+    companyName: form.companyName?.trim() || null,
+    status: form.status,
+    samples: form.samples.map((sample) => ({
+      sequenceNumber: sample.sequenceNumber,
+      dosage: sample.dosage.trim(),
+      cement: sample.cement.trim(),
+      admixture: sample.admixture?.trim() || null,
+      designation: sample.designation.trim(),
+      pourDate: sample.pourDate,
+      specimenSendDate: sample.specimenSendDate || null,
+      specimenCount: sample.specimenCount,
+      sortOrder: sample.sortOrder,
+      series: sample.series.map((series) => ({
+        crushingDate: series.crushingDate,
+        reference: series.reference?.trim() || null,
+        sortOrder: series.sortOrder,
+        results: series.results.map((result) => ({
+          specimenNumber: result.specimenNumber,
+          status: result.status,
+          value:
+            result.status === "VALID"
+              ? result.value ?? null
+              : null,
+          note: result.note?.trim() || null,
+        })),
+      })),
+    })),
+  };
+}
+
+function CompressionReportEditorPanel({
+  mode,
+  reportId,
+  onClose,
+  onSaved,
+}: Omit<CompressionReportEditorProps, "open">) {
+  const [projects, setProjects] = useState<FerRapportDTO[]>([]);
+  const [loadedProject, setLoadedProject] =
+    useState<CompressionProjectDTO | null>(null);
+  const [form, setForm] = useState<CompressionEditorForm>(
+    createInitialForm,
+  );
+  const [resultColumnCount, setResultColumnCount] = useState(4);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const readOnly = mode === "view";
+
+  useEffect(() => {
+    let cancelled = false;
+
+    setLoading(true);
+    setError("");
+    setProjects([]);
+    setLoadedProject(null);
+    setForm(createInitialForm());
+    setResultColumnCount(4);
+
+    void (async () => {
+      try {
+        const projectsPromise = ferraillageApi.listProjects();
+        const reportPromise =
+          mode === "create"
+            ? Promise.resolve(null)
+            : compressionApi.getReport(reportId ?? "");
+        const [projectsResponse, reportResponse] =
+          await Promise.all([projectsPromise, reportPromise]);
+
+        if (cancelled) return;
+        setProjects(projectsResponse.items ?? []);
+
+        if (reportResponse) {
+          const count = highestResultColumn(reportResponse.item);
+          setResultColumnCount(count);
+          setForm(mapReportToForm(reportResponse.item, count));
+          setLoadedProject(reportResponse.item.project);
+        }
+      } catch (loadError: unknown) {
+        if (cancelled) return;
+        setError(readableError(loadError));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, reportId]);
+
+  useEffect(() => {
+    return () => {
+      document.body.classList.remove("project-print-active");
+    };
+  }, []);
+
+  const selectedProject = useMemo<CompressionProjectDTO | null>(
+    () => {
+      const project = projects.find(
+        (item) => item.id === form.projectId,
+      );
+      if (project) {
+        return {
+          id: project.id,
+          chantierName: project.chantierName,
+          responsable: project.responsable,
+        };
+      }
+      return loadedProject?.id === form.projectId
+        ? loadedProject
+        : null;
+    },
+    [form.projectId, loadedProject, projects],
+  );
+
+  const handlePrint = () => {
+    document.body.classList.add("project-print-active");
+    const cleanup = () =>
+      document.body.classList.remove("project-print-active");
+    window.addEventListener("afterprint", cleanup, { once: true });
+    window.requestAnimationFrame(() => window.print());
+  };
+
+  const handleSave = async () => {
+    if (readOnly || saving) return;
+    const validationError = validateForm(form);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+    try {
+      const payload = buildPayload(form);
+      const response =
+        mode === "create"
+          ? await compressionApi.createReport(payload)
+          : await compressionApi.updateReport(
+              reportId ?? "",
+              payload,
+            );
+      await onSaved?.(response.item);
+      onClose();
+    } catch (saveError: unknown) {
+      setError(readableError(saveError));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const safeClose = () => {
+    if (!saving) onClose();
+  };
+
+  const footer = readOnly ? (
+    <div className="flex w-full justify-start">
+      <button
+        type="button"
+        className="stepper__nav"
+        onClick={safeClose}
+      >
+        Fermer
+      </button>
+    </div>
+  ) : (
+    <div className="flex w-full items-center justify-between gap-3">
+      <button
+        type="button"
+        className="stepper__nav"
+        onClick={safeClose}
+        disabled={saving}
+      >
+        Annuler
+      </button>
+      <button
+        type="button"
+        className="btn-fit-white-outline inline-flex items-center gap-2"
+        onClick={() => void handleSave()}
+        disabled={saving || loading}
+      >
+        {saving ? (
+          <FaSpinner className="animate-spin" />
+        ) : null}
+        Enregistrer
+      </button>
+    </div>
+  );
+
+  return (
+    <ProjectModalShell
+      title={MODE_TITLES[mode]}
+      subtitle={
+        selectedProject?.chantierName ||
+        form.title?.trim() ||
+        "—"
+      }
+      onClose={safeClose}
+      panelClassName="w-full max-w-[99%] h-[98%] rounded-xl bg-white shadow-xl border border-gray-200 flex flex-col"
+      bodyClassName="p-4 flex-1 overflow-auto bg-green-50"
+      headerActions={
+        <button
+          type="button"
+          className="btn-fit-white-outline no-print"
+          onClick={handlePrint}
+          disabled={loading || saving}
+        >
+          Imprimer
+        </button>
+      }
+      footer={footer}
+    >
+      {loading ? (
+        <div className="no-print flex min-h-80 items-center justify-center">
+          <FaSpinner className="animate-spin text-4xl text-(--primary)" />
+        </div>
+      ) : (
+        <>
+          <div className="no-print space-y-4">
+            {error ? (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            ) : null}
+
+            <div className="grid grid-cols-1 gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-2 xl:grid-cols-3">
+              <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+                Projet
+                <select
+                  value={form.projectId}
+                  disabled={readOnly || saving}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      projectId: event.target.value,
+                    }))
+                  }
+                  className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 disabled:bg-slate-100"
+                >
+                  <option value="">Sélectionner un projet</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.chantierName} —{" "}
+                      {project.responsable?.trim() || "—"}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+                Chantier
+                <div className="min-h-10 rounded border border-slate-300 bg-slate-50 px-3 py-2 text-slate-900">
+                  {selectedProject
+                    ? `${selectedProject.chantierName} — ${
+                        selectedProject.responsable?.trim() || "—"
+                      }`
+                    : "—"}
+                </div>
+              </label>
+
+              <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+                Date du rapport
+                <input
+                  type="date"
+                  value={form.reportDate}
+                  disabled={readOnly || saving}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      reportDate: event.target.value,
+                    }))
+                  }
+                  className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 disabled:bg-slate-100"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+                Titre
+                <input
+                  type="text"
+                  value={form.title ?? ""}
+                  disabled={readOnly || saving}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      title: event.target.value,
+                    }))
+                  }
+                  className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 disabled:bg-slate-100"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+                Entreprise
+                <input
+                  type="text"
+                  value={form.companyName ?? ""}
+                  disabled={readOnly || saving}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      companyName: event.target.value,
+                    }))
+                  }
+                  className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 disabled:bg-slate-100"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+                Statut
+                <select
+                  value={form.status}
+                  disabled={readOnly || saving}
+                  onChange={(event) => {
+                    const status = event.target.value;
+                    if (
+                      status !== "DRAFT" &&
+                      status !== "FINALIZED"
+                    ) {
+                      return;
+                    }
+                    setForm((current) => ({
+                      ...current,
+                      status,
+                    }));
+                  }}
+                  className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 disabled:bg-slate-100"
+                >
+                  <option value="DRAFT">Brouillon</option>
+                  <option value="FINALIZED">Finalisé</option>
+                </select>
+              </label>
+            </div>
+
+            <CompressionSamplesTable
+              readOnly={readOnly || saving}
+              samples={form.samples}
+              resultColumnCount={resultColumnCount}
+              onSamplesChange={(samples) =>
+                setForm((current) => ({
+                  ...current,
+                  samples,
+                }))
+              }
+              onResultColumnCountChange={setResultColumnCount}
+            />
+          </div>
+
+          <CompressionReportPrintView
+            report={buildPayload(form)}
+            project={selectedProject}
+            resultColumnCount={resultColumnCount}
+          />
+        </>
+      )}
+    </ProjectModalShell>
+  );
+}
+
+export default function CompressionReportEditor({
+  open,
+  mode,
+  reportId,
+  onClose,
+  onSaved,
+}: CompressionReportEditorProps) {
+  if (!open) return null;
+
+  return createPortal(
+    <CompressionReportEditorPanel
+      key={`${mode}-${reportId ?? "new"}`}
+      mode={mode}
+      reportId={reportId}
+      onClose={onClose}
+      onSaved={onSaved}
+    />,
+    document.body,
+  );
+}
