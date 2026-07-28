@@ -474,47 +474,47 @@ function CompressionReportEditorPanel({
             </div>
 
             {tab === "DETAILS_CHANTIER" ? (
-              <div className="rounded bg-white p-4 shadow">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                  <div>
-                    <div className="text-xs text-gray-500">
-                      Chantier
+              <div className="space-y-4">
+                <div className="rounded bg-white p-4 shadow">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <div>
+                      <div className="text-xs text-gray-500">
+                        Chantier
+                      </div>
+                      <div className="font-semibold text-gray-900">
+                        {selectedProject?.chantierName?.trim() || "—"}
+                      </div>
                     </div>
-                    <div className="font-semibold text-gray-900">
-                      {selectedProject?.chantierName?.trim() || "—"}
-                    </div>
-                  </div>
 
-                  <div>
-                    <div className="text-xs text-gray-500">
-                      Responsable
+                    <div>
+                      <div className="text-xs text-gray-500">
+                        Responsable
+                      </div>
+                      <div className="font-semibold text-gray-900">
+                        {selectedProject?.responsable?.trim() || "—"}
+                      </div>
                     </div>
-                    <div className="font-semibold text-gray-900">
-                      {selectedProject?.responsable?.trim() || "—"}
-                    </div>
-                  </div>
 
-                  <div>
-                    <div className="text-xs text-gray-500">
-                      Type d&apos;acier
+                    <div>
+                      <div className="text-xs text-gray-500">
+                        Type d&apos;acier
+                      </div>
+                      <div className="font-semibold text-gray-900">
+                        {selectedProject?.acierType ?? "—"}
+                      </div>
                     </div>
-                    <div className="font-semibold text-gray-900">
-                      {selectedProject?.acierType ?? "—"}
-                    </div>
-                  </div>
 
-                  <div className="md:col-span-3">
-                    <div className="text-xs text-gray-500">
-                      Note
-                    </div>
-                    <div className="whitespace-pre-wrap text-gray-900">
-                      {selectedProject?.note?.trim() || "—"}
+                    <div className="md:col-span-3">
+                      <div className="text-xs text-gray-500">
+                        Note
+                      </div>
+                      <div className="whitespace-pre-wrap text-gray-900">
+                        {selectedProject?.note?.trim() || "—"}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
+
                 <div className="grid grid-cols-1 gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-2 xl:grid-cols-3">
                   <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
                     Projet
@@ -599,6 +599,9 @@ function CompressionReportEditorPanel({
                   </label>
 
                 </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
 
                 <CompressionSamplesTable
                   readOnly={readOnly || saving}
