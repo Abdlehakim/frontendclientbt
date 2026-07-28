@@ -3,7 +3,6 @@ import { FaRegEdit, FaRegEye, FaTrashAlt } from "react-icons/fa";
 import { FaSpinner } from "react-icons/fa6";
 import DeleteConfirmModal from "@/components/common/DeleteConfirmModal";
 import CreateProjetWizard from "@/components/ferraillage/CreateProjetWizard";
-import EditRapportWizard from "@/components/ferraillage/EditProjectData";
 import ViewProjectData from "@/components/ferraillage/ViewProjectData";
 import TablePagination from "@/components/tablePagination";
 import {
@@ -36,8 +35,9 @@ export default function ProjectsPage() {
   const debounceRef = useRef<number | null>(null);
 
   const [projectWizardOpen, setProjectWizardOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [editItem, setEditItem] = useState<FerRapportDTO | null>(null);
+  const [projectEditOpen, setProjectEditOpen] = useState(false);
+  const [projectEditItem, setProjectEditItem] =
+    useState<FerRapportDTO | null>(null);
   const [viewOpen, setViewOpen] = useState(false);
   const [viewItem, setViewItem] = useState<FerRapportDTO | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
@@ -106,8 +106,8 @@ export default function ProjectsPage() {
   }
 
   function onEdit(item: FerRapportDTO) {
-    setEditItem(item);
-    setEditOpen(true);
+    setProjectEditItem(item);
+    setProjectEditOpen(true);
   }
 
   async function onProjectCreated(item: FerRapportDTO) {
@@ -147,7 +147,7 @@ export default function ProjectsPage() {
       ),
     );
 
-    setEditItem((current) =>
+    setProjectEditItem((current) =>
       current && current.id === updatedProject.id
         ? {
             ...current,
@@ -344,21 +344,21 @@ export default function ProjectsPage() {
         onClose={() => setProjectWizardOpen(false)}
         onCreated={onProjectCreated}
       />
+      <CreateProjetWizard
+        open={projectEditOpen}
+        project={projectEditItem}
+        onUpdated={handleProjectUpdated}
+        onClose={() => {
+          setProjectEditOpen(false);
+          setProjectEditItem(null);
+        }}
+      />
       <DeleteConfirmModal
         open={Boolean(deleteTarget)}
         itemName={deleteTarget?.chantierName ?? ""}
         loading={deleteLoading}
         onConfirm={() => void confirmDelete()}
         onCancel={closeDeleteModal}
-      />
-      <EditRapportWizard
-        open={editOpen}
-        rapport={editItem}
-        onProjectUpdated={handleProjectUpdated}
-        onClose={() => {
-          setEditOpen(false);
-          setEditItem(null);
-        }}
       />
       <ViewProjectData
         open={viewOpen}

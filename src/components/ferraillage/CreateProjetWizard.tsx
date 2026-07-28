@@ -14,6 +14,8 @@ type Props = {
   open: boolean;
   onClose: () => void;
   onCreated?: (item: FerRapportDTO) => void | Promise<void>;
+  project?: FerRapportDTO | null;
+  onUpdated?: (item: FerRapportDTO) => void | Promise<void>;
 };
 
 export type AcierType = "F400" | "F500";
@@ -46,7 +48,15 @@ function getValidationError(data: ReturnType<typeof normalizeWizardData>) {
   return null;
 }
 
-export default function CreateProjetWizard({ open, onClose, onCreated }: Props) {
+export default function CreateProjetWizard({
+  open,
+  onClose,
+  onCreated,
+  project = null,
+  onUpdated,
+}: Props) {
+  const isEditMode = Boolean(project?.id);
+
   const [data, setData] = useState<ProjectWizardData>(INITIAL_DATA);
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState("");
@@ -57,13 +67,27 @@ export default function CreateProjetWizard({ open, onClose, onCreated }: Props) 
     if (!open) return;
 
     const t = window.setTimeout(() => {
-      setData(INITIAL_DATA);
+      if (project?.id) {
+        setData({
+          chantierName: project.chantierName ?? "",
+          responsable: project.responsable ?? "",
+          acierType:
+            project.acierType === "F400" ||
+            project.acierType === "F500"
+              ? project.acierType
+              : "F500",
+          note: project.note ?? "",
+        });
+      } else {
+        setData(INITIAL_DATA);
+      }
+
       setSubmitting(false);
       setErr("");
     }, 0);
 
     return () => window.clearTimeout(t);
-  }, [open]);
+  }, [open, project]);
 
   useEffect(() => {
     if (!open) return;
@@ -94,17 +118,41 @@ export default function CreateProjetWizard({ open, onClose, onCreated }: Props) 
     setErr("");
 
     try {
-      const response = await ferraillageApi.createProject({
+      const payload = {
         chantierName: normalized.chantierName,
         responsable: normalized.responsable || null,
         acierType: normalized.acierType,
         note: normalized.note || null,
-      });
+      };
 
-      await onCreated?.(response.item);
+      if (isEditMode) {
+        const projectId = project?.id?.trim();
+
+        if (!projectId) {
+          setErr("Identifiant du projet introuvable.");
+          setSubmitting(false);
+          return;
+        }
+
+        const response = await ferraillageApi.updateProject(
+          projectId,
+          payload,
+        );
+        await onUpdated?.(response.item);
+      } else {
+        const response = await ferraillageApi.createProject(payload);
+        await onCreated?.(response.item);
+      }
+
       onClose();
     } catch (error: unknown) {
-      setErr(isFerApiError(error) ? error.message : "Project creation failed");
+      setErr(
+        isFerApiError(error)
+          ? error.message
+          : isEditMode
+            ? "Project update failed"
+            : "Project creation failed",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -128,7 +176,9 @@ export default function CreateProjetWizard({ open, onClose, onCreated }: Props) 
         >
           <div className="px-5 py-2 bg-gray-50 rounded-t-xl border-b border-gray-200 flex items-center justify-between">
             <div className="flex flex-col">
-              <div className="text-sm font-semibold text-gray-900">Creer Projet</div>
+              <div className="text-sm font-semibold text-gray-900">
+                {isEditMode ? "Modifier Projet" : "Creer Projet"}
+              </div>
             </div>
 
             <button
@@ -165,12 +215,26 @@ export default function CreateProjetWizard({ open, onClose, onCreated }: Props) 
             </div>
 
             <div className="flex items-center justify-end gap-2 flex-1 whitespace-nowrap">
-              <button type="button" onClick={() => void submitProject()} className="stepper__nav" disabled={submitting} aria-label="Creer le projet">
+              <button
+                type="button"
+                onClick={() => void submitProject()}
+                className="stepper__nav"
+                disabled={submitting}
+                aria-label={
+                  isEditMode
+                    ? "Modifier le projet"
+                    : "Creer le projet"
+                }
+              >
                 {submitting ? (
                   <span className="inline-flex items-center gap-2">
                     <FaSpinner className="animate-spin" />
-                    Enregistrement...
+                    {isEditMode
+                      ? "Modification..."
+                      : "Enregistrement..."}
                   </span>
+                ) : isEditMode ? (
+                  "Modifier"
                 ) : (
                   "Terminer"
                 )}

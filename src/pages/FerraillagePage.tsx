@@ -60,7 +60,7 @@ export default function FerraillagePage() {
       setErr(
         isFerApiError(error)
           ? error.message
-          : "Failed to load",
+          : "Impossible de charger les données de Ferraillage.",
       );
     } finally {
       setLoading(false);
@@ -85,16 +85,30 @@ export default function FerraillagePage() {
     if (!q) return items;
 
     return items.filter((report) => {
-      const name = report.name.toLowerCase();
-      const chantierName = (
-        report.project.chantierName || ""
-      ).toLowerCase();
-      const responsable = (
-        report.project.responsable || ""
-      ).toLowerCase();
-      const createdByName = (
-        report.createdByName || ""
-      ).toLowerCase();
+      const project =
+        report &&
+        typeof report === "object" &&
+        report.project &&
+        typeof report.project === "object"
+          ? report.project
+          : null;
+
+      const name =
+        typeof report?.name === "string"
+          ? report.name.toLowerCase()
+          : "";
+      const chantierName =
+        typeof project?.chantierName === "string"
+          ? project.chantierName.toLowerCase()
+          : "";
+      const responsable =
+        typeof project?.responsable === "string"
+          ? project.responsable.toLowerCase()
+          : "";
+      const createdByName =
+        typeof report?.createdByName === "string"
+          ? report.createdByName.toLowerCase()
+          : "";
 
       return (
         name.includes(q) ||
@@ -135,13 +149,29 @@ export default function FerraillagePage() {
   }, [searchTerm]);
 
   function onEdit(report: FerraillageReportDTO) {
+    if (!report.project?.id) {
+      setErr(
+        "Les données du projet lié sont indisponibles.",
+      );
+      return;
+    }
+
     setEditItem(report.project);
     setEditOpen(true);
   }
 
   function onView(report: FerraillageReportDTO) {
-    setViewProjectId(report.projectId);
-    setViewName(report.name);
+    const projectId = report.projectId?.trim();
+
+    if (!projectId) {
+      setErr(
+        "Le projet lié à ce Ferraillage est introuvable.",
+      );
+      return;
+    }
+
+    setViewProjectId(projectId);
+    setViewName(report.name?.trim() || "Ferraillage");
     setViewOpen(true);
   }
 
@@ -312,13 +342,13 @@ export default function FerraillagePage() {
                     className={index % 2 ? "bg-gray-100" : "bg-white"}
                   >
                     <td className="py-2 text-center font-semibold truncate">
-                      {report.name}
+                      {report.name?.trim() || "—"}
                     </td>
                     <td className="py-2 text-center truncate">
-                      {report.project.chantierName}
+                      {report.project?.chantierName?.trim() || "—"}
                     </td>
                     <td className="py-2 text-center truncate">
-                      {report.createdByName || "—"}
+                      {report.createdByName?.trim() || "—"}
                     </td>
                     <td className="py-2 text-center">
                       {fmtDate(report.createdAt)}

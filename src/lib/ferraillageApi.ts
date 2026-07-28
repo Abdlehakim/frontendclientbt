@@ -181,16 +181,146 @@ export function isApiError(err: unknown): err is ApiError {
   return err instanceof ApiError;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value)
+  );
+}
+
+function isNullableString(value: unknown): value is string | null {
+  return typeof value === "string" || value === null;
+}
+
+function isFerRapportDTO(value: unknown): value is FerRapportDTO {
+  if (!isRecord(value)) return false;
+
+  if (
+    typeof value.id !== "string" ||
+    typeof value.chantierName !== "string" ||
+    !isNullableString(value.responsable) ||
+    typeof value.createdAt !== "string" ||
+    typeof value.updatedAt !== "string"
+  ) {
+    return false;
+  }
+
+  if (
+    "acierType" in value &&
+    value.acierType !== "F400" &&
+    value.acierType !== "F500" &&
+    value.acierType !== null
+  ) {
+    return false;
+  }
+
+  if ("note" in value && !isNullableString(value.note)) {
+    return false;
+  }
+
+  if ("_count" in value && !isRecord(value._count)) {
+    return false;
+  }
+
+  return true;
+}
+
+function isFerraillageReportDTO(
+  value: unknown,
+): value is FerraillageReportDTO {
+  if (!isRecord(value)) return false;
+
+  return (
+    typeof value.id === "string" &&
+    typeof value.name === "string" &&
+    typeof value.projectId === "string" &&
+    isNullableString(value.createdById) &&
+    typeof value.createdByName === "string" &&
+    typeof value.createdAt === "string" &&
+    typeof value.updatedAt === "string" &&
+    isFerRapportDTO(value.project)
+  );
+}
+
+function isFerProjectDetailDTO(
+  value: unknown,
+): value is FerProjectDetailDTO {
+  if (!isRecord(value) || !isFerRapportDTO(value)) return false;
+
+  return (
+    Array.isArray(value.etats) &&
+    Array.isArray(value.restants) &&
+    Array.isArray(value.lignes) &&
+    Array.isArray(value.niveaux)
+  );
+}
+
+function isFerraillageReportDetailDTO(
+  value: unknown,
+): value is FerraillageReportDetailDTO {
+  if (!isRecord(value) || !isFerraillageReportDTO(value)) {
+    return false;
+  }
+
+  return isFerProjectDetailDTO(value.project);
+}
+
+function parseFerraillageReportListResponse(
+  value: unknown,
+): { items: FerraillageReportDTO[] } {
+  if (!isRecord(value)) {
+    throw new ApiError(
+      500,
+      "Invalid Ferraillage reports response",
+    );
+  }
+
+  const items = value.items;
+  if (
+    !Array.isArray(items) ||
+    !items.every(isFerraillageReportDTO)
+  ) {
+    throw new ApiError(
+      500,
+      "Invalid Ferraillage reports response",
+    );
+  }
+
+  return { items };
+}
+
+function parseFerraillageReportDetailResponse(
+  value: unknown,
+): { item: FerraillageReportDetailDTO } {
+  if (
+    !isRecord(value) ||
+    !isFerraillageReportDetailDTO(value.item)
+  ) {
+    throw new ApiError(
+      500,
+      "Invalid Ferraillage report response",
+    );
+  }
+
+  return { item: value.item };
+}
+
 export const ferraillageApi = {
   listProjects: (q?: string) =>
     request<{ items: FerRapportDTO[] }>(
       `${BASE}/projects${q ? `?q=${encodeURIComponent(q)}` : ""}`,
     ),
 
-  listRapports: (q?: string) =>
-    request<{ items: FerraillageReportDTO[] }>(
-      `${BASE}/rapports${q ? `?q=${encodeURIComponent(q)}` : ""}`,
-    ),
+  listRapports: async (q?: string) => {
+    const response = await request<unknown>(
+      `${BASE}/rapports${
+        q ? `?q=${encodeURIComponent(q)}` : ""
+      }`,
+    );
+
+    return parseFerraillageReportListResponse(response);
+  },
 
   createProject: (payload: FerProjectCreatePayload) =>
     request<{ item: FerRapportDTO }>(`${BASE}/projects`, {
@@ -227,10 +357,13 @@ export const ferraillageApi = {
       body: JSON.stringify(payload),
     }),
 
-  getRapport: (rapportId: string) =>
-    request<{ item: FerraillageReportDetailDTO }>(
+  getRapport: async (rapportId: string) => {
+    const response = await request<unknown>(
       `${BASE}/rapports/${encodeURIComponent(rapportId)}`,
-    ),
+    );
+
+    return parseFerraillageReportDetailResponse(response);
+  },
 
   getProject: (projectId: string) =>
     request<{ item: FerProjectDetailDTO }>(`${BASE}/projects/${encodeURIComponent(projectId)}`),

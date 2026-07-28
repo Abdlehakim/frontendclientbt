@@ -39,7 +39,7 @@ export default function FerRapportViewPage() {
         setErr(
           isFerApiError(error)
             ? error.message
-            : "Failed to load Ferraillage report",
+            : "Impossible de charger la donnée de Ferraillage.",
         );
       })
       .finally(() => {
@@ -84,6 +84,24 @@ export default function FerRapportViewPage() {
     );
   }
 
+  if (!report.project?.id) {
+    return (
+      <div className="p-6 w-[80%] mx-auto">
+        <p className="text-red-600">
+          Le projet lié à cette donnée de Ferraillage est introuvable.
+        </p>
+
+        <button
+          onClick={() => nav(-1)}
+          className="mt-4 px-4 py-2 bg-(--primary) text-white rounded"
+          type="button"
+        >
+          Retour
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="project-print-area print-wrapper mx-auto px-4 py-4 flex flex-col gap-4 h-full bg-green-50 rounded-xl">
       <div className="flex items-center gap-4">
@@ -91,7 +109,7 @@ export default function FerRapportViewPage() {
           Back to list
         </button>
         <h1 className="text-3xl font-bold">
-          Ferraillage - {report.name}
+          Ferraillage - {report.name?.trim() || "Sans nom"}
         </h1>
       </div>
 
