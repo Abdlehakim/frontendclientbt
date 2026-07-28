@@ -14,7 +14,6 @@ export type CompressionSampleModalPayload = {
   designation: string;
   pourDate: string;
   specimenSendDate: string;
-  specimenCount: number;
 };
 
 export type CompressionSampleModalMode =
@@ -40,7 +39,6 @@ type CompressionSampleModalForm = {
   designation: string;
   pourDate: string;
   specimenSendDate: string;
-  specimenCount: string;
 };
 
 const EMPTY_FORM: CompressionSampleModalForm = {
@@ -50,7 +48,6 @@ const EMPTY_FORM: CompressionSampleModalForm = {
   designation: "",
   pourDate: "",
   specimenSendDate: "",
-  specimenCount: "6",
 };
 
 function payloadToForm(
@@ -64,9 +61,6 @@ function payloadToForm(
     pourDate: payload.pourDate,
     specimenSendDate:
       payload.specimenSendDate,
-    specimenCount: String(
-      payload.specimenCount,
-    ),
   };
 }
 
@@ -90,15 +84,6 @@ function validateForm(
   }
   if (!form.pourDate) {
     return "La date de coulage est obligatoire.";
-  }
-
-  const specimenCount = Number(form.specimenCount);
-  if (
-    !Number.isInteger(specimenCount) ||
-    specimenCount < 1 ||
-    specimenCount > 100
-  ) {
-    return "Le nombre d’éprouvettes doit être compris entre 1 et 100.";
   }
 
   return "";
@@ -153,8 +138,6 @@ export default function CompressionSampleModal({
       return;
     }
 
-    const specimenCount = Number(form.specimenCount);
-
     onSubmit({
       dosage: form.dosage.trim(),
       cement: form.cement.trim(),
@@ -162,7 +145,6 @@ export default function CompressionSampleModal({
       designation: form.designation.trim(),
       pourDate: form.pourDate,
       specimenSendDate: form.specimenSendDate,
-      specimenCount,
     });
   };
 
@@ -312,27 +294,6 @@ export default function CompressionSampleModal({
                     setForm((current) => ({
                       ...current,
                       specimenSendDate: event.target.value,
-                    }));
-                    setError("");
-                  }}
-                  className={fieldClass}
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <label className="mb-1 text-xs font-semibold text-gray-700">
-                  Nombre d’éprouvettes
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  max={100}
-                  step={1}
-                  value={form.specimenCount}
-                  onChange={(event) => {
-                    setForm((current) => ({
-                      ...current,
-                      specimenCount: event.target.value,
                     }));
                     setError("");
                   }}

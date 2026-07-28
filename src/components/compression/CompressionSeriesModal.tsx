@@ -12,6 +12,11 @@ import type {
   CompressionSeriesInput,
 } from "@/lib/compressionApi";
 
+export type CompressionSeriesModalPayload = {
+  series: CompressionSeriesInput;
+  specimenCount: number;
+};
+
 const RESULT_STATUS_LABELS: Record<
   CompressionResultStatus,
   string
@@ -33,10 +38,11 @@ type CompressionSeriesModalProps = {
   initialValue:
     | CompressionSeriesInput
     | null;
+  initialSpecimenCount: number;
   resultColumnCount: number;
   onClose: () => void;
   onSubmit: (
-    series: CompressionSeriesInput,
+    payload: CompressionSeriesModalPayload,
   ) => void;
 };
 
@@ -133,6 +139,7 @@ export default function CompressionSeriesModal({
   open,
   mode,
   initialValue,
+  initialSpecimenCount,
   resultColumnCount,
   onClose,
   onSubmit,
@@ -145,6 +152,12 @@ export default function CompressionSeriesModal({
           resultColumnCount,
         ),
     );
+  const [specimenCount, setSpecimenCount] =
+    useState(
+      initialSpecimenCount > 0
+        ? String(initialSpecimenCount)
+        : "6",
+    );
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -156,8 +169,14 @@ export default function CompressionSeriesModal({
         resultColumnCount,
       ),
     );
+    setSpecimenCount(
+      initialSpecimenCount > 0
+        ? String(initialSpecimenCount)
+        : "6",
+    );
     setError("");
   }, [
+    initialSpecimenCount,
     initialValue,
     open,
     resultColumnCount,
@@ -206,22 +225,44 @@ export default function CompressionSeriesModal({
       return;
     }
 
+    const normalizedSpecimenCount =
+      Number(specimenCount);
+
+    if (
+      !Number.isInteger(
+        normalizedSpecimenCount,
+      ) ||
+      normalizedSpecimenCount < 1 ||
+      normalizedSpecimenCount > 100
+    ) {
+      setError(
+        "Le nombre d’éprouvettes doit être compris entre 1 et 100.",
+      );
+      return;
+    }
+
     onSubmit({
-      crushingDate: series.crushingDate,
-      reference:
-        series.reference?.trim() || null,
-      sortOrder: series.sortOrder,
-      results: series.results.map(
-        (result) => ({
-          ...result,
-          value:
-            result.status === "VALID"
-              ? result.value
-              : null,
-          note:
-            result.note?.trim() || null,
-        }),
-      ),
+      specimenCount:
+        normalizedSpecimenCount,
+      series: {
+        crushingDate:
+          series.crushingDate,
+        reference:
+          series.reference?.trim() || null,
+        sortOrder:
+          series.sortOrder,
+        results: series.results.map(
+          (result) => ({
+            ...result,
+            value:
+              result.status === "VALID"
+                ? result.value
+                : null,
+            note:
+              result.note?.trim() || null,
+          }),
+        ),
+      },
     });
   };
 
@@ -266,7 +307,7 @@ export default function CompressionSeriesModal({
           </div>
 
           <div className="max-h-[75vh] overflow-y-auto p-5">
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               <div className="flex flex-col">
                 <label className="mb-1 text-xs font-semibold text-gray-700">
                   Date d’écrasement
@@ -300,6 +341,26 @@ export default function CompressionSeriesModal({
                       reference:
                         event.target.value,
                     }));
+                    setError("");
+                  }}
+                  className={fieldClass}
+                />
+              </div>
+
+              <div className="flex flex-col">
+                <label className="mb-1 text-xs font-semibold text-gray-700">
+                  Nombre d’éprouvettes
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  step={1}
+                  value={specimenCount}
+                  onChange={(event) => {
+                    setSpecimenCount(
+                      event.target.value,
+                    );
                     setError("");
                   }}
                   className={fieldClass}

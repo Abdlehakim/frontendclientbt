@@ -2,7 +2,9 @@ import { useState } from "react";
 import CompressionSampleModal, {
   type CompressionSampleModalPayload,
 } from "@/components/compression/CompressionSampleModal";
-import CompressionSeriesModal from "@/components/compression/CompressionSeriesModal";
+import CompressionSeriesModal, {
+  type CompressionSeriesModalPayload,
+} from "@/components/compression/CompressionSeriesModal";
 import {
   FaPlus,
   FaRegEdit,
@@ -42,6 +44,7 @@ type SeriesModalState = {
   sampleIndex: number;
   seriesIndex: number;
   initialValue: CompressionSeriesInput;
+  initialSpecimenCount: number;
 } | null;
 
 export function createEmptyCompressionResults(
@@ -210,7 +213,6 @@ const sampleToModalPayload = (
   pourDate: sample.pourDate,
   specimenSendDate:
     sample.specimenSendDate ?? "",
-  specimenCount: sample.specimenCount,
 });
 
 export default function CompressionSamplesTable({
@@ -235,22 +237,6 @@ export default function CompressionSamplesTable({
         index === sampleIndex ? sample : current,
       ),
     );
-  };
-
-  const replaceSeries = (
-    sampleIndex: number,
-    seriesIndex: number,
-    series: CompressionSeriesInput,
-  ) => {
-    const sample = samples[sampleIndex];
-    if (!sample) return;
-
-    replaceSample(sampleIndex, {
-      ...sample,
-      series: sample.series.map((current, index) =>
-        index === seriesIndex ? series : current,
-      ),
-    });
   };
 
   const openCreateSampleModal = () => {
@@ -297,7 +283,7 @@ export default function CompressionSamplesTable({
         pourDate: payload.pourDate,
         specimenSendDate:
           payload.specimenSendDate || null,
-        specimenCount: payload.specimenCount,
+        specimenCount: 6,
         sortOrder: samples.length,
         series: [],
       };
@@ -324,7 +310,6 @@ export default function CompressionSamplesTable({
           pourDate: payload.pourDate,
           specimenSendDate:
             payload.specimenSendDate || null,
-          specimenCount: payload.specimenCount,
         },
       );
     }
@@ -368,6 +353,10 @@ export default function CompressionSamplesTable({
           resultColumnCount,
           sample.series.length,
         ),
+      initialSpecimenCount:
+        sample.specimenCount > 0
+          ? sample.specimenCount
+          : 6,
     });
   };
 
@@ -375,9 +364,11 @@ export default function CompressionSamplesTable({
     sampleIndex: number,
     seriesIndex: number,
   ) => {
-    const series =
-      samples[sampleIndex]?.series[seriesIndex];
+    const sample = samples[sampleIndex];
+    if (!sample) return;
 
+    const series =
+      sample.series[seriesIndex];
     if (!series) return;
 
     setActionError("");
@@ -393,13 +384,20 @@ export default function CompressionSamplesTable({
           }),
         ),
       },
+      initialSpecimenCount:
+        sample.specimenCount > 0
+          ? sample.specimenCount
+          : 6,
     });
   };
 
   const submitSeriesModal = (
-    submittedSeries: CompressionSeriesInput,
+    payload: CompressionSeriesModalPayload,
   ) => {
     if (!seriesModalState) return;
+
+    const submittedSeries =
+      payload.series;
 
     const sample =
       samples[seriesModalState.sampleIndex];
@@ -411,6 +409,8 @@ export default function CompressionSamplesTable({
         seriesModalState.sampleIndex,
         {
           ...sample,
+          specimenCount:
+            payload.specimenCount,
           series: [
             ...sample.series,
             {
@@ -428,12 +428,23 @@ export default function CompressionSamplesTable({
 
       if (!existingSeries) return;
 
-      replaceSeries(
+      replaceSample(
         seriesModalState.sampleIndex,
-        seriesModalState.seriesIndex,
         {
-          ...submittedSeries,
-          sortOrder: existingSeries.sortOrder,
+          ...sample,
+          specimenCount:
+            payload.specimenCount,
+          series: sample.series.map(
+            (currentSeries, index) =>
+              index ===
+              seriesModalState.seriesIndex
+                ? {
+                    ...submittedSeries,
+                    sortOrder:
+                      existingSeries.sortOrder,
+                  }
+                : currentSeries,
+          ),
         },
       );
     }
@@ -530,6 +541,10 @@ export default function CompressionSamplesTable({
         }
         initialValue={
           seriesModalState?.initialValue ?? null
+        }
+        initialSpecimenCount={
+          seriesModalState
+            ?.initialSpecimenCount ?? 6
         }
         resultColumnCount={resultColumnCount}
         onClose={() => {
