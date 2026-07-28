@@ -19,8 +19,16 @@ export type CompressionSampleModalPayload = {
   reference: string;
 };
 
+export type CompressionSampleModalMode =
+  | "create"
+  | "edit";
+
 type CompressionSampleModalProps = {
   open: boolean;
+  mode: CompressionSampleModalMode;
+  initialValue?:
+    | CompressionSampleModalPayload
+    | null;
   onClose: () => void;
   onSubmit: (
     payload: CompressionSampleModalPayload,
@@ -50,6 +58,25 @@ const EMPTY_FORM: CompressionSampleModalForm = {
   crushingDate: "",
   reference: "",
 };
+
+function payloadToForm(
+  payload: CompressionSampleModalPayload,
+): CompressionSampleModalForm {
+  return {
+    dosage: payload.dosage,
+    cement: payload.cement,
+    admixture: payload.admixture,
+    designation: payload.designation,
+    pourDate: payload.pourDate,
+    specimenSendDate:
+      payload.specimenSendDate,
+    specimenCount: String(
+      payload.specimenCount,
+    ),
+    crushingDate: payload.crushingDate,
+    reference: payload.reference,
+  };
+}
 
 const fieldClass =
   "form-control w-full rounded-md border text-sm font-medium " +
@@ -100,6 +127,8 @@ function validateForm(
 
 export default function CompressionSampleModal({
   open,
+  mode,
+  initialValue,
   onClose,
   onSubmit,
 }: CompressionSampleModalProps) {
@@ -109,9 +138,15 @@ export default function CompressionSampleModal({
 
   useEffect(() => {
     if (!open) return;
-    setForm({ ...EMPTY_FORM });
+
+    if (mode === "edit" && initialValue) {
+      setForm(payloadToForm(initialValue));
+    } else {
+      setForm({ ...EMPTY_FORM });
+    }
+
     setError("");
-  }, [open]);
+  }, [initialValue, mode, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -179,7 +214,9 @@ export default function CompressionSampleModal({
         >
           <div className="px-5 py-3 bg-gray-50 rounded-t-xl border-b border-gray-200 flex items-center justify-between">
             <div className="text-sm font-semibold text-gray-900">
-              Ajouter un prélèvement
+              {mode === "edit"
+                ? "Modifier le prélèvement"
+                : "Ajouter un prélèvement"}
             </div>
             <button
               type="button"
@@ -395,7 +432,9 @@ export default function CompressionSampleModal({
                 type="submit"
                 className="stepper__nav"
               >
-                Ajouter
+                {mode === "edit"
+                  ? "Enregistrer"
+                  : "Ajouter"}
               </button>
             </div>
           </div>

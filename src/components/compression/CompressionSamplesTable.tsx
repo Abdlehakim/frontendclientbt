@@ -2,29 +2,22 @@ import { useState } from "react";
 import CompressionSampleModal, {
   type CompressionSampleModalPayload,
 } from "@/components/compression/CompressionSampleModal";
+import CompressionSeriesModal from "@/components/compression/CompressionSeriesModal";
+import {
+  FaPlus,
+  FaRegEdit,
+  FaTrashAlt,
+} from "react-icons/fa";
 import type {
   CompressionResultInput,
-  CompressionResultStatus,
   CompressionSampleInput,
   CompressionSeriesInput,
 } from "@/lib/compressionApi";
-
-const RESULT_STATUS_LABELS: Record<
-  CompressionResultStatus,
-  string
-> = {
-  VALID: "Valide",
-  INVALID: "Invalide",
-  NOT_TESTED: "Non testé",
-};
 
 const numberFormatter = new Intl.NumberFormat("fr-FR", {
   minimumFractionDigits: 0,
   maximumFractionDigits: 3,
 });
-
-const inputClassName =
-  "h-7 w-full min-w-0 rounded border border-slate-300 bg-white px-1 py-0.5 text-[10px] leading-tight text-slate-900";
 
 export type CompressionSamplesTableProps = {
   readOnly: boolean;
@@ -33,6 +26,23 @@ export type CompressionSamplesTableProps = {
   onSamplesChange: (samples: CompressionSampleInput[]) => void;
   onResultColumnCountChange: (count: number) => void;
 };
+
+type SampleModalState =
+  | {
+      mode: "create";
+    }
+  | {
+      mode: "edit";
+      sampleIndex: number;
+    }
+  | null;
+
+type SeriesModalState = {
+  mode: "create" | "edit";
+  sampleIndex: number;
+  seriesIndex: number;
+  initialValue: CompressionSeriesInput;
+} | null;
 
 export function createEmptyCompressionResults(
   count: number,
@@ -167,14 +177,17 @@ export function formatCompressionNumber(
     : "—";
 }
 
-function isResultStatus(
-  value: string,
-): value is CompressionResultStatus {
-  return (
-    value === "VALID" ||
-    value === "INVALID" ||
-    value === "NOT_TESTED"
-  );
+function formatDateOnly(
+  value: string | null | undefined,
+): string {
+  if (!value) return "—";
+
+  const match =
+    /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+
+  if (!match) return value;
+
+  return `${match[3]}/${match[2]}/${match[1]}`;
 }
 
 function displayResult(result: CompressionResultInput): string {
@@ -184,6 +197,27 @@ function displayResult(result: CompressionResultInput): string {
   return result.note?.trim() || "—";
 }
 
+const sampleToModalPayload = (
+  sample: CompressionSampleInput,
+): CompressionSampleModalPayload => {
+  const firstSeries = sample.series[0];
+
+  return {
+    dosage: sample.dosage,
+    cement: sample.cement,
+    admixture: sample.admixture ?? "",
+    designation: sample.designation,
+    pourDate: sample.pourDate,
+    specimenSendDate:
+      sample.specimenSendDate ?? "",
+    specimenCount: sample.specimenCount,
+    crushingDate:
+      firstSeries?.crushingDate ?? "",
+    reference:
+      firstSeries?.reference ?? "",
+  };
+};
+
 export default function CompressionSamplesTable({
   readOnly,
   samples,
@@ -192,8 +226,10 @@ export default function CompressionSamplesTable({
   onResultColumnCountChange,
 }: CompressionSamplesTableProps) {
   const [actionError, setActionError] = useState("");
-  const [sampleModalOpen, setSampleModalOpen] =
-    useState(false);
+  const [sampleModalState, setSampleModalState] =
+    useState<SampleModalState>(null);
+  const [seriesModalState, setSeriesModalState] =
+    useState<SeriesModalState>(null);
   const useCompactLayout = resultColumnCount <= 4;
   const resultColumnWidth =
     20 / Math.max(resultColumnCount, 1);
@@ -225,73 +261,119 @@ export default function CompressionSamplesTable({
     });
   };
 
-  const replaceResult = (
-    sampleIndex: number,
-    seriesIndex: number,
-    resultIndex: number,
-    result: CompressionResultInput,
-  ) => {
-    const series = samples[sampleIndex]?.series[seriesIndex];
-    if (!series) return;
-
-    replaceSeries(sampleIndex, seriesIndex, {
-      ...series,
-      results: series.results.map((current, index) =>
-        index === resultIndex ? result : current,
-      ),
+  const openCreateSampleModal = () => {
+    setActionError("");
+    setSampleModalState({
+      mode: "create",
     });
   };
 
-  const openSampleModal = () => {
+  const openEditSampleModal = (
+    sampleIndex: number,
+  ) => {
+    const sample = samples[sampleIndex];
+    if (!sample) return;
+
     setActionError("");
-    setSampleModalOpen(true);
+    setSampleModalState({
+      mode: "edit",
+      sampleIndex,
+    });
   };
 
-  const addSampleFromModal = (
+  const submitSampleModal = (
     payload: CompressionSampleModalPayload,
   ) => {
-    const nextSequenceNumber =
-      Math.max(
-        0,
-        ...samples.map((sample) => sample.sequenceNumber),
-      ) + 1;
+    if (!sampleModalState) return;
 
-    const initialSeries =
-      createEmptyCompressionSeries(
-        resultColumnCount,
-        0,
-      );
+    if (sampleModalState.mode === "create") {
+      const nextSequenceNumber =
+        Math.max(
+          0,
+          ...samples.map(
+            (sample) => sample.sequenceNumber,
+          ),
+        ) + 1;
 
-    const newSample: CompressionSampleInput = {
-      sequenceNumber: nextSequenceNumber,
-      dosage: payload.dosage,
-      cement: payload.cement,
-      admixture:
-        payload.admixture.trim() || null,
-      designation: payload.designation,
-      pourDate: payload.pourDate,
-      specimenSendDate:
-        payload.specimenSendDate || null,
-      specimenCount: payload.specimenCount,
-      sortOrder: samples.length,
-      series: [
+      const initialSeries =
+        createEmptyCompressionSeries(
+          resultColumnCount,
+          0,
+        );
+
+      const newSample: CompressionSampleInput = {
+        sequenceNumber: nextSequenceNumber,
+        dosage: payload.dosage,
+        cement: payload.cement,
+        admixture:
+          payload.admixture.trim() || null,
+        designation: payload.designation,
+        pourDate: payload.pourDate,
+        specimenSendDate:
+          payload.specimenSendDate || null,
+        specimenCount: payload.specimenCount,
+        sortOrder: samples.length,
+        series: [
+          {
+            ...initialSeries,
+            crushingDate: payload.crushingDate,
+            reference:
+              payload.reference.trim() || null,
+          },
+        ],
+      };
+
+      onSamplesChange([
+        ...samples,
+        newSample,
+      ]);
+    } else {
+      const sample =
+        samples[sampleModalState.sampleIndex];
+
+      if (!sample) return;
+
+      const firstSeries =
+        sample.series[0] ??
+        createEmptyCompressionSeries(
+          resultColumnCount,
+          0,
+        );
+
+      const updatedFirstSeries: CompressionSeriesInput = {
+        ...firstSeries,
+        crushingDate: payload.crushingDate,
+        reference:
+          payload.reference.trim() || null,
+        sortOrder: 0,
+      };
+
+      replaceSample(
+        sampleModalState.sampleIndex,
         {
-          ...initialSeries,
-          crushingDate: payload.crushingDate,
-          reference:
-            payload.reference.trim() || null,
+          ...sample,
+          dosage: payload.dosage,
+          cement: payload.cement,
+          admixture:
+            payload.admixture.trim() || null,
+          designation: payload.designation,
+          pourDate: payload.pourDate,
+          specimenSendDate:
+            payload.specimenSendDate || null,
+          specimenCount: payload.specimenCount,
+          series:
+            sample.series.length > 0
+              ? [
+                  updatedFirstSeries,
+                  ...sample.series.slice(1),
+                ]
+              : [updatedFirstSeries],
         },
-      ],
-    };
+      );
+    }
 
     setActionError("");
-
-    onSamplesChange([
-      ...samples,
-      newSample,
-    ]);
-
-    setSampleModalOpen(false);
+    setSampleModalState(null);
   };
 
   const removeSample = (sampleIndex: number) => {
@@ -313,21 +395,94 @@ export default function CompressionSamplesTable({
     );
   };
 
-  const addSeries = (sampleIndex: number) => {
+  const openCreateSeriesModal = (
+    sampleIndex: number,
+  ) => {
     const sample = samples[sampleIndex];
     if (!sample) return;
 
     setActionError("");
-    replaceSample(sampleIndex, {
-      ...sample,
-      series: [
-        ...sample.series,
+    setSeriesModalState({
+      mode: "create",
+      sampleIndex,
+      seriesIndex: sample.series.length,
+      initialValue:
         createEmptyCompressionSeries(
           resultColumnCount,
           sample.series.length,
         ),
-      ],
     });
+  };
+
+  const openEditSeriesModal = (
+    sampleIndex: number,
+    seriesIndex: number,
+  ) => {
+    const series =
+      samples[sampleIndex]?.series[seriesIndex];
+
+    if (!series) return;
+
+    setActionError("");
+    setSeriesModalState({
+      mode: "edit",
+      sampleIndex,
+      seriesIndex,
+      initialValue: {
+        ...series,
+        results: series.results.map(
+          (result) => ({
+            ...result,
+          }),
+        ),
+      },
+    });
+  };
+
+  const submitSeriesModal = (
+    submittedSeries: CompressionSeriesInput,
+  ) => {
+    if (!seriesModalState) return;
+
+    const sample =
+      samples[seriesModalState.sampleIndex];
+
+    if (!sample) return;
+
+    if (seriesModalState.mode === "create") {
+      replaceSample(
+        seriesModalState.sampleIndex,
+        {
+          ...sample,
+          series: [
+            ...sample.series,
+            {
+              ...submittedSeries,
+              sortOrder: sample.series.length,
+            },
+          ],
+        },
+      );
+    } else {
+      const existingSeries =
+        sample.series[
+          seriesModalState.seriesIndex
+        ];
+
+      if (!existingSeries) return;
+
+      replaceSeries(
+        seriesModalState.sampleIndex,
+        seriesModalState.seriesIndex,
+        {
+          ...submittedSeries,
+          sortOrder: existingSeries.sortOrder,
+        },
+      );
+    }
+
+    setActionError("");
+    setSeriesModalState(null);
   };
 
   const removeSeries = (
@@ -387,14 +542,43 @@ export default function CompressionSamplesTable({
     onResultColumnCountChange(nextCount);
   };
 
+  const editingSample =
+    sampleModalState?.mode === "edit"
+      ? samples[sampleModalState.sampleIndex] ??
+        null
+      : null;
+
   return (
     <div className="space-y-3">
       <CompressionSampleModal
-        open={sampleModalOpen}
+        open={sampleModalState !== null}
+        mode={
+          sampleModalState?.mode ?? "create"
+        }
+        initialValue={
+          editingSample
+            ? sampleToModalPayload(editingSample)
+            : null
+        }
         onClose={() => {
-          setSampleModalOpen(false);
+          setSampleModalState(null);
         }}
-        onSubmit={addSampleFromModal}
+        onSubmit={submitSampleModal}
+      />
+
+      <CompressionSeriesModal
+        open={seriesModalState !== null}
+        mode={
+          seriesModalState?.mode ?? "create"
+        }
+        initialValue={
+          seriesModalState?.initialValue ?? null
+        }
+        resultColumnCount={resultColumnCount}
+        onClose={() => {
+          setSeriesModalState(null);
+        }}
+        onSubmit={submitSeriesModal}
       />
 
       {!readOnly ? (
@@ -402,7 +586,7 @@ export default function CompressionSamplesTable({
           <button
             type="button"
             className="btn-fit-white-outline"
-            onClick={openSampleModal}
+            onClick={openCreateSampleModal}
           >
             Ajouter un prélèvement
           </button>
@@ -539,289 +723,58 @@ export default function CompressionSamplesTable({
                     {seriesIndex === 0 ? (
                       <>
                         <td rowSpan={sample.series.length} className="border border-slate-300 p-0.5 text-center">
-                          {readOnly ? (
-                            sample.sequenceNumber
-                          ) : (
-                            <input
-                              type="number"
-                              min={1}
-                              value={sample.sequenceNumber}
-                              onChange={(event) =>
-                                replaceSample(sampleIndex, {
-                                  ...sample,
-                                  sequenceNumber: Number(
-                                    event.target.value,
-                                  ),
-                                })
-                              }
-                              className={inputClassName}
-                            />
-                          )}
+                          {sample.sequenceNumber}
                         </td>
                         <td rowSpan={sample.series.length} className="border border-slate-300 p-0.5">
-                          {readOnly ? (
-                            sample.dosage || "—"
-                          ) : (
-                            <input
-                              type="text"
-                              value={sample.dosage}
-                              onChange={(event) =>
-                                replaceSample(sampleIndex, {
-                                  ...sample,
-                                  dosage: event.target.value,
-                                })
-                              }
-                              className={inputClassName}
-                            />
-                          )}
+                          {sample.dosage.trim() || "—"}
                         </td>
                         <td rowSpan={sample.series.length} className="border border-slate-300 p-0.5">
-                          {readOnly ? (
-                            sample.cement || "—"
-                          ) : (
-                            <input
-                              type="text"
-                              value={sample.cement}
-                              onChange={(event) =>
-                                replaceSample(sampleIndex, {
-                                  ...sample,
-                                  cement: event.target.value,
-                                })
-                              }
-                              className={inputClassName}
-                            />
-                          )}
+                          {sample.cement.trim() || "—"}
                         </td>
                         <td rowSpan={sample.series.length} className="border border-slate-300 p-0.5">
-                          {readOnly ? (
-                            sample.admixture?.trim() || "—"
-                          ) : (
-                            <input
-                              type="text"
-                              value={sample.admixture ?? ""}
-                              onChange={(event) =>
-                                replaceSample(sampleIndex, {
-                                  ...sample,
-                                  admixture: event.target.value,
-                                })
-                              }
-                              className={inputClassName}
-                            />
-                          )}
+                          {sample.admixture?.trim() || "—"}
                         </td>
                         <td rowSpan={sample.series.length} className="border border-slate-300 p-0.5">
-                          {readOnly ? (
-                            sample.designation || "—"
-                          ) : (
-                            <textarea
-                              value={sample.designation}
-                              onChange={(event) =>
-                                replaceSample(sampleIndex, {
-                                  ...sample,
-                                  designation: event.target.value,
-                                })
-                              }
-                              className={`${inputClassName} h-8 min-h-8 resize-y`}
-                            />
-                          )}
+                          <div className="whitespace-pre-wrap break-words">
+                            {sample.designation.trim() || "—"}
+                          </div>
                         </td>
                         <td rowSpan={sample.series.length} className="border border-slate-300 p-0.5 text-center">
-                          {readOnly ? (
-                            sample.pourDate || "—"
-                          ) : (
-                            <input
-                              type="date"
-                              value={sample.pourDate}
-                              onChange={(event) =>
-                                replaceSample(sampleIndex, {
-                                  ...sample,
-                                  pourDate: event.target.value,
-                                })
-                              }
-                              className={inputClassName}
-                            />
-                          )}
+                          {formatDateOnly(sample.pourDate)}
                         </td>
                         <td rowSpan={sample.series.length} className="border border-slate-300 p-0.5 text-center">
-                          {readOnly ? (
-                            sample.specimenSendDate || "—"
-                          ) : (
-                            <input
-                              type="date"
-                              value={sample.specimenSendDate ?? ""}
-                              onChange={(event) =>
-                                replaceSample(sampleIndex, {
-                                  ...sample,
-                                  specimenSendDate:
-                                    event.target.value,
-                                })
-                              }
-                              className={inputClassName}
-                            />
+                          {formatDateOnly(
+                            sample.specimenSendDate,
                           )}
                         </td>
                       </>
                     ) : null}
 
                     <td className="border border-slate-300 p-0.5 text-center">
-                      {readOnly ? (
-                        series.crushingDate || "—"
-                      ) : (
-                        <input
-                          type="date"
-                          value={series.crushingDate}
-                          onChange={(event) =>
-                            replaceSeries(
-                              sampleIndex,
-                              seriesIndex,
-                              {
-                                ...series,
-                                crushingDate: event.target.value,
-                              },
-                            )
-                          }
-                          className={inputClassName}
-                        />
+                      {formatDateOnly(
+                        series.crushingDate,
                       )}
                     </td>
 
                     {seriesIndex === 0 ? (
                       <td rowSpan={sample.series.length} className="border border-slate-300 p-0.5 text-center">
-                        {readOnly ? (
-                          sample.specimenCount
-                        ) : (
-                          <input
-                            type="number"
-                            min={1}
-                            max={100}
-                            value={sample.specimenCount}
-                            onChange={(event) =>
-                              replaceSample(sampleIndex, {
-                                ...sample,
-                                specimenCount: Number(
-                                  event.target.value,
-                                ),
-                              })
-                            }
-                            className={inputClassName}
-                          />
-                        )}
+                        {sample.specimenCount}
                       </td>
                     ) : null}
 
                     <td className="border border-slate-300 p-0.5">
-                      {readOnly ? (
-                        series.reference?.trim() || "—"
-                      ) : (
-                        <input
-                          type="text"
-                          value={series.reference ?? ""}
-                          onChange={(event) =>
-                            replaceSeries(
-                              sampleIndex,
-                              seriesIndex,
-                              {
-                                ...series,
-                                reference: event.target.value,
-                              },
-                            )
-                          }
-                          className={inputClassName}
-                        />
-                      )}
+                      {series.reference?.trim() || "—"}
                     </td>
                     <td className="border border-slate-300 p-0.5 text-center font-semibold">
                       {maturity === null ? "—" : maturity}
                     </td>
 
-                    {series.results.map((result, resultIndex) => (
+                    {series.results.map((result) => (
                       <td
                         key={`${sampleIndex}-${seriesIndex}-${result.specimenNumber}`}
                         className="border border-slate-300 p-0.5 text-center"
                       >
-                        {readOnly ? (
-                          displayResult(result)
-                        ) : (
-                          <div className="space-y-0.5">
-                            <select
-                              value={result.status}
-                              onChange={(event) => {
-                                const status = event.target.value;
-                                if (!isResultStatus(status)) return;
-                                replaceResult(
-                                  sampleIndex,
-                                  seriesIndex,
-                                  resultIndex,
-                                  {
-                                    ...result,
-                                    status,
-                                    value:
-                                      status === "VALID"
-                                        ? result.value
-                                        : null,
-                                  },
-                                );
-                              }}
-                              className={inputClassName}
-                            >
-                              {Object.entries(
-                                RESULT_STATUS_LABELS,
-                              ).map(([status, label]) => (
-                                <option key={status} value={status}>
-                                  {label}
-                                </option>
-                              ))}
-                            </select>
-
-                            {result.status === "VALID" ? (
-                              <input
-                                type="number"
-                                min={0}
-                                step="0.001"
-                                value={result.value ?? ""}
-                                onChange={(event) =>
-                                  replaceResult(
-                                    sampleIndex,
-                                    seriesIndex,
-                                    resultIndex,
-                                    {
-                                      ...result,
-                                      value:
-                                        event.target.value === ""
-                                          ? null
-                                          : Number(
-                                              event.target.value,
-                                            ),
-                                    },
-                                  )
-                                }
-                                className={inputClassName}
-                              />
-                            ) : (
-                              <input
-                                type="text"
-                                value={result.note ?? ""}
-                                placeholder={
-                                  result.status === "INVALID"
-                                    ? "Ex. Mal faite"
-                                    : "Note (optionnelle)"
-                                }
-                                onChange={(event) =>
-                                  replaceResult(
-                                    sampleIndex,
-                                    seriesIndex,
-                                    resultIndex,
-                                    {
-                                      ...result,
-                                      note: event.target.value,
-                                    },
-                                  )
-                                }
-                                className={inputClassName}
-                              />
-                            )}
-                          </div>
-                        )}
+                        {displayResult(result)}
                       </td>
                     ))}
 
@@ -830,41 +783,76 @@ export default function CompressionSamplesTable({
                     </td>
                     <td className="no-print border border-slate-300 p-0.5">
                       {!readOnly ? (
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-wrap items-center justify-center gap-1">
                           {seriesIndex === 0 ? (
                             <>
                               <button
                                 type="button"
-                                className="rounded border border-slate-300 bg-white px-1 py-0.5 text-[9px] leading-tight hover:bg-slate-50"
+                                className="ButtonSquare"
+                                title="Modifier le prélèvement"
+                                aria-label="Modifier le prélèvement"
                                 onClick={() =>
-                                  addSeries(sampleIndex)
+                                  openEditSampleModal(sampleIndex)
                                 }
                               >
-                                Ajouter une série
+                                <FaRegEdit size={13} />
                               </button>
                               <button
                                 type="button"
-                                className="rounded border border-red-200 bg-white px-1 py-0.5 text-[9px] leading-tight text-red-700 hover:bg-red-50"
+                                className="ButtonSquare"
+                                title="Ajouter une série"
+                                aria-label="Ajouter une série"
+                                onClick={() =>
+                                  openCreateSeriesModal(sampleIndex)
+                                }
+                              >
+                                <FaPlus size={12} />
+                              </button>
+                              <button
+                                type="button"
+                                className="ButtonSquareDelete"
+                                title="Supprimer le prélèvement"
+                                aria-label="Supprimer le prélèvement"
                                 onClick={() =>
                                   removeSample(sampleIndex)
                                 }
                               >
-                                Supprimer le prélèvement
+                                <FaTrashAlt size={13} />
                               </button>
                             </>
                           ) : null}
+
                           <button
                             type="button"
-                            className="rounded border border-slate-300 bg-white px-1 py-0.5 text-[9px] leading-tight hover:bg-slate-50"
+                            className="ButtonSquare"
+                            title="Modifier la série"
+                            aria-label="Modifier la série"
                             onClick={() =>
-                              removeSeries(
+                              openEditSeriesModal(
                                 sampleIndex,
                                 seriesIndex,
                               )
                             }
                           >
-                            Supprimer la série
+                            <FaRegEdit size={13} />
                           </button>
+
+                          {sample.series.length > 1 ? (
+                            <button
+                              type="button"
+                              className="ButtonSquareDelete"
+                              title="Supprimer la série"
+                              aria-label="Supprimer la série"
+                              onClick={() =>
+                                removeSeries(
+                                  sampleIndex,
+                                  seriesIndex,
+                                )
+                              }
+                            >
+                              <FaTrashAlt size={13} />
+                            </button>
+                          ) : null}
                         </div>
                       ) : null}
                     </td>
