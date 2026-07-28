@@ -2,13 +2,18 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { FaSpinner } from "react-icons/fa6";
 import ProjectDetailViewContent from "@/components/ferraillage/ProjectDetailViewContent";
-import { ferraillageApi, type FerProjectDetailDTO, isApiError as isFerApiError } from "@/lib/ferraillageApi";
+import {
+  ferraillageApi,
+  type FerraillageReportDetailDTO,
+  isApiError as isFerApiError,
+} from "@/lib/ferraillageApi";
 
 export default function FerRapportViewPage() {
   const { rapportId } = useParams();
   const nav = useNavigate();
 
-  const [project, setProject] = useState<FerProjectDetailDTO | null>(null);
+  const [report, setReport] =
+    useState<FerraillageReportDetailDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
@@ -24,14 +29,18 @@ export default function FerRapportViewPage() {
     });
 
     ferraillageApi
-      .getProject(rapportId)
+      .getRapport(rapportId)
       .then((response) => {
         if (cancelled) return;
-        setProject(response.item);
+        setReport(response.item);
       })
       .catch((error: unknown) => {
         if (cancelled) return;
-        setErr(isFerApiError(error) ? error.message : "Failed to load project");
+        setErr(
+          isFerApiError(error)
+            ? error.message
+            : "Failed to load Ferraillage report",
+        );
       })
       .finally(() => {
         if (cancelled) return;
@@ -62,10 +71,12 @@ export default function FerRapportViewPage() {
     );
   }
 
-  if (!project) {
+  if (!report) {
     return (
       <div className="p-6 w-[80%] mx-auto">
-        <p className="text-gray-700">Projet introuvable.</p>
+        <p className="text-gray-700">
+          Donnée de Ferraillage introuvable.
+        </p>
         <button onClick={() => nav(-1)} className="mt-4 px-4 py-2 bg-(--primary) text-white rounded" type="button">
           Retour
         </button>
@@ -79,10 +90,12 @@ export default function FerRapportViewPage() {
         <button onClick={() => nav(-1)} className="no-print px-4 py-2 bg-(--primary) text-white rounded" type="button">
           Back to list
         </button>
-        <h1 className="text-3xl font-bold">Ferraillage - Details du projet</h1>
+        <h1 className="text-3xl font-bold">
+          Ferraillage - {report.name}
+        </h1>
       </div>
 
-      <ProjectDetailViewContent project={project} />
+      <ProjectDetailViewContent project={report.project} />
     </div>
   );
 }

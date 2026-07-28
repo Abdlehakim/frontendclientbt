@@ -67,6 +67,27 @@ export type FerRapportDetailDTO = FerRapportDTO & {
 
 export type FerProjectDetailDTO = FerRapportDetailDTO;
 
+export type FerraillageReportDTO = {
+  id: string;
+  name: string;
+  projectId: string;
+  createdById: string | null;
+  createdByName: string;
+  createdAt: string;
+  updatedAt: string;
+  project: FerRapportDTO;
+};
+
+export type FerraillageReportDetailDTO =
+  Omit<FerraillageReportDTO, "project"> & {
+    project: FerProjectDetailDTO;
+  };
+
+export type FerraillageReportCreatePayload = {
+  projectId: string;
+  name: string;
+};
+
 export type FerProjectCreatePayload = {
   chantierName: string;
   responsable?: string | null;
@@ -161,8 +182,15 @@ export function isApiError(err: unknown): err is ApiError {
 }
 
 export const ferraillageApi = {
+  listProjects: (q?: string) =>
+    request<{ items: FerRapportDTO[] }>(
+      `${BASE}/projects${q ? `?q=${encodeURIComponent(q)}` : ""}`,
+    ),
+
   listRapports: (q?: string) =>
-    request<{ items: FerRapportDTO[] }>(`${BASE}/rapports${q ? `?q=${encodeURIComponent(q)}` : ""}`),
+    request<{ items: FerraillageReportDTO[] }>(
+      `${BASE}/rapports${q ? `?q=${encodeURIComponent(q)}` : ""}`,
+    ),
 
   createProject: (payload: FerProjectCreatePayload) =>
     request<{ item: FerRapportDTO }>(`${BASE}/projects`, {
@@ -188,26 +216,21 @@ export const ferraillageApi = {
       method: "PUT",
       body: JSON.stringify(normalizedPayload),
     };
-    const rapportPath = `${BASE}/rapports/${encodeURIComponent(normalizedProjectId)}`;
     const projectPath = `${BASE}/projects/${encodeURIComponent(normalizedProjectId)}`;
 
-    return request<{ item: FerProjectDetailDTO }>(rapportPath, requestOptions).catch((error: unknown) => {
-      if (!isApiError(error) || error.status !== 404) {
-        throw error;
-      }
-
-      return request<{ item: FerProjectDetailDTO }>(projectPath, requestOptions);
-    });
+    return request<{ item: FerProjectDetailDTO }>(projectPath, requestOptions);
   },
 
-  createRapport: (payload: { chantierName: string; responsable?: string | null }) =>
-    request<{ item: FerRapportDTO }>(`${BASE}/rapports`, {
+  createRapport: (payload: FerraillageReportCreatePayload) =>
+    request<{ item: FerraillageReportDTO }>(`${BASE}/rapports`, {
       method: "POST",
       body: JSON.stringify(payload),
     }),
 
   getRapport: (rapportId: string) =>
-    request<{ item: FerRapportDetailDTO }>(`${BASE}/rapports/${encodeURIComponent(rapportId)}`),
+    request<{ item: FerraillageReportDetailDTO }>(
+      `${BASE}/rapports/${encodeURIComponent(rapportId)}`,
+    ),
 
   getProject: (projectId: string) =>
     request<{ item: FerProjectDetailDTO }>(`${BASE}/projects/${encodeURIComponent(projectId)}`),
@@ -283,6 +306,12 @@ export const ferraillageApi = {
       method: "DELETE",
       body: JSON.stringify(payload),
     }),
+
+  deleteProject: (projectId: string) =>
+    request<{ ok: true }>(
+      `${BASE}/projects/${encodeURIComponent(projectId)}`,
+      { method: "DELETE" },
+    ),
 
   deleteRapport: (rapportId: string) =>
     request<{ ok: true }>(`${BASE}/rapports/${encodeURIComponent(rapportId)}`, { method: "DELETE" }),

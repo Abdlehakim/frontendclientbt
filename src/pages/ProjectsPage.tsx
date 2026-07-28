@@ -2,14 +2,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { FaRegEdit, FaRegEye, FaTrashAlt } from "react-icons/fa";
 import { FaSpinner } from "react-icons/fa6";
 import DeleteConfirmModal from "@/components/common/DeleteConfirmModal";
-import CreateRapportModal from "@/components/ferraillage/CreateRapportModal";
+import CreateProjetWizard from "@/components/ferraillage/CreateProjetWizard";
 import EditRapportWizard from "@/components/ferraillage/EditProjectData";
 import ViewProjectData from "@/components/ferraillage/ViewProjectData";
 import TablePagination from "@/components/tablePagination";
 import {
   ferraillageApi,
   type FerRapportDTO,
-  type FerraillageReportDTO,
   isApiError as isFerApiError,
 } from "@/lib/ferraillageApi";
 
@@ -17,18 +16,18 @@ const PAGE_SIZE = 12;
 
 type DeleteTarget = {
   id: string;
-  name: string;
+  chantierName: string;
 };
 
 function fmtDate(iso: string | null | undefined) {
   if (!iso) return "—";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString();
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString();
 }
 
-export default function FerraillagePage() {
-  const [items, setItems] = useState<FerraillageReportDTO[]>([]);
+export default function ProjectsPage() {
+  const [items, setItems] = useState<FerRapportDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [err, setErr] = useState("");
@@ -36,32 +35,23 @@ export default function FerraillagePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const debounceRef = useRef<number | null>(null);
 
-  const [createOpen, setCreateOpen] = useState(false);
+  const [projectWizardOpen, setProjectWizardOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editItem, setEditItem] = useState<FerRapportDTO | null>(null);
   const [viewOpen, setViewOpen] = useState(false);
-  const [viewProjectId, setViewProjectId] = useState<string | null>(
-    null,
-  );
-  const [viewName, setViewName] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(
-    null,
-  );
+  const [viewItem, setViewItem] = useState<FerRapportDTO | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  async function loadRapports() {
+  async function loadProjects() {
     setLoading(true);
     setErr("");
 
     try {
-      const response = await ferraillageApi.listRapports();
-      setItems(response.items ?? []);
+      const response = await ferraillageApi.listProjects();
+      setItems(response.items || []);
     } catch (error: unknown) {
-      setErr(
-        isFerApiError(error)
-          ? error.message
-          : "Failed to load",
-      );
+      setErr(isFerApiError(error) ? error.message : "Failed to load");
     } finally {
       setLoading(false);
     }
@@ -72,7 +62,7 @@ export default function FerraillagePage() {
 
     void (async () => {
       if (cancelled) return;
-      await loadRapports();
+      await loadProjects();
     })();
 
     return () => {
@@ -83,32 +73,14 @@ export default function FerraillagePage() {
   const filtered = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
     if (!q) return items;
-
-    return items.filter((report) => {
-      const name = report.name.toLowerCase();
-      const chantierName = (
-        report.project.chantierName || ""
-      ).toLowerCase();
-      const responsable = (
-        report.project.responsable || ""
-      ).toLowerCase();
-      const createdByName = (
-        report.createdByName || ""
-      ).toLowerCase();
-
-      return (
-        name.includes(q) ||
-        chantierName.includes(q) ||
-        responsable.includes(q) ||
-        createdByName.includes(q)
-      );
+    return items.filter((project) => {
+      const chantierName = (project.chantierName || "").toLowerCase();
+      const responsable = (project.responsable || "").toLowerCase();
+      return chantierName.includes(q) || responsable.includes(q);
     });
   }, [items, searchTerm]);
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filtered.length / PAGE_SIZE),
-  );
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
 
   const displayed = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
@@ -120,39 +92,30 @@ export default function FerraillagePage() {
   }, [currentPage, totalPages]);
 
   useEffect(() => {
-    if (debounceRef.current) {
-      window.clearTimeout(debounceRef.current);
-    }
-    debounceRef.current = window.setTimeout(
-      () => setCurrentPage(1),
-      150,
-    );
+    if (debounceRef.current) window.clearTimeout(debounceRef.current);
+    debounceRef.current = window.setTimeout(() => setCurrentPage(1), 150);
     return () => {
-      if (debounceRef.current) {
-        window.clearTimeout(debounceRef.current);
-      }
+      if (debounceRef.current) window.clearTimeout(debounceRef.current);
     };
   }, [searchTerm]);
 
-  function onEdit(report: FerraillageReportDTO) {
-    setEditItem(report.project);
-    setEditOpen(true);
-  }
-
-  function onView(report: FerraillageReportDTO) {
-    setViewProjectId(report.projectId);
-    setViewName(report.name);
+  function onView(id: string) {
+    const target = items.find((item) => item.id === id) ?? null;
+    setViewItem(target);
     setViewOpen(true);
   }
 
-  async function handleReportCreated(
-    item: FerraillageReportDTO,
-  ) {
+  function onEdit(item: FerRapportDTO) {
+    setEditItem(item);
+    setEditOpen(true);
+  }
+
+  async function onProjectCreated(item: FerRapportDTO) {
     setCurrentPage(1);
-    setCreateOpen(false);
+    setProjectWizardOpen(false);
 
     try {
-      await loadRapports();
+      await loadProjects();
     } catch {
       setItems((current) => [
         item,
@@ -170,19 +133,16 @@ export default function FerraillagePage() {
     updatedAt: string;
   }) {
     setItems((current) =>
-      current.map((report) =>
-        report.projectId !== updatedProject.id
-          ? report
+      current.map((item) =>
+        item.id !== updatedProject.id
+          ? item
           : {
-              ...report,
-              project: {
-                ...report.project,
-                chantierName: updatedProject.chantierName,
-                responsable: updatedProject.responsable,
-                acierType: updatedProject.acierType ?? null,
-                note: updatedProject.note ?? null,
-                updatedAt: updatedProject.updatedAt,
-              },
+              ...item,
+              chantierName: updatedProject.chantierName,
+              responsable: updatedProject.responsable,
+              acierType: updatedProject.acierType ?? null,
+              note: updatedProject.note ?? null,
+              updatedAt: updatedProject.updatedAt,
             },
       ),
     );
@@ -199,12 +159,25 @@ export default function FerraillagePage() {
           }
         : current,
     );
+
+    setViewItem((current) =>
+      current && current.id === updatedProject.id
+        ? {
+            ...current,
+            chantierName: updatedProject.chantierName,
+            responsable: updatedProject.responsable,
+            acierType: updatedProject.acierType ?? null,
+            note: updatedProject.note ?? null,
+            updatedAt: updatedProject.updatedAt,
+          }
+        : current,
+    );
   }
 
-  function onDeleteClick(report: FerraillageReportDTO) {
+  function onDeleteClick(item: FerRapportDTO) {
     setDeleteTarget({
-      id: report.id,
-      name: report.name,
+      id: item.id,
+      chantierName: item.chantierName,
     });
   }
 
@@ -219,17 +192,13 @@ export default function FerraillagePage() {
     setErr("");
     setDeleteLoading(true);
     try {
-      await ferraillageApi.deleteRapport(deleteTarget.id);
+      await ferraillageApi.deleteProject(deleteTarget.id);
       setItems((current) =>
-        current.filter((report) => report.id !== deleteTarget.id),
+        current.filter((item) => item.id !== deleteTarget.id),
       );
       setDeleteTarget(null);
     } catch (error: unknown) {
-      setErr(
-        isFerApiError(error)
-          ? error.message
-          : "Delete failed",
-      );
+      setErr(isFerApiError(error) ? error.message : "Delete failed");
     } finally {
       setDeleteLoading(false);
     }
@@ -238,15 +207,15 @@ export default function FerraillagePage() {
   return (
     <div className="mx-auto px-4 py-4 flex flex-col gap-4 h-full bg-green-50 rounded-xl">
       <div className="flex h-16 justify-between items-start">
-        <h1 className="text-3xl font-bold uppercase">Ferraillage</h1>
+        <h1 className="text-3xl font-bold uppercase">Projets</h1>
 
         <div className="flex items-center gap-2">
           <button
             className="btn-fit-white-outline"
             type="button"
-            onClick={() => setCreateOpen(true)}
+            onClick={() => setProjectWizardOpen(true)}
           >
-            Créer Rapport
+            Créer Projet
           </button>
         </div>
       </div>
@@ -257,7 +226,7 @@ export default function FerraillagePage() {
           <input
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder="Ferraillage / chantier / créateur"
+            placeholder="Chantier / responsable"
             className="border border-gray-300 rounded px-2 py-1 bg-white"
           />
         </div>
@@ -270,21 +239,18 @@ export default function FerraillagePage() {
           <thead className="bg-(--primary) text-white">
             <tr>
               <th className="py-2 text-sm font-medium text-center">
-                Ferraillage
-              </th>
-              <th className="py-2 text-sm font-medium text-center border-x-4 border-white">
                 Chantier
               </th>
-              <th className="py-2 text-sm font-medium text-center">
-                Créé par
-              </th>
               <th className="py-2 text-sm font-medium text-center border-x-4 border-white">
+                Responsable
+              </th>
+              <th className="py-2 text-sm font-medium text-center">
                 Créé le
               </th>
-              <th className="py-2 text-sm font-medium text-center">
+              <th className="py-2 text-sm font-medium text-center border-x-4 border-white">
                 MàJ le
               </th>
-              <th className="w-2/9 py-2 text-sm font-medium text-center border-l-4 border-white">
+              <th className="w-2/9 py-2 text-sm font-medium text-center">
                 Actions
               </th>
             </tr>
@@ -297,39 +263,36 @@ export default function FerraillagePage() {
               <tbody>
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={5}
                     className="py-6 text-center text-gray-600"
                   >
-                    Aucune donnée de ferraillage trouvée.
+                    Aucun projet trouvé.
                   </td>
                 </tr>
               </tbody>
             ) : (
               <tbody className="divide-y divide-gray-200 [&>tr]:h-12">
-                {displayed.map((report, index) => (
+                {displayed.map((project, index) => (
                   <tr
-                    key={report.id}
+                    key={project.id}
                     className={index % 2 ? "bg-gray-100" : "bg-white"}
                   >
                     <td className="py-2 text-center font-semibold truncate">
-                      {report.name}
+                      {project.chantierName}
                     </td>
                     <td className="py-2 text-center truncate">
-                      {report.project.chantierName}
-                    </td>
-                    <td className="py-2 text-center truncate">
-                      {report.createdByName || "—"}
+                      {project.responsable ?? "—"}
                     </td>
                     <td className="py-2 text-center">
-                      {fmtDate(report.createdAt)}
+                      {fmtDate(project.createdAt)}
                     </td>
                     <td className="py-2 text-center">
-                      {fmtDate(report.updatedAt)}
+                      {fmtDate(project.updatedAt)}
                     </td>
                     <td className="py-2 w-2/9">
                       <div className="flex justify-center items-center gap-2">
                         <button
-                          onClick={() => onEdit(report)}
+                          onClick={() => onEdit(project)}
                           className="ButtonSquare"
                           title="Modifier"
                           type="button"
@@ -337,7 +300,7 @@ export default function FerraillagePage() {
                           <FaRegEdit size={14} />
                         </button>
                         <button
-                          onClick={() => onView(report)}
+                          onClick={() => onView(project.id)}
                           className="ButtonSquare"
                           title="Voir"
                           type="button"
@@ -345,7 +308,7 @@ export default function FerraillagePage() {
                           <FaRegEye size={14} />
                         </button>
                         <button
-                          onClick={() => onDeleteClick(report)}
+                          onClick={() => onDeleteClick(project)}
                           className="ButtonSquareDelete"
                           title="Supprimer"
                           type="button"
@@ -376,14 +339,14 @@ export default function FerraillagePage() {
         />
       </div>
 
-      <CreateRapportModal
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        onCreated={handleReportCreated}
+      <CreateProjetWizard
+        open={projectWizardOpen}
+        onClose={() => setProjectWizardOpen(false)}
+        onCreated={onProjectCreated}
       />
       <DeleteConfirmModal
         open={Boolean(deleteTarget)}
-        itemName={deleteTarget?.name ?? ""}
+        itemName={deleteTarget?.chantierName ?? ""}
         loading={deleteLoading}
         onConfirm={() => void confirmDelete()}
         onCancel={closeDeleteModal}
@@ -399,12 +362,11 @@ export default function FerraillagePage() {
       />
       <ViewProjectData
         open={viewOpen}
-        projectId={viewProjectId}
-        projectName={viewName}
+        projectId={viewItem?.id ?? null}
+        projectName={viewItem?.chantierName ?? ""}
         onClose={() => {
           setViewOpen(false);
-          setViewProjectId(null);
-          setViewName("");
+          setViewItem(null);
         }}
       />
     </div>
