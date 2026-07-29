@@ -737,7 +737,7 @@ export default function CompressionSamplesTable({
                             {sample.series.length > 1 ? (
                               <button
                                 type="button"
-                                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-red-300 bg-white text-red-600 shadow-sm transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-200"
+                                className="ButtonSquareDelete"
                                 title="Supprimer l’écrasement"
                                 aria-label="Supprimer l’écrasement"
                                 onClick={() =>

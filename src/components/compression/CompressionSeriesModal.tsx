@@ -6,6 +6,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { CiCircleRemove } from "react-icons/ci";
+import { FiCalendar } from "react-icons/fi";
 import {
   DatePickerInput,
 } from "@/components/DatePickerInput";
@@ -223,7 +224,7 @@ function validateSeries(
     series.showInPlanning &&
     !isValidPlanningTime(series.planningTime)
   ) {
-    return "L’heure d’écrasement doit être comprise entre 08:00 et 17:59.";
+    return "L’heure de planification doit être comprise entre 08:00 et 17:59.";
   }
 
   for (const result of series.results) {
@@ -606,55 +607,84 @@ export default function CompressionSeriesModal({
 
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
             <div className="flex flex-col gap-4">
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <div className="flex flex-col justify-end">
-                  <label
-                    htmlFor="compression-series-show-in-planning"
-                    className={`${fieldClass} inline-flex cursor-pointer items-center gap-3`}
-                  >
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-end">
+                <div className="w-full sm:max-w-sm">
+                  <div className="flex flex-col">
+                    <label
+                      htmlFor="compression-series-planning-time"
+                      className="mb-1 text-xs font-semibold text-gray-700"
+                    >
+                      Heure de planification
+                    </label>
                     <input
-                      id="compression-series-show-in-planning"
-                      type="checkbox"
-                      checked={series.showInPlanning}
+                      id="compression-series-planning-time"
+                      type="time"
+                      step={60}
+                      value={series.planningTime}
                       onChange={(event) => {
                         setSeries((current) => ({
                           ...current,
-                          showInPlanning:
-                            event.target.checked,
+                          planningTime:
+                            event.target.value,
                         }));
                         setError("");
                       }}
-                      className="h-4 w-4 accent-emerald-600"
+                      className={fieldClass}
                     />
-                    <span>
-                      Afficher dans la planification
-                    </span>
-                  </label>
+                  </div>
                 </div>
 
-                <div className="flex flex-col">
-                  <label
-                    htmlFor="compression-series-planning-time"
-                    className="mb-1 text-xs font-semibold text-gray-700"
-                  >
-                    Heure d’écrasement
-                  </label>
-                  <input
-                    id="compression-series-planning-time"
-                    type="time"
-                    step={60}
-                    value={series.planningTime}
-                    onChange={(event) => {
-                      setSeries((current) => ({
-                        ...current,
-                        planningTime:
-                          event.target.value,
-                      }));
-                      setError("");
-                    }}
-                    className={fieldClass}
+                <button
+                  type="button"
+                  aria-pressed={series.showInPlanning}
+                  aria-label={
+                    series.showInPlanning
+                      ? "Retirer de la planification"
+                      : "Afficher dans la planification"
+                  }
+                  title={
+                    series.showInPlanning
+                      ? "Retirer de la planification"
+                      : "Afficher dans la planification"
+                  }
+                  onClick={() => {
+                    setSeries((current) => ({
+                      ...current,
+                      showInPlanning:
+                        !current.showInPlanning,
+                    }));
+                    setError("");
+                  }}
+                  className={[
+                    "inline-flex h-12 w-12 shrink-0 self-end",
+                    "items-center justify-center",
+                    "rounded-full border",
+                    "transition-colors",
+                    "focus-visible:outline-none",
+                    "focus-visible:ring-2",
+                    "focus-visible:ring-emerald-400",
+                    "focus-visible:ring-offset-2",
+                    series.showInPlanning
+                      ? [
+                          "border-emerald-600",
+                          "bg-emerald-600",
+                          "text-white",
+                          "shadow-sm",
+                          "hover:bg-emerald-700",
+                        ].join(" ")
+                      : [
+                          "border-slate-300",
+                          "bg-white",
+                          "text-slate-500",
+                          "hover:bg-slate-50",
+                        ].join(" "),
+                  ].join(" ")}
+                >
+                  <FiCalendar
+                    aria-hidden="true"
+                    size={20}
                   />
-                </div>
+                </button>
               </div>
 
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">

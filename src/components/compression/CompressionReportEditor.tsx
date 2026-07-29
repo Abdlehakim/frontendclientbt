@@ -216,7 +216,7 @@ function validateForm(form: CompressionEditorForm): string {
         series.showInPlanning &&
         !isValidPlanningTime(series.planningTime)
       ) {
-        return `${prefix} : l’heure d’écrasement doit être comprise entre 08:00 et 17:59.`;
+        return `${prefix} : l’heure de planification doit être comprise entre 08:00 et 17:59.`;
       }
       if (series.results.length === 0) {
         return `${prefix} : ajoutez au moins un résultat.`;
