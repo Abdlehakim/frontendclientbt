@@ -30,10 +30,17 @@ import {
   type FerRapportDTO,
 } from "@/lib/ferraillageApi";
 
+export type CompressionReportCreateInitialValues = {
+  projectId: string;
+  title: string;
+  reportDate: string;
+};
+
 export type CompressionReportEditorProps = {
   open: boolean;
   mode: "create" | "edit" | "view";
   reportId?: string | null;
+  initialCreateValues?: CompressionReportCreateInitialValues | null;
   onClose: () => void;
   onSaved?: (
     item: CompressionReportDetailDTO,
@@ -94,11 +101,15 @@ function formatDateOnly(
   return `${match[3]}/${match[2]}/${match[1]}`;
 }
 
-function createInitialForm(): CompressionEditorForm {
+function createInitialForm(
+  initialValues?: CompressionReportCreateInitialValues | null,
+): CompressionEditorForm {
   return {
-    projectId: "",
-    reportDate: todayDateInput(),
-    title: "",
+    projectId: initialValues?.projectId ?? "",
+    reportDate:
+      initialValues?.reportDate ??
+      todayDateInput(),
+    title: initialValues?.title ?? "",
     companyName: "",
     samples: [],
   };
@@ -344,6 +355,7 @@ function DetailItem({
 function CompressionReportEditorPanel({
   mode,
   reportId,
+  initialCreateValues,
   onClose,
   onSaved,
 }: Omit<CompressionReportEditorProps, "open">) {
@@ -351,7 +363,12 @@ function CompressionReportEditorPanel({
   const [loadedProject, setLoadedProject] =
     useState<CompressionProjectDTO | null>(null);
   const [form, setForm] = useState<CompressionEditorForm>(
-    createInitialForm,
+    () =>
+      createInitialForm(
+        mode === "create"
+          ? initialCreateValues
+          : null,
+      ),
   );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -368,7 +385,13 @@ function CompressionReportEditorPanel({
     setError("");
     setProjects([]);
     setLoadedProject(null);
-    setForm(createInitialForm());
+    setForm(
+      createInitialForm(
+        mode === "create"
+          ? initialCreateValues
+          : null,
+      ),
+    );
 
     void (async () => {
       try {
@@ -402,7 +425,13 @@ function CompressionReportEditorPanel({
     return () => {
       cancelled = true;
     };
-  }, [mode, reportId]);
+  }, [
+    mode,
+    reportId,
+    initialCreateValues?.projectId,
+    initialCreateValues?.title,
+    initialCreateValues?.reportDate,
+  ]);
 
   const selectedProject = useMemo<CompressionEditorProject | null>(
     () => {
@@ -669,6 +698,7 @@ export default function CompressionReportEditor({
   open,
   mode,
   reportId,
+  initialCreateValues,
   onClose,
   onSaved,
 }: CompressionReportEditorProps) {
@@ -679,6 +709,7 @@ export default function CompressionReportEditor({
       key={`${mode}-${reportId ?? "new"}`}
       mode={mode}
       reportId={reportId}
+      initialCreateValues={initialCreateValues}
       onClose={onClose}
       onSaved={onSaved}
     />,
