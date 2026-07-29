@@ -7,6 +7,7 @@ import {
 } from "react";
 import {
   Outlet,
+  useLocation,
   useNavigate,
 } from "react-router-dom";
 import {
@@ -14,9 +15,14 @@ import {
   FiChevronDown,
   FiFolder,
 } from "react-icons/fi";
+import {
+  LuArrowBigLeft,
+  LuArrowBigRight,
+} from "react-icons/lu";
 import { VscSignOut } from "react-icons/vsc";
 
 import { useAuth } from "@/auth/useAuth";
+import IconButton from "@/components/sidebar/IconButton";
 import Sidebar from "@/components/sidebar/Sidebar";
 import {
   ProjectSelectionProvider,
@@ -38,6 +44,10 @@ export default function AppLayout() {
 function AppLayoutContent() {
   const navigate = useNavigate();
   const {
+    pathname,
+    search,
+  } = useLocation();
+  const {
     logout,
     user,
   } = useAuth();
@@ -48,6 +58,40 @@ function AppLayoutContent() {
     projectsError,
     setSelectedProjectId,
   } = useProjectSelection();
+
+  const sidebarCollapsed = useMemo(() => {
+    const params =
+      new URLSearchParams(search);
+
+    return params.get("nav") === "collapsed";
+  }, [search]);
+
+  const toggleSidebar = () => {
+    const params =
+      new URLSearchParams(search);
+
+    params.set(
+      "nav",
+      sidebarCollapsed
+        ? "expanded"
+        : "collapsed",
+    );
+
+    const nextSearch =
+      params.toString();
+
+    navigate(
+      {
+        pathname,
+        search: nextSearch
+          ? `?${nextSearch}`
+          : "",
+      },
+      {
+        replace: true,
+      },
+    );
+  };
 
   const [profileMenuOpen, setProfileMenuOpen] =
     useState(false);
@@ -194,64 +238,84 @@ function AppLayoutContent() {
           items-center justify-between gap-3
         "
       >
-        <div className="relative min-w-48 max-w-72 flex-1 sm:flex-none">
-          <FiFolder
-            aria-hidden="true"
-            size={18}
-            className="
-              pointer-events-none
-              absolute left-3 top-1/2 z-10
-              -translate-y-1/2 text-slate-500
-            "
-          />
-
-          <select
-            aria-label="Sélectionner un projet"
-            aria-invalid={projectsError ? true : undefined}
-            title={projectsError || undefined}
-            value={selectedProjectId}
-            onChange={(event) =>
-              setSelectedProjectId(event.target.value)
+        <div className="flex min-w-0 items-center gap-2">
+          <IconButton
+            icon={
+              sidebarCollapsed ? (
+                <LuArrowBigRight size={20} />
+              ) : (
+                <LuArrowBigLeft size={20} />
+              )
             }
-            disabled={projectsLoading}
-            className="
-              h-10 w-full appearance-none
-              rounded-lg border border-slate-200
-              bg-white pl-10 pr-9
-              text-sm text-slate-700
-              transition-colors
-              disabled:cursor-wait disabled:opacity-70
-              focus-visible:outline-none
-              focus-visible:ring-2
-              focus-visible:ring-(--primary)
-              focus-visible:ring-offset-2
-            "
-          >
-            <option value="">
-              {projectsLoading
-                ? "Chargement..."
-                : "Tous les projets"}
-            </option>
-
-            {projects.map((project) => (
-              <option
-                key={project.id}
-                value={project.id}
-              >
-                {project.chantierName}
-              </option>
-            ))}
-          </select>
-
-          <FiChevronDown
-            aria-hidden="true"
-            size={17}
-            className="
-              pointer-events-none
-              absolute right-3 top-1/2
-              -translate-y-1/2 text-slate-500
-            "
+            onClick={toggleSidebar}
+            ariaLabel={
+              sidebarCollapsed
+                ? "Ouvrir la barre latérale"
+                : "Fermer la barre latérale"
+            }
+            floating={false}
+            className="shrink-0"
           />
+
+          <div className="relative min-w-48 max-w-72 flex-1 sm:flex-none">
+            <FiFolder
+              aria-hidden="true"
+              size={18}
+              className="
+                pointer-events-none
+                absolute left-3 top-1/2 z-10
+                -translate-y-1/2 text-slate-500
+              "
+            />
+
+            <select
+              aria-label="Sélectionner un projet"
+              aria-invalid={projectsError ? true : undefined}
+              title={projectsError || undefined}
+              value={selectedProjectId}
+              onChange={(event) =>
+                setSelectedProjectId(event.target.value)
+              }
+              disabled={projectsLoading}
+              className="
+                h-10 w-full appearance-none
+                rounded-lg border border-slate-200
+                bg-white pl-10 pr-9
+                text-sm text-slate-700
+                transition-colors
+                disabled:cursor-wait disabled:opacity-70
+                focus-visible:outline-none
+                focus-visible:ring-2
+                focus-visible:ring-(--primary)
+                focus-visible:ring-offset-2
+              "
+            >
+              <option value="">
+                {projectsLoading
+                  ? "Chargement..."
+                  : "Tous les projets"}
+              </option>
+
+              {projects.map((project) => (
+                <option
+                  key={project.id}
+                  value={project.id}
+                >
+                  {project.chantierName}
+                </option>
+              ))}
+            </select>
+
+            <FiChevronDown
+              aria-hidden="true"
+              size={17}
+              className="
+                pointer-events-none
+                absolute right-3 top-1/2
+                -translate-y-1/2 text-slate-500
+              "
+            />
+          </div>
         </div>
 
         <div className="flex items-center gap-3">

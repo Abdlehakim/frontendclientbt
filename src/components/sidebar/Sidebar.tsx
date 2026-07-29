@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, type To } from "react-router-dom";
 
-import { LuArrowBigLeft, LuArrowBigRight } from "react-icons/lu";
+import { LuArrowBigLeft } from "react-icons/lu";
 import { BiChevronRight, BiChevronDown, BiChevronUp } from "react-icons/bi";
 import { FaBars } from "react-icons/fa6";
 
-import IconButton from "@/components/sidebar/IconButton";
 import { sidebarItems, type SidebarItem } from "@/components/sidebar/sidebarItems";
 import { useAuth } from "@/auth/useAuth";
 import type { ModuleKey, SubModuleKey } from "@/lib/api";
@@ -112,6 +111,34 @@ export default function Sidebar() {
 
     return false;
   });
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const isDesktop =
+      window
+        .matchMedia("(min-width: 768px)")
+        .matches;
+
+    if (!isDesktop) {
+      return;
+    }
+
+    const navState =
+      new URLSearchParams(search)
+        .get("nav");
+
+    if (navState === "collapsed") {
+      setCollapsed(true);
+      return;
+    }
+
+    if (navState === "expanded") {
+      setCollapsed(false);
+    }
+  }, [search]);
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
@@ -352,24 +379,6 @@ export default function Sidebar() {
           ${collapsed ? "-translate-x-full w-15" : "translate-x-0 w-[70%] md:w-70"}
           md:sticky md:top-0 md:self-start md:translate-x-0`}
       >
-        <IconButton
-          icon={
-            collapsed ? (
-              <LuArrowBigRight size={20} />
-            ) : (
-              <LuArrowBigLeft size={20} />
-            )
-          }
-          onClick={toggleCollapse}
-          ariaLabel={
-            collapsed
-              ? "Ouvrir la barre latérale"
-              : "Fermer la barre latérale"
-          }
-          className="absolute top-4 -right-6"
-          floating={false}
-        />
-
         {!collapsed && (
           <button
             type="button"
