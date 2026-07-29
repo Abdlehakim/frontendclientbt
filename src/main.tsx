@@ -3,7 +3,6 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import "@/index.css";
 
-import "@/lib/swbDatePicker.css";
 import "@/lib/swbDatePicker";
 
 import { AuthProvider } from "@/auth/AuthProvider";
