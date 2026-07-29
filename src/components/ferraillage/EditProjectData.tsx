@@ -1,6 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { createPortal } from "react-dom";
 import { FaSpinner } from "react-icons/fa6";
+import {
+  FiFileText,
+  FiLayers,
+  FiMapPin,
+  FiUser,
+} from "react-icons/fi";
 import CalculeTotalFerraillage from "@/components/ferraillage/Edit/EditCalculeTotalFerraillage";
 import ProjectModalShell from "@/components/ferraillage/ProjectModalShell";
 import { buildTotalFerraillageData } from "@/components/ferraillage/shared/totalFerraillageData";
@@ -144,6 +155,58 @@ function EmptyAttachementTab({ mmCols }: { mmCols: number[] }) {
               </tr>
             </tbody>
           </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type DetailItemProps = {
+  icon: ReactNode;
+  label: string;
+  value: ReactNode;
+  className?: string;
+  valueClassName?: string;
+};
+
+function DetailItem({
+  icon,
+  label,
+  value,
+  className = "",
+  valueClassName = "",
+}: DetailItemProps) {
+  return (
+    <div
+      className={[
+        "flex min-w-0 items-center gap-4",
+        className,
+      ].join(" ")}
+    >
+      <div
+        className="
+          flex h-14 w-14 shrink-0
+          items-center justify-center
+          rounded-full bg-emerald-100/70
+          text-emerald-950
+        "
+        aria-hidden="true"
+      >
+        {icon}
+      </div>
+
+      <div className="min-w-0">
+        <div className="text-sm text-slate-600">
+          {label}
+        </div>
+
+        <div
+          className={[
+            "mt-1 break-words text-lg font-semibold text-slate-950",
+            valueClassName,
+          ].join(" ")}
+        >
+          {value}
         </div>
       </div>
     </div>
@@ -323,43 +386,72 @@ function EditProjectDataPanel({
 
             <div className="min-h-65">
               {tab === "DETAILS_CHANTIER" ? (
-                <div className="rounded bg-white p-4 shadow">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <div>
-                      <div className="text-xs text-gray-500">
-                        Chantier
-                      </div>
-                      <div className="font-semibold text-gray-900">
-                        {project?.chantierName?.trim() || "—"}
-                      </div>
-                    </div>
+                <div className="px-4 py-6 sm:px-8 lg:px-12">
+                  <div
+                    className="
+                      grid grid-cols-1
+                      gap-x-12 gap-y-8
+                      md:grid-cols-2
+                      xl:grid-cols-3
+                    "
+                  >
+                    <DetailItem
+                      icon={
+                        <FiMapPin
+                          size={26}
+                          strokeWidth={1.8}
+                        />
+                      }
+                      label="Chantier"
+                      value={
+                        project?.chantierName?.trim() ||
+                        "—"
+                      }
+                    />
 
-                    <div>
-                      <div className="text-xs text-gray-500">
-                        Responsable
-                      </div>
-                      <div className="font-semibold text-gray-900">
-                        {project?.responsable?.trim() || "—"}
-                      </div>
-                    </div>
+                    <DetailItem
+                      icon={
+                        <FiUser
+                          size={26}
+                          strokeWidth={1.8}
+                        />
+                      }
+                      label="Responsable"
+                      value={
+                        project?.responsable?.trim() ||
+                        "—"
+                      }
+                    />
 
-                    <div>
-                      <div className="text-xs text-gray-500">
-                        Type d&apos;acier
-                      </div>
-                      <div className="font-semibold text-gray-900">
-                        {project?.acierType ?? "—"}
-                      </div>
-                    </div>
+                    <DetailItem
+                      icon={
+                        <FiLayers
+                          size={26}
+                          strokeWidth={1.8}
+                        />
+                      }
+                      label="Type d’acier"
+                      value={
+                        project?.acierType ??
+                        "—"
+                      }
+                    />
 
-                    <div className="md:col-span-3">
-                      <div className="text-xs text-gray-500">
-                        Note
-                      </div>
-                      <div className="whitespace-pre-wrap text-gray-900">
-                        {project?.note?.trim() || "—"}
-                      </div>
-                    </div>
+                    <DetailItem
+                      icon={
+                        <FiFileText
+                          size={26}
+                          strokeWidth={1.8}
+                        />
+                      }
+                      label="Note"
+                      value={
+                        project?.note?.trim() ||
+                        "—"
+                      }
+                      className="md:col-span-2 xl:col-span-3"
+                      valueClassName="whitespace-pre-wrap"
+                    />
                   </div>
                 </div>
               ) : tab === "TOTAL_FERRAILLAGE" ? (
