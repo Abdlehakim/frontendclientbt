@@ -7,6 +7,9 @@ import { createPortal } from "react-dom";
 import { CiCircleRemove } from "react-icons/ci";
 import { FaSpinner } from "react-icons/fa6";
 import {
+  DatePickerInput,
+} from "@/components/DatePickerInput";
+import {
   compressionApi,
   isCompressionApiError,
   type CompressionReportDetailDTO,
@@ -270,20 +273,19 @@ export default function CreateCompressionReportModal({
                 Date du rapport
               </label>
 
-              <input
+              <DatePickerInput
                 id="compression-report-date"
-                type="date"
-                className={fieldClass}
                 value={reportDate}
-                onChange={(event) => {
-                  setReportDate(event.target.value);
+                onChange={(value) => {
+                  setReportDate(value);
 
                   if (error) {
                     setError("");
                   }
                 }}
                 disabled={submitting}
-                required
+                className="w-full"
+                inputClassName={fieldClass}
               />
             </div>
           </div>
