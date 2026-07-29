@@ -82,6 +82,7 @@ export type CompressionPlanningEventDTO = {
 };
 
 export type CompressionResultInput = {
+  id?: string;
   specimenNumber: number;
   value?: number | null;
   status: CompressionResultStatus;
@@ -89,6 +90,7 @@ export type CompressionResultInput = {
 };
 
 export type CompressionSeriesInput = {
+  id?: string;
   crushingDate: string;
   reference?: string | null;
   sortOrder: number;
@@ -98,6 +100,7 @@ export type CompressionSeriesInput = {
 };
 
 export type CompressionSampleInput = {
+  id?: string;
   sequenceNumber: number;
   dosage: string;
   cement: string;
@@ -120,6 +123,41 @@ export type CompressionReportInput = {
 
 export type CompressionReportCreateInput = CompressionReportInput;
 export type CompressionReportUpdateInput = CompressionReportInput;
+
+export type CompressionReportHeaderCreateInput = {
+  projectId: string;
+  name: string;
+  reportDate: string;
+};
+
+export type CompressionSampleMutationInput = {
+  sequenceNumber: number;
+  dosage: string;
+  cement: string;
+  admixture?: string | null;
+  designation: string;
+  pourDate: string;
+  specimenSendDate?: string | null;
+  specimenCount: number;
+  sortOrder: number;
+};
+
+export type CompressionSeriesMutationInput = {
+  specimenCount: number;
+  series: {
+    crushingDate: string;
+    reference?: string | null;
+    sortOrder: number;
+    showInPlanning: boolean;
+    planningTime: string;
+    results: Array<{
+      specimenNumber: number;
+      value?: number | null;
+      status: CompressionResultStatus;
+      note?: string | null;
+    }>;
+  };
+};
 
 export class CompressionApiError extends Error {
   status: number;
@@ -391,6 +429,22 @@ function normalizeReportId(reportId: string): string {
   return normalized;
 }
 
+function normalizeEntityId(
+  value: string,
+  label: string,
+): string {
+  const normalized = value.trim();
+
+  if (!normalized) {
+    throw new CompressionApiError(
+      400,
+      `Invalid ${label}`,
+    );
+  }
+
+  return normalized;
+}
+
 export function isCompressionApiError(
   error: unknown,
 ): error is CompressionApiError {
@@ -431,6 +485,168 @@ export const compressionApi = {
       method: "POST",
       body: JSON.stringify(payload),
     });
+    return parseDetailResponse(response);
+  },
+
+  createHeader: async (
+    payload: CompressionReportHeaderCreateInput,
+  ) => {
+    const response = await request(`${BASE}/headers`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+
+    return parseDetailResponse(response);
+  },
+
+  createSample: async (
+    reportId: string,
+    payload: CompressionSampleMutationInput,
+  ) => {
+    const normalizedReportId =
+      normalizeReportId(reportId);
+
+    const response = await request(
+      `${BASE}/${encodeURIComponent(
+        normalizedReportId,
+      )}/samples`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    );
+
+    return parseDetailResponse(response);
+  },
+
+  updateSample: async (
+    reportId: string,
+    sampleId: string,
+    payload: CompressionSampleMutationInput,
+  ) => {
+    const normalizedReportId =
+      normalizeReportId(reportId);
+    const normalizedSampleId =
+      normalizeEntityId(sampleId, "sampleId");
+
+    const response = await request(
+      `${BASE}/${encodeURIComponent(
+        normalizedReportId,
+      )}/samples/${encodeURIComponent(
+        normalizedSampleId,
+      )}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      },
+    );
+
+    return parseDetailResponse(response);
+  },
+
+  deleteSample: async (
+    reportId: string,
+    sampleId: string,
+  ) => {
+    const normalizedReportId =
+      normalizeReportId(reportId);
+    const normalizedSampleId =
+      normalizeEntityId(sampleId, "sampleId");
+
+    const response = await request(
+      `${BASE}/${encodeURIComponent(
+        normalizedReportId,
+      )}/samples/${encodeURIComponent(
+        normalizedSampleId,
+      )}`,
+      {
+        method: "DELETE",
+      },
+    );
+
+    return parseDetailResponse(response);
+  },
+
+  createSeries: async (
+    reportId: string,
+    sampleId: string,
+    payload: CompressionSeriesMutationInput,
+  ) => {
+    const normalizedReportId =
+      normalizeReportId(reportId);
+    const normalizedSampleId =
+      normalizeEntityId(sampleId, "sampleId");
+
+    const response = await request(
+      `${BASE}/${encodeURIComponent(
+        normalizedReportId,
+      )}/samples/${encodeURIComponent(
+        normalizedSampleId,
+      )}/series`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    );
+
+    return parseDetailResponse(response);
+  },
+
+  updateSeries: async (
+    reportId: string,
+    sampleId: string,
+    seriesId: string,
+    payload: CompressionSeriesMutationInput,
+  ) => {
+    const normalizedReportId =
+      normalizeReportId(reportId);
+    const normalizedSampleId =
+      normalizeEntityId(sampleId, "sampleId");
+    const normalizedSeriesId =
+      normalizeEntityId(seriesId, "seriesId");
+
+    const response = await request(
+      `${BASE}/${encodeURIComponent(
+        normalizedReportId,
+      )}/samples/${encodeURIComponent(
+        normalizedSampleId,
+      )}/series/${encodeURIComponent(
+        normalizedSeriesId,
+      )}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      },
+    );
+
+    return parseDetailResponse(response);
+  },
+
+  deleteSeries: async (
+    reportId: string,
+    sampleId: string,
+    seriesId: string,
+  ) => {
+    const normalizedReportId =
+      normalizeReportId(reportId);
+    const normalizedSampleId =
+      normalizeEntityId(sampleId, "sampleId");
+    const normalizedSeriesId =
+      normalizeEntityId(seriesId, "seriesId");
+
+    const response = await request(
+      `${BASE}/${encodeURIComponent(
+        normalizedReportId,
+      )}/samples/${encodeURIComponent(
+        normalizedSampleId,
+      )}/series/${encodeURIComponent(
+        normalizedSeriesId,
+      )}`,
+      {
+        method: "DELETE",
+      },
+    );
+
     return parseDetailResponse(response);
   },
 

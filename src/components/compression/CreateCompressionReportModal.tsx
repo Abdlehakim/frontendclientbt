@@ -6,6 +6,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { CiCircleRemove } from "react-icons/ci";
+import { FaSpinner } from "react-icons/fa6";
 import {
   IoIosArrowDropdown,
   IoIosArrowDropup,
@@ -13,9 +14,11 @@ import {
 import {
   DatePickerInput,
 } from "@/components/DatePickerInput";
-import type {
-  CompressionReportCreateInitialValues,
-} from "@/components/compression/CompressionReportEditor";
+import {
+  compressionApi,
+  isCompressionApiError,
+  type CompressionReportDetailDTO,
+} from "@/lib/compressionApi";
 import {
   ferraillageApi,
   isApiError as isFerraillageApiError,
@@ -25,9 +28,9 @@ import {
 type Props = {
   open: boolean;
   onClose: () => void;
-  onContinue: (
-    values: CompressionReportCreateInitialValues,
-  ) => void;
+  onCreated: (
+    item: CompressionReportDetailDTO,
+  ) => void | Promise<void>;
 };
 
 const fieldClass =
@@ -43,6 +46,17 @@ function todayDateInput(): string {
   const day = String(date.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
+}
+
+function readableError(error: unknown): string {
+  if (
+    isCompressionApiError(error) ||
+    isFerraillageApiError(error)
+  ) {
+    return error.message;
+  }
+
+  return "Impossible de créer l’essai à la compression.";
 }
 
 function CheckIcon() {
@@ -240,13 +254,15 @@ function ProjectDropdown({
 export default function CreateCompressionReportModal({
   open,
   onClose,
-  onContinue,
+  onCreated,
 }: Props) {
   const [projects, setProjects] = useState<FerRapportDTO[]>([]);
   const [projectId, setProjectId] = useState("");
   const [name, setName] = useState("");
   const [reportDate, setReportDate] = useState(todayDateInput);
   const [loadingProjects, setLoadingProjects] = useState(false);
+  const [submitting, setSubmitting] =
+    useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -257,6 +273,7 @@ export default function CreateCompressionReportModal({
     setProjectId("");
     setName("");
     setReportDate(todayDateInput());
+    setSubmitting(false);
     setError("");
     setLoadingProjects(true);
 
@@ -288,24 +305,31 @@ export default function CreateCompressionReportModal({
     if (!open) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape" && !submitting) {
+        onClose();
+      }
     };
 
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [onClose, open]);
+  }, [onClose, open, submitting]);
 
-  const submit = (
+  const submit = async (
     event: FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
-    if (loadingProjects) return;
-    if (!projectId) {
-      setError("Veuillez sélectionner un projet.");
+
+    if (loadingProjects || submitting) {
       return;
     }
 
     const normalizedName = name.trim();
+
+    if (!projectId) {
+      setError("Sélectionnez un projet.");
+      return;
+    }
+
     if (!normalizedName) {
       setError(
         "Le nom de l’essai à la compression est obligatoire.",
@@ -318,12 +342,23 @@ export default function CreateCompressionReportModal({
       return;
     }
 
+    setSubmitting(true);
     setError("");
-    onContinue({
-      projectId,
-      title: normalizedName,
-      reportDate,
-    });
+
+    try {
+      const response =
+        await compressionApi.createHeader({
+          projectId,
+          name: normalizedName,
+          reportDate,
+        });
+
+      await onCreated(response.item);
+    } catch (requestError: unknown) {
+      setError(readableError(requestError));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (!open) return null;
@@ -335,13 +370,16 @@ export default function CreateCompressionReportModal({
       <div
         className="absolute inset-0 flex items-center justify-center p-4"
         onMouseDown={(event) => {
-          if (event.target === event.currentTarget) {
+          if (
+            event.target === event.currentTarget &&
+            !submitting
+          ) {
             onClose();
           }
         }}
       >
         <form
-          onSubmit={submit}
+          onSubmit={(event) => void submit(event)}
           className="w-full max-w-4xl max-h-[95vh] overflow-visible rounded-xl bg-white shadow-xl border border-gray-200 flex flex-col"
         >
           <div className="px-5 py-2 bg-gray-50 rounded-t-xl border-b border-gray-200 flex items-center justify-between">
@@ -354,6 +392,7 @@ export default function CreateCompressionReportModal({
               onClick={onClose}
               aria-label="Fermer"
               title="Fermer"
+              disabled={submitting}
               className="p-1 text-gray-700 hover:cursor-pointer hover:text-red-600 hover:scale-120 transition-transform disabled:opacity-50 disabled:hover:scale-100"
             >
               <CiCircleRemove size={28} />
@@ -379,6 +418,7 @@ export default function CreateCompressionReportModal({
                   loading={loadingProjects}
                   disabled={
                     loadingProjects ||
+                    submitting ||
                     projects.length === 0
                   }
                   onChange={(nextProjectId) => {
@@ -413,6 +453,7 @@ export default function CreateCompressionReportModal({
                       if (error) setError("");
                     }}
                     placeholder="Ex: Essai fondations Bloc A"
+                    disabled={submitting}
                   />
                 </div>
 
@@ -434,6 +475,7 @@ export default function CreateCompressionReportModal({
                         setError("");
                       }
                     }}
+                    disabled={submitting}
                     className="w-full"
                   />
                 </div>
@@ -451,10 +493,18 @@ export default function CreateCompressionReportModal({
                 className="btn-fit-white-outline"
                 disabled={
                   loadingProjects ||
+                  submitting ||
                   projects.length === 0
                 }
               >
-                Continuer
+                {submitting ? (
+                  <span className="inline-flex items-center gap-2">
+                    <FaSpinner className="animate-spin" />
+                    Enregistrement...
+                  </span>
+                ) : (
+                  "Enregistrer"
+                )}
               </button>
             </div>
           </div>

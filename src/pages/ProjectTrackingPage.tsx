@@ -4,9 +4,6 @@ import { FiEdit3 } from "react-icons/fi";
 import { FaSpinner } from "react-icons/fa6";
 import DeleteConfirmModal from "@/components/common/DeleteConfirmModal";
 import CompressionReportEditor from "@/components/compression/CompressionReportEditor";
-import type {
-  CompressionReportCreateInitialValues,
-} from "@/components/compression/CompressionReportEditor";
 import CreateCompressionReportModal from "@/components/compression/CreateCompressionReportModal";
 import TablePagination from "@/components/tablePagination";
 import { useProjectSelection } from "@/contexts/ProjectSelectionContext";
@@ -47,12 +44,6 @@ export default function ProjectTrackingPage() {
     useState<EditorMode>("create");
   const [selectedReportId, setSelectedReportId] =
     useState<string | null>(null);
-  const [
-    createInitialValues,
-    setCreateInitialValues,
-  ] = useState<CompressionReportCreateInitialValues | null>(
-    null,
-  );
   const [deleteTarget, setDeleteTarget] =
     useState<DeleteTarget | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -133,7 +124,6 @@ export default function ProjectTrackingPage() {
     mode: EditorMode,
     reportId: string | null,
   ) => {
-    setCreateInitialValues(null);
     setEditorMode(mode);
     setSelectedReportId(reportId);
     setEditorOpen(true);
@@ -142,16 +132,18 @@ export default function ProjectTrackingPage() {
   const closeEditor = () => {
     setEditorOpen(false);
     setSelectedReportId(null);
-    setCreateInitialValues(null);
   };
 
-  const handleCreateContinue = (
-    values: CompressionReportCreateInitialValues,
+  const handleReportCreated = async (
+    item: CompressionReportDetailDTO,
   ) => {
-    setCreateInitialValues(values);
     setCreateOpen(false);
-    setEditorMode("create");
-    setSelectedReportId(null);
+    setCurrentPage(1);
+
+    await loadReports();
+
+    setSelectedReportId(item.id);
+    setEditorMode("edit");
     setEditorOpen(true);
   };
 
@@ -345,11 +337,6 @@ export default function ProjectTrackingPage() {
         open={editorOpen}
         mode={editorMode}
         reportId={selectedReportId}
-        initialCreateValues={
-          editorMode === "create"
-            ? createInitialValues
-            : null
-        }
         onClose={closeEditor}
         onSaved={handleSaved}
       />
@@ -357,7 +344,7 @@ export default function ProjectTrackingPage() {
       <CreateCompressionReportModal
         open={createOpen}
         onClose={() => setCreateOpen(false)}
-        onContinue={handleCreateContinue}
+        onCreated={handleReportCreated}
       />
 
       <DeleteConfirmModal

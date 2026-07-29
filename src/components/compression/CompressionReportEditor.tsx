@@ -22,7 +22,9 @@ import {
   type CompressionProjectDTO,
   type CompressionReportDetailDTO,
   type CompressionReportInput,
+  type CompressionSampleMutationInput,
   type CompressionSampleInput,
+  type CompressionSeriesMutationInput,
 } from "@/lib/compressionApi";
 import {
   ferraillageApi,
@@ -30,17 +32,10 @@ import {
   type FerRapportDTO,
 } from "@/lib/ferraillageApi";
 
-export type CompressionReportCreateInitialValues = {
-  projectId: string;
-  title: string;
-  reportDate: string;
-};
-
 export type CompressionReportEditorProps = {
   open: boolean;
   mode: "create" | "edit" | "view";
   reportId?: string | null;
-  initialCreateValues?: CompressionReportCreateInitialValues | null;
   onClose: () => void;
   onSaved?: (
     item: CompressionReportDetailDTO,
@@ -101,15 +96,11 @@ function formatDateOnly(
   return `${match[3]}/${match[2]}/${match[1]}`;
 }
 
-function createInitialForm(
-  initialValues?: CompressionReportCreateInitialValues | null,
-): CompressionEditorForm {
+function createInitialForm(): CompressionEditorForm {
   return {
-    projectId: initialValues?.projectId ?? "",
-    reportDate:
-      initialValues?.reportDate ??
-      todayDateInput(),
-    title: initialValues?.title ?? "",
+    projectId: "",
+    reportDate: todayDateInput(),
+    title: "",
     companyName: "",
     samples: [],
   };
@@ -120,6 +111,7 @@ function mapReportToForm(
 ): CompressionEditorForm {
   const samples: CompressionSampleInput[] = report.samples.map(
     (sample) => ({
+      id: sample.id,
       sequenceNumber: sample.sequenceNumber,
       dosage: sample.dosage,
       cement: sample.cement,
@@ -130,12 +122,14 @@ function mapReportToForm(
       specimenCount: sample.specimenCount,
       sortOrder: sample.sortOrder,
       series: sample.series.map((series) => ({
+        id: series.id,
         crushingDate: toDateInput(series.crushingDate),
         reference: series.reference ?? "",
         sortOrder: series.sortOrder,
         showInPlanning: series.showInPlanning,
         planningTime: series.planningTime,
         results: series.results.map((result) => ({
+          id: result.id,
           specimenNumber: result.specimenNumber,
           value:
             typeof result.value === "number" &&
@@ -166,138 +160,6 @@ function readableError(error: unknown): string {
     return error.message;
   }
   return "Une erreur inattendue est survenue.";
-}
-
-function isValidPlanningTime(value: string): boolean {
-  if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)) {
-    return false;
-  }
-
-  const [hours, minutes] = value
-    .split(":")
-    .map(Number);
-  const totalMinutes = hours * 60 + minutes;
-
-  return (
-    totalMinutes >= 8 * 60 &&
-    totalMinutes < 18 * 60
-  );
-}
-
-function validateForm(form: CompressionEditorForm): string {
-  if (!form.projectId.trim()) {
-    return "Sélectionnez un projet.";
-  }
-  if (!form.reportDate) {
-    return "La date du rapport est obligatoire.";
-  }
-  if (form.samples.length === 0) {
-    return "Ajoutez au moins un prélèvement.";
-  }
-
-  for (const sample of form.samples) {
-    const prefix = `Prélèvement ${sample.sequenceNumber}`;
-    if (!sample.dosage.trim()) {
-      return `${prefix} : le dosage est obligatoire.`;
-    }
-    if (!sample.cement.trim()) {
-      return `${prefix} : le ciment est obligatoire.`;
-    }
-    if (!sample.designation.trim()) {
-      return `${prefix} : la désignation est obligatoire.`;
-    }
-    if (!sample.pourDate) {
-      return `${prefix} : la date de coulage est obligatoire.`;
-    }
-    if (
-      !Number.isInteger(sample.specimenCount) ||
-      sample.specimenCount <= 0
-    ) {
-      return `${prefix} : le nombre d’éprouvettes doit être supérieur à zéro.`;
-    }
-    if (sample.series.length === 0) {
-      return `${prefix} : ajoutez au moins une série.`;
-    }
-
-    for (const series of sample.series) {
-      if (!series.crushingDate) {
-        return `${prefix} : la date d’écrasement est obligatoire.`;
-      }
-      if (
-        series.showInPlanning &&
-        !isValidPlanningTime(series.planningTime)
-      ) {
-        return `${prefix} : l’heure de planification doit être comprise entre 08:00 et 17:59.`;
-      }
-      if (series.results.length === 0) {
-        return `${prefix} : ajoutez au moins un résultat.`;
-      }
-
-      for (const result of series.results) {
-        if (
-          result.value !== null &&
-          result.value !== undefined &&
-          (
-            typeof result.value !== "number" ||
-            !Number.isFinite(result.value) ||
-            result.value < 0
-          )
-        ) {
-          return `${prefix}, EP${result.specimenNumber} : saisissez une valeur numérique valide.`;
-        }
-      }
-    }
-  }
-
-  return "";
-}
-
-function buildPayload(
-  form: CompressionEditorForm,
-): CompressionReportInput {
-  return {
-    projectId: form.projectId.trim(),
-    reportDate: form.reportDate,
-    title: form.title?.trim() || null,
-    companyName: form.companyName?.trim() || null,
-    samples: form.samples.map((sample) => ({
-      sequenceNumber: sample.sequenceNumber,
-      dosage: sample.dosage.trim(),
-      cement: sample.cement.trim(),
-      admixture: sample.admixture?.trim() || null,
-      designation: sample.designation.trim(),
-      pourDate: sample.pourDate,
-      specimenSendDate: sample.specimenSendDate || null,
-      specimenCount: sample.specimenCount,
-      sortOrder: sample.sortOrder,
-      series: sample.series.map((series) => ({
-        crushingDate: series.crushingDate,
-        reference: series.reference?.trim() || null,
-        sortOrder: series.sortOrder,
-        showInPlanning: series.showInPlanning,
-        planningTime: series.planningTime || "10:00",
-        results: series.results.map((result, index) => {
-          const hasNumericValue =
-            typeof result.value === "number" &&
-            Number.isFinite(result.value);
-
-          return {
-            specimenNumber: index + 1,
-            value: hasNumericValue
-              ? result.value
-              : null,
-            status:
-              result.status === "INVALID"
-                ? "INVALID"
-                : hasNumericValue
-                  ? "VALID"
-                  : "NOT_TESTED",
-            note: result.note ?? null,
-          };
-        }),
-      })),
-    })),
-  };
 }
 
 type DetailItemProps = {
@@ -355,7 +217,6 @@ function DetailItem({
 function CompressionReportEditorPanel({
   mode,
   reportId,
-  initialCreateValues,
   onClose,
   onSaved,
 }: Omit<CompressionReportEditorProps, "open">) {
@@ -363,15 +224,10 @@ function CompressionReportEditorPanel({
   const [loadedProject, setLoadedProject] =
     useState<CompressionProjectDTO | null>(null);
   const [form, setForm] = useState<CompressionEditorForm>(
-    () =>
-      createInitialForm(
-        mode === "create"
-          ? initialCreateValues
-          : null,
-      ),
+    createInitialForm,
   );
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [mutating, setMutating] = useState(false);
   const [error, setError] = useState("");
   const [tab, setTab] =
     useState<TabKey>("DETAILS_CHANTIER");
@@ -385,13 +241,7 @@ function CompressionReportEditorPanel({
     setError("");
     setProjects([]);
     setLoadedProject(null);
-    setForm(
-      createInitialForm(
-        mode === "create"
-          ? initialCreateValues
-          : null,
-      ),
-    );
+    setForm(createInitialForm());
 
     void (async () => {
       try {
@@ -425,13 +275,7 @@ function CompressionReportEditorPanel({
     return () => {
       cancelled = true;
     };
-  }, [
-    mode,
-    reportId,
-    initialCreateValues?.projectId,
-    initialCreateValues?.title,
-    initialCreateValues?.reportDate,
-  ]);
+  }, [mode, reportId]);
 
   const selectedProject = useMemo<CompressionEditorProject | null>(
     () => {
@@ -454,36 +298,117 @@ function CompressionReportEditorPanel({
     [form.projectId, loadedProject, projects],
   );
 
-  const handleSave = async () => {
-    if (readOnly || saving) return;
-    const validationError = validateForm(form);
-    if (validationError) {
-      setError(validationError);
+  const applySavedReport = async (
+    item: CompressionReportDetailDTO,
+  ) => {
+    setForm(mapReportToForm(item));
+    setLoadedProject(item.project);
+    await onSaved?.(item);
+  };
+
+  const runMutation = async (
+    operation: () => Promise<{
+      item: CompressionReportDetailDTO;
+    }>,
+  ) => {
+    if (readOnly || mutating) {
       return;
     }
 
-    setSaving(true);
+    setMutating(true);
     setError("");
+
     try {
-      const payload = buildPayload(form);
-      const response =
-        mode === "create"
-          ? await compressionApi.createReport(payload)
-          : await compressionApi.updateReport(
-              reportId ?? "",
-              payload,
-            );
-      await onSaved?.(response.item);
-      onClose();
-    } catch (saveError: unknown) {
-      setError(readableError(saveError));
+      const response = await operation();
+      await applySavedReport(response.item);
+    } catch (mutationError: unknown) {
+      setError(readableError(mutationError));
+      throw mutationError;
     } finally {
-      setSaving(false);
+      setMutating(false);
     }
   };
 
+  const createSample = async (
+    payload: CompressionSampleMutationInput,
+  ) => {
+    await runMutation(() =>
+      compressionApi.createSample(
+        reportId ?? "",
+        payload,
+      ),
+    );
+  };
+
+  const updateSample = async (
+    sampleId: string,
+    payload: CompressionSampleMutationInput,
+  ) => {
+    await runMutation(() =>
+      compressionApi.updateSample(
+        reportId ?? "",
+        sampleId,
+        payload,
+      ),
+    );
+  };
+
+  const deleteSample = async (
+    sampleId: string,
+  ) => {
+    await runMutation(() =>
+      compressionApi.deleteSample(
+        reportId ?? "",
+        sampleId,
+      ),
+    );
+  };
+
+  const createSeries = async (
+    sampleId: string,
+    payload: CompressionSeriesMutationInput,
+  ) => {
+    await runMutation(() =>
+      compressionApi.createSeries(
+        reportId ?? "",
+        sampleId,
+        payload,
+      ),
+    );
+  };
+
+  const updateSeries = async (
+    sampleId: string,
+    seriesId: string,
+    payload: CompressionSeriesMutationInput,
+  ) => {
+    await runMutation(() =>
+      compressionApi.updateSeries(
+        reportId ?? "",
+        sampleId,
+        seriesId,
+        payload,
+      ),
+    );
+  };
+
+  const deleteSeries = async (
+    sampleId: string,
+    seriesId: string,
+  ) => {
+    await runMutation(() =>
+      compressionApi.deleteSeries(
+        reportId ?? "",
+        sampleId,
+        seriesId,
+      ),
+    );
+  };
+
   const safeClose = () => {
-    if (!saving) onClose();
+    if (!mutating) {
+      onClose();
+    }
   };
 
   const footer = readOnly ? (
@@ -502,21 +427,17 @@ function CompressionReportEditorPanel({
         type="button"
         className="stepper__nav"
         onClick={safeClose}
-        disabled={saving}
+        disabled={mutating}
       >
-        Annuler
+        Fermer
       </button>
-      <button
-        type="button"
-        className="btn-fit-white-outline inline-flex items-center gap-2"
-        onClick={() => void handleSave()}
-        disabled={saving || loading}
-      >
-        {saving ? (
+
+      {mutating ? (
+        <span className="inline-flex items-center gap-2 text-sm text-slate-600">
           <FaSpinner className="animate-spin" />
-        ) : null}
-        Enregistrer
-      </button>
+          Enregistrement...
+        </span>
+      ) : null}
     </div>
   );
 
@@ -675,14 +596,15 @@ function CompressionReportEditorPanel({
               <div className="space-y-4">
 
                 <CompressionSamplesTable
-                  readOnly={readOnly || saving}
+                  readOnly={readOnly}
+                  busy={mutating}
                   samples={form.samples}
-                  onSamplesChange={(samples) =>
-                    setForm((current) => ({
-                      ...current,
-                      samples,
-                    }))
-                  }
+                  onCreateSample={createSample}
+                  onUpdateSample={updateSample}
+                  onDeleteSample={deleteSample}
+                  onCreateSeries={createSeries}
+                  onUpdateSeries={updateSeries}
+                  onDeleteSeries={deleteSeries}
                 />
               </div>
             )}
@@ -698,7 +620,6 @@ export default function CompressionReportEditor({
   open,
   mode,
   reportId,
-  initialCreateValues,
   onClose,
   onSaved,
 }: CompressionReportEditorProps) {
@@ -709,7 +630,6 @@ export default function CompressionReportEditor({
       key={`${mode}-${reportId ?? "new"}`}
       mode={mode}
       reportId={reportId}
-      initialCreateValues={initialCreateValues}
       onClose={onClose}
       onSaved={onSaved}
     />,

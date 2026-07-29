@@ -15,7 +15,9 @@ import { FiEdit3 } from "react-icons/fi";
 import type {
   CompressionResultInput,
   CompressionSampleInput,
+  CompressionSampleMutationInput,
   CompressionSeriesInput,
+  CompressionSeriesMutationInput,
 } from "@/lib/compressionApi";
 
 const numberFormatter = new Intl.NumberFormat("fr-FR", {
@@ -25,8 +27,31 @@ const numberFormatter = new Intl.NumberFormat("fr-FR", {
 
 export type CompressionSamplesTableProps = {
   readOnly: boolean;
+  busy: boolean;
   samples: CompressionSampleInput[];
-  onSamplesChange: (samples: CompressionSampleInput[]) => void;
+  onCreateSample: (
+    payload: CompressionSampleMutationInput,
+  ) => Promise<void>;
+  onUpdateSample: (
+    sampleId: string,
+    payload: CompressionSampleMutationInput,
+  ) => Promise<void>;
+  onDeleteSample: (
+    sampleId: string,
+  ) => Promise<void>;
+  onCreateSeries: (
+    sampleId: string,
+    payload: CompressionSeriesMutationInput,
+  ) => Promise<void>;
+  onUpdateSeries: (
+    sampleId: string,
+    seriesId: string,
+    payload: CompressionSeriesMutationInput,
+  ) => Promise<void>;
+  onDeleteSeries: (
+    sampleId: string,
+    seriesId: string,
+  ) => Promise<void>;
 };
 
 type SampleModalState =
@@ -184,27 +209,28 @@ const sampleToModalPayload = (
 
 export default function CompressionSamplesTable({
   readOnly,
+  busy,
   samples,
-  onSamplesChange,
+  onCreateSample,
+  onUpdateSample,
+  onDeleteSample,
+  onCreateSeries,
+  onUpdateSeries,
+  onDeleteSeries,
 }: CompressionSamplesTableProps) {
   const [actionError, setActionError] = useState("");
+  const [actionPending, setActionPending] =
+    useState(false);
   const [sampleModalState, setSampleModalState] =
     useState<SampleModalState>(null);
   const [seriesModalState, setSeriesModalState] =
     useState<SeriesModalState>(null);
 
-  const replaceSample = (
-    sampleIndex: number,
-    sample: CompressionSampleInput,
-  ) => {
-    onSamplesChange(
-      samples.map((current, index) =>
-        index === sampleIndex ? sample : current,
-      ),
-    );
-  };
+  const interactionDisabled =
+    readOnly || busy || actionPending;
 
   const openCreateSampleModal = () => {
+    if (interactionDisabled) return;
     setActionError("");
     setSampleModalState({
       mode: "create",
@@ -214,6 +240,7 @@ export default function CompressionSamplesTable({
   const openEditSampleModal = (
     sampleIndex: number,
   ) => {
+    if (interactionDisabled) return;
     const sample = samples[sampleIndex];
     if (!sample) return;
 
@@ -224,10 +251,10 @@ export default function CompressionSamplesTable({
     });
   };
 
-  const submitSampleModal = (
+  const submitSampleModal = async (
     payload: CompressionSampleModalPayload,
   ) => {
-    if (!sampleModalState) return;
+    if (!sampleModalState || interactionDisabled) return;
 
     if (sampleModalState.mode === "create") {
       const nextSequenceNumber =
@@ -238,7 +265,7 @@ export default function CompressionSamplesTable({
           ),
         ) + 1;
 
-      const newSample: CompressionSampleInput = {
+      const input: CompressionSampleMutationInput = {
         sequenceNumber: nextSequenceNumber,
         dosage: payload.dosage,
         cement: payload.cement,
@@ -250,40 +277,65 @@ export default function CompressionSamplesTable({
           payload.specimenSendDate || null,
         specimenCount: 6,
         sortOrder: samples.length,
-        series: [],
       };
 
-      onSamplesChange([
-        ...samples,
-        newSample,
-      ]);
+      setActionPending(true);
+      setActionError("");
+
+      try {
+        await onCreateSample(input);
+        setSampleModalState(null);
+      } catch {
+        setActionError(
+          "Impossible d’enregistrer le prélèvement.",
+        );
+      } finally {
+        setActionPending(false);
+      }
     } else {
       const sample =
         samples[sampleModalState.sampleIndex];
 
-      if (!sample) return;
+      if (!sample?.id) {
+        setActionError(
+          "Le prélèvement enregistré est introuvable.",
+        );
+        return;
+      }
 
-      replaceSample(
-        sampleModalState.sampleIndex,
-        {
-          ...sample,
-          dosage: payload.dosage,
-          cement: payload.cement,
-          admixture:
-            payload.admixture.trim() || null,
-          designation: payload.designation,
-          pourDate: payload.pourDate,
-          specimenSendDate:
-            payload.specimenSendDate || null,
-        },
-      );
+      const input: CompressionSampleMutationInput = {
+        sequenceNumber: sample.sequenceNumber,
+        dosage: payload.dosage,
+        cement: payload.cement,
+        admixture:
+          payload.admixture.trim() || null,
+        designation: payload.designation,
+        pourDate: payload.pourDate,
+        specimenSendDate:
+          payload.specimenSendDate || null,
+        specimenCount: sample.specimenCount,
+        sortOrder: sample.sortOrder,
+      };
+
+      setActionPending(true);
+      setActionError("");
+
+      try {
+        await onUpdateSample(sample.id, input);
+        setSampleModalState(null);
+      } catch {
+        setActionError(
+          "Impossible d’enregistrer le prélèvement.",
+        );
+      } finally {
+        setActionPending(false);
+      }
     }
-
-    setActionError("");
-    setSampleModalState(null);
   };
 
-  const removeSample = (sampleIndex: number) => {
+  const removeSample = async (sampleIndex: number) => {
+    if (interactionDisabled) return;
+
     if (samples.length <= 1) {
       setActionError(
         "Le rapport doit contenir au moins un prélèvement.",
@@ -291,20 +343,32 @@ export default function CompressionSamplesTable({
       return;
     }
 
+    const sample = samples[sampleIndex];
+    if (!sample?.id) {
+      setActionError(
+        "Le prélèvement enregistré est introuvable.",
+      );
+      return;
+    }
+
+    setActionPending(true);
     setActionError("");
-    onSamplesChange(
-      samples
-        .filter((_, index) => index !== sampleIndex)
-        .map((sample, sortOrder) => ({
-          ...sample,
-          sortOrder,
-        })),
-    );
+
+    try {
+      await onDeleteSample(sample.id);
+    } catch {
+      setActionError(
+        "Impossible de supprimer le prélèvement.",
+      );
+    } finally {
+      setActionPending(false);
+    }
   };
 
   const openCreateSeriesModal = (
     sampleIndex: number,
   ) => {
+    if (interactionDisabled) return;
     const sample = samples[sampleIndex];
     if (!sample) return;
 
@@ -330,6 +394,7 @@ export default function CompressionSamplesTable({
     sampleIndex: number,
     seriesIndex: number,
   ) => {
+    if (interactionDisabled) return;
     const sample = samples[sampleIndex];
     if (!sample) return;
 
@@ -358,72 +423,91 @@ export default function CompressionSamplesTable({
     });
   };
 
-  const submitSeriesModal = (
+  const submitSeriesModal = async (
     payload: CompressionSeriesModalPayload,
   ) => {
-    if (!seriesModalState) return;
-
-    const submittedSeries =
-      payload.series;
+    if (!seriesModalState || interactionDisabled) return;
 
     const sample =
       samples[seriesModalState.sampleIndex];
 
-    if (!sample) return;
-
-    if (seriesModalState.mode === "create") {
-      replaceSample(
-        seriesModalState.sampleIndex,
-        {
-          ...sample,
-          specimenCount:
-            payload.specimenCount,
-          series: [
-            ...sample.series,
-            {
-              ...submittedSeries,
-              sortOrder: sample.series.length,
-            },
-          ],
-        },
+    if (!sample?.id) {
+      setActionError(
+        "Le prélèvement enregistré est introuvable.",
       );
-    } else {
-      const existingSeries =
-        sample.series[
-          seriesModalState.seriesIndex
-        ];
-
-      if (!existingSeries) return;
-
-      replaceSample(
-        seriesModalState.sampleIndex,
-        {
-          ...sample,
-          specimenCount:
-            payload.specimenCount,
-          series: sample.series.map(
-            (currentSeries, index) =>
-              index ===
-              seriesModalState.seriesIndex
-                ? {
-                    ...submittedSeries,
-                    sortOrder:
-                      existingSeries.sortOrder,
-                  }
-                : currentSeries,
-          ),
-        },
-      );
+      return;
     }
 
+    const buildInput = (
+      sortOrder: number,
+    ): CompressionSeriesMutationInput => ({
+      specimenCount: payload.specimenCount,
+      series: {
+        crushingDate:
+          payload.series.crushingDate,
+        reference:
+          payload.series.reference?.trim() || null,
+        sortOrder,
+        showInPlanning:
+          payload.series.showInPlanning,
+        planningTime:
+          payload.series.planningTime,
+        results: payload.series.results.map(
+          (result, index) => ({
+            specimenNumber: index + 1,
+            value: result.value ?? null,
+            status: result.status,
+            note: result.note ?? null,
+          }),
+        ),
+      },
+    });
+
+    setActionPending(true);
     setActionError("");
-    setSeriesModalState(null);
+
+    try {
+      if (seriesModalState.mode === "create") {
+        await onCreateSeries(
+          sample.id,
+          buildInput(sample.series.length),
+        );
+      } else {
+        const existingSeries =
+          sample.series[
+            seriesModalState.seriesIndex
+          ];
+
+        if (!existingSeries?.id) {
+          setActionError(
+            "La série enregistrée est introuvable.",
+          );
+          return;
+        }
+
+        await onUpdateSeries(
+          sample.id,
+          existingSeries.id,
+          buildInput(existingSeries.sortOrder),
+        );
+      }
+
+      setSeriesModalState(null);
+    } catch {
+      setActionError(
+        "Impossible d’enregistrer la série.",
+      );
+    } finally {
+      setActionPending(false);
+    }
   };
 
-  const removeSeries = (
+  const removeSeries = async (
     sampleIndex: number,
     seriesIndex: number,
   ) => {
+    if (interactionDisabled) return;
+
     const sample = samples[sampleIndex];
     if (!sample) return;
     if (sample.series.length <= 1) {
@@ -433,16 +517,29 @@ export default function CompressionSamplesTable({
       return;
     }
 
+    const series = sample.series[seriesIndex];
+    if (!sample.id || !series?.id) {
+      setActionError(
+        "La série enregistrée est introuvable.",
+      );
+      return;
+    }
+
+    setActionPending(true);
     setActionError("");
-    replaceSample(sampleIndex, {
-      ...sample,
-      series: sample.series
-        .filter((_, index) => index !== seriesIndex)
-        .map((series, sortOrder) => ({
-          ...series,
-          sortOrder,
-        })),
-    });
+
+    try {
+      await onDeleteSeries(
+        sample.id,
+        series.id,
+      );
+    } catch {
+      setActionError(
+        "Impossible de supprimer la série.",
+      );
+    } finally {
+      setActionPending(false);
+    }
   };
 
   const editingSample =
@@ -463,8 +560,11 @@ export default function CompressionSamplesTable({
             ? sampleToModalPayload(editingSample)
             : null
         }
+        submitting={actionPending || busy}
         onClose={() => {
-          setSampleModalState(null);
+          if (!interactionDisabled) {
+            setSampleModalState(null);
+          }
         }}
         onSubmit={submitSampleModal}
       />
@@ -484,8 +584,11 @@ export default function CompressionSamplesTable({
         pourDate={
           seriesModalState?.pourDate ?? ""
         }
+        submitting={actionPending || busy}
         onClose={() => {
-          setSeriesModalState(null);
+          if (!interactionDisabled) {
+            setSeriesModalState(null);
+          }
         }}
         onSubmit={submitSeriesModal}
       />
@@ -497,6 +600,7 @@ export default function CompressionSamplesTable({
             type="button"
             className="btn-fit-white-outline"
             onClick={openCreateSampleModal}
+            disabled={interactionDisabled}
           >
             <FaPlusCircle size={18} />
 
@@ -639,6 +743,7 @@ export default function CompressionSamplesTable({
                               className="ButtonSquare"
                               title="Modifier le prélèvement"
                               aria-label="Modifier le prélèvement"
+                              disabled={interactionDisabled}
                               onClick={() =>
                                 openEditSampleModal(sampleIndex)
                               }
@@ -651,6 +756,7 @@ export default function CompressionSamplesTable({
                               className="ButtonSquare"
                               title="Ajouter un écrasement"
                               aria-label="Ajouter un écrasement"
+                              disabled={interactionDisabled}
                               onClick={() =>
                                 openCreateSeriesModal(sampleIndex)
                               }
@@ -663,9 +769,10 @@ export default function CompressionSamplesTable({
                               className="ButtonSquareDelete"
                               title="Supprimer le prélèvement"
                               aria-label="Supprimer le prélèvement"
-                              onClick={() =>
-                                removeSample(sampleIndex)
-                              }
+                              disabled={interactionDisabled}
+                              onClick={() => {
+                                void removeSample(sampleIndex);
+                              }}
                             >
                               <FaTrashAlt size={18} />
                             </button>
@@ -724,6 +831,7 @@ export default function CompressionSamplesTable({
                               className="ButtonSquare"
                               title="Modifier l’écrasement"
                               aria-label="Modifier l’écrasement"
+                              disabled={interactionDisabled}
                               onClick={() =>
                                 openEditSeriesModal(
                                   sampleIndex,
@@ -740,12 +848,13 @@ export default function CompressionSamplesTable({
                                 className="ButtonSquareDelete"
                                 title="Supprimer l’écrasement"
                                 aria-label="Supprimer l’écrasement"
-                                onClick={() =>
-                                  removeSeries(
+                                disabled={interactionDisabled}
+                                onClick={() => {
+                                  void removeSeries(
                                     sampleIndex,
                                     seriesIndex,
-                                  )
-                                }
+                                  );
+                                }}
                               >
                                 <FaTrashAlt size={17} />
                               </button>

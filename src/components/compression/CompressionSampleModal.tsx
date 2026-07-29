@@ -6,6 +6,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { CiCircleRemove } from "react-icons/ci";
+import { FaSpinner } from "react-icons/fa6";
 import {
   DatePickerInput,
 } from "@/components/DatePickerInput";
@@ -29,10 +30,11 @@ type CompressionSampleModalProps = {
   initialValue?:
     | CompressionSampleModalPayload
     | null;
+  submitting: boolean;
   onClose: () => void;
   onSubmit: (
     payload: CompressionSampleModalPayload,
-  ) => void;
+  ) => void | Promise<void>;
 };
 
 type CompressionSampleModalForm = {
@@ -96,6 +98,7 @@ export default function CompressionSampleModal({
   open,
   mode,
   initialValue,
+  submitting,
   onClose,
   onSubmit,
 }: CompressionSampleModalProps) {
@@ -119,7 +122,7 @@ export default function CompressionSampleModal({
     if (!open) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
+      if (event.key === "Escape" && !submitting) {
         onClose();
       }
     };
@@ -128,12 +131,16 @@ export default function CompressionSampleModal({
     return () => {
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [onClose, open]);
+  }, [onClose, open, submitting]);
 
-  const submit = (
+  const submit = async (
     event: FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
+
+    if (submitting) {
+      return;
+    }
 
     const validationError = validateForm(form);
     if (validationError) {
@@ -141,7 +148,7 @@ export default function CompressionSampleModal({
       return;
     }
 
-    onSubmit({
+    await onSubmit({
       dosage: form.dosage.trim(),
       cement: form.cement.trim(),
       admixture: form.admixture.trim(),
@@ -154,7 +161,10 @@ export default function CompressionSampleModal({
   const closeOnBackdrop = (
     event: ReactMouseEvent<HTMLDivElement>,
   ) => {
-    if (event.target === event.currentTarget) {
+    if (
+      event.target === event.currentTarget &&
+      !submitting
+    ) {
       onClose();
     }
   };
@@ -170,7 +180,7 @@ export default function CompressionSampleModal({
         onMouseDown={closeOnBackdrop}
       >
         <form
-          onSubmit={submit}
+          onSubmit={(event) => void submit(event)}
           onMouseDown={(event) => event.stopPropagation()}
           className="w-full max-w-4xl max-h-[95vh] overflow-visible rounded-xl border border-gray-200 bg-white shadow-xl flex flex-col"
         >
@@ -185,6 +195,7 @@ export default function CompressionSampleModal({
               onClick={onClose}
               aria-label="Fermer"
               title="Fermer"
+              disabled={submitting}
               className="p-1 text-gray-700 hover:cursor-pointer hover:text-red-600 hover:scale-120 transition-transform"
             >
               <CiCircleRemove size={28} />
@@ -220,6 +231,7 @@ export default function CompressionSampleModal({
                   }}
                   placeholder="Ex: 400 KG/M³"
                   className={fieldClass}
+                  disabled={submitting}
                 />
               </div>
 
@@ -239,6 +251,7 @@ export default function CompressionSampleModal({
                   }}
                   placeholder="Ex: I42.5 HRS"
                   className={fieldClass}
+                  disabled={submitting}
                 />
               </div>
 
@@ -258,6 +271,7 @@ export default function CompressionSampleModal({
                   }}
                   placeholder="Optionnel"
                   className={fieldClass}
+                  disabled={submitting}
                 />
               </div>
 
@@ -282,6 +296,7 @@ export default function CompressionSampleModal({
                   }}
                   placeholder="Ex: Semelles axe C et axe D"
                   className={fieldClass}
+                  disabled={submitting}
                 />
               </div>
 
@@ -304,6 +319,7 @@ export default function CompressionSampleModal({
                     setError("");
                   }}
                   className="w-full"
+                  disabled={submitting}
                 />
               </div>
 
@@ -326,6 +342,7 @@ export default function CompressionSampleModal({
                     setError("");
                   }}
                   className="w-full"
+                  disabled={submitting}
                 />
               </div>
               </div>
@@ -340,10 +357,16 @@ export default function CompressionSampleModal({
               <button
                 type="submit"
                 className="btn-fit-white-outline"
+                disabled={submitting}
               >
-                {mode === "edit"
-                  ? "Enregistrer"
-                  : "Ajouter"}
+                {submitting ? (
+                  <span className="inline-flex items-center gap-2">
+                    <FaSpinner className="animate-spin" />
+                    Enregistrement...
+                  </span>
+                ) : (
+                  "Enregistrer"
+                )}
               </button>
             </div>
           </div>

@@ -6,6 +6,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { CiCircleRemove } from "react-icons/ci";
+import { FaSpinner } from "react-icons/fa6";
 import { FiCalendar } from "react-icons/fi";
 import {
   DatePickerInput,
@@ -127,10 +128,11 @@ type CompressionSeriesModalProps = {
     | null;
   initialSpecimenCount: number;
   pourDate: string;
+  submitting: boolean;
   onClose: () => void;
   onSubmit: (
     payload: CompressionSeriesModalPayload,
-  ) => void;
+  ) => void | Promise<void>;
 };
 
 function createResult(
@@ -259,6 +261,7 @@ export default function CompressionSeriesModal({
   initialValue,
   initialSpecimenCount,
   pourDate,
+  submitting,
   onClose,
   onSubmit,
 }: CompressionSeriesModalProps) {
@@ -316,7 +319,10 @@ export default function CompressionSeriesModal({
     if (!open) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
+      if (
+        event.key === "Escape" &&
+        !submitting
+      ) {
         onClose();
       }
     };
@@ -325,7 +331,7 @@ export default function CompressionSeriesModal({
     return () => {
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [onClose, open]);
+  }, [onClose, open, submitting]);
 
   const updateResult = (
     resultIndex: number,
@@ -451,10 +457,12 @@ export default function CompressionSeriesModal({
     setError("");
   };
 
-  const submit = (
+  const submit = async (
     event: FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
+
+    if (submitting) return;
 
     const parsedMaturity =
       Number(maturityDays);
@@ -528,7 +536,7 @@ export default function CompressionSeriesModal({
       return;
     }
 
-    onSubmit({
+    await onSubmit({
       specimenCount:
         normalizedSpecimenCount,
       series: {
@@ -571,7 +579,10 @@ export default function CompressionSeriesModal({
   const closeOnBackdrop = (
     event: ReactMouseEvent<HTMLDivElement>,
   ) => {
-    if (event.target === event.currentTarget) {
+    if (
+      event.target === event.currentTarget &&
+      !submitting
+    ) {
       onClose();
     }
   };
@@ -587,7 +598,9 @@ export default function CompressionSeriesModal({
         onMouseDown={closeOnBackdrop}
       >
         <form
-          onSubmit={submit}
+          onSubmit={(event) => {
+            void submit(event);
+          }}
           onMouseDown={(event) => event.stopPropagation()}
           className="w-full max-w-4xl max-h-[95vh] rounded-xl border border-gray-200 bg-white shadow-xl flex flex-col"
         >
@@ -600,6 +613,7 @@ export default function CompressionSeriesModal({
             <button
               type="button"
               onClick={onClose}
+              disabled={submitting}
               aria-label="Fermer"
               title="Fermer"
               className="p-1 text-gray-700 hover:cursor-pointer hover:text-red-600 hover:scale-120 transition-transform"
@@ -638,6 +652,7 @@ export default function CompressionSeriesModal({
                     }));
                     setError("");
                   }}
+                  disabled={submitting}
                   className={[
                     "inline-flex h-12 w-12 shrink-0 self-end",
                     "items-center justify-center",
@@ -680,6 +695,7 @@ export default function CompressionSeriesModal({
                     min={0}
                     step={1}
                     value={maturityDays}
+                    disabled={submitting}
                     onChange={(event) => {
                       updateMaturityDays(
                         event.target.value,
@@ -701,6 +717,7 @@ export default function CompressionSeriesModal({
                     type="time"
                     step={60}
                     value={series.planningTime}
+                    disabled={submitting}
                     onChange={(event) => {
                       setSeries((current) => ({
                         ...current,
@@ -725,6 +742,7 @@ export default function CompressionSeriesModal({
                     id="compression-series-crushing-date"
                     value={series.crushingDate}
                     onChange={updateCrushingDate}
+                    disabled={submitting}
                     className="w-full"
                   />
                 </div>
@@ -736,6 +754,7 @@ export default function CompressionSeriesModal({
                   <input
                     type="text"
                     value={series.reference ?? ""}
+                    disabled={submitting}
                     placeholder="Optionnel"
                     onChange={(event) => {
                       setSeries((current) => ({
@@ -759,6 +778,7 @@ export default function CompressionSeriesModal({
                     max={100}
                     step={1}
                     value={specimenCount}
+                    disabled={submitting}
                     onChange={(event) => {
                       setSpecimenCount(
                         event.target.value,
@@ -780,7 +800,10 @@ export default function CompressionSeriesModal({
                   type="button"
                   className="btn-fit-white-outline"
                   onClick={removeResult}
-                  disabled={series.results.length <= 1}
+                  disabled={
+                    submitting ||
+                    series.results.length <= 1
+                  }
                 >
                   Retirer EP
                 </button>
@@ -789,7 +812,10 @@ export default function CompressionSeriesModal({
                   type="button"
                   className="btn-fit-white-outline"
                   onClick={addResult}
-                  disabled={series.results.length >= 12}
+                  disabled={
+                    submitting ||
+                    series.results.length >= 12
+                  }
                 >
                   Ajouter EP
                 </button>
@@ -819,6 +845,7 @@ export default function CompressionSeriesModal({
                       min={0}
                       step="0.001"
                       value={result.value ?? ""}
+                      disabled={submitting}
                       onChange={(event) => {
                         const inputValue =
                           event.target.value;
@@ -856,10 +883,16 @@ export default function CompressionSeriesModal({
               <button
                 type="submit"
                 className="btn-fit-white-outline"
+                disabled={submitting}
               >
-                {mode === "edit"
-                  ? "Enregistrer"
-                  : "Ajouter"}
+                {submitting ? (
+                  <span className="inline-flex items-center gap-2">
+                    <FaSpinner className="animate-spin" />
+                    Enregistrement...
+                  </span>
+                ) : (
+                  "Enregistrer"
+                )}
               </button>
             </div>
           </div>
