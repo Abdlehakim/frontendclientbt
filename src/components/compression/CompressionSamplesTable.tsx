@@ -6,7 +6,9 @@ import CompressionSeriesModal, {
   type CompressionSeriesModalPayload,
 } from "@/components/compression/CompressionSeriesModal";
 import {
+  FaChartBar,
   FaPlus,
+  FaPlusCircle,
   FaRegEdit,
   FaTrashAlt,
 } from "react-icons/fa";
@@ -486,17 +488,23 @@ export default function CompressionSamplesTable({
         onSubmit={submitSeriesModal}
       />
 
-      {!readOnly ? (
-        <div className="flex w-full flex-wrap items-center justify-end gap-2">
+      <div className="flex w-full flex-wrap items-center justify-between gap-4">
+        <h2 className="text-2xl font-bold tracking-tight text-[#0d2d5f] md:text-3xl">
+          Essais à la compression
+        </h2>
+
+        {!readOnly ? (
           <button
             type="button"
-            className="btn-fit-white-outline"
+            className="inline-flex items-center justify-center gap-3 rounded-lg bg-[#0d2d5f] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#163f78]"
             onClick={openCreateSampleModal}
           >
-            Ajouter un prélèvement
+            <FaPlusCircle size={18} />
+
+            <span>Ajouter un prélèvement</span>
           </button>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
 
       {actionError ? (
         <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -505,32 +513,32 @@ export default function CompressionSamplesTable({
       ) : null}
 
       {samples.length === 0 ? (
-        <div className="overflow-hidden rounded-lg border border-slate-300 bg-white">
-          <table className="w-full table-fixed border-collapse text-xs">
-            <thead className="bg-(--primary) text-white">
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.08)]">
+          <table className="w-full table-fixed border-collapse text-sm">
+            <thead className="bg-[#0d2d5f] text-white">
               <tr>
-                <th className="border border-white/30 px-2 py-2">
+                <th className="border border-white/20 px-3 py-4 text-center text-sm font-semibold">
                   N°
                 </th>
-                <th className="border border-white/30 px-2 py-2">
+                <th className="border border-white/20 px-3 py-4 text-center text-sm font-semibold">
                   Dosage
                 </th>
-                <th className="border border-white/30 px-2 py-2">
+                <th className="border border-white/20 px-3 py-4 text-center text-sm font-semibold">
                   Ciment
                 </th>
-                <th className="border border-white/30 px-2 py-2">
+                <th className="border border-white/20 px-3 py-4 text-center text-sm font-semibold">
                   Adjuvant
                 </th>
-                <th className="border border-white/30 px-2 py-2">
+                <th className="border border-white/20 px-3 py-4 text-center text-sm font-semibold">
                   Désignation
                 </th>
-                <th className="border border-white/30 px-2 py-2">
+                <th className="border border-white/20 px-3 py-4 text-center text-sm font-semibold leading-tight">
                   Date coulage / prélèvement
                 </th>
-                <th className="border border-white/30 px-2 py-2">
+                <th className="border border-white/20 px-3 py-4 text-center text-sm font-semibold leading-tight">
                   Date d’envoi éprouvette
                 </th>
-                <th className="no-print border border-white/30 px-2 py-2">
+                <th className="no-print border border-white/20 px-3 py-4 text-center text-sm font-semibold">
                   Actions
                 </th>
               </tr>
@@ -540,7 +548,7 @@ export default function CompressionSamplesTable({
               <tr>
                 <td
                   colSpan={8}
-                  className="border border-slate-300 px-4 py-6 text-center text-sm text-slate-500"
+                  className="border border-slate-200 px-4 py-8 text-center text-sm text-slate-500"
                 >
                   Aucun prélèvement ajouté.
                 </td>
@@ -549,49 +557,49 @@ export default function CompressionSamplesTable({
           </table>
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-8">
           {samples.map((sample, sampleIndex) => (
             <section
               key={`sample-block-${sample.sequenceNumber}-${sampleIndex}`}
-              className="space-y-3"
+              className="space-y-6"
             >
-              <div className="overflow-hidden rounded-lg border border-slate-300 bg-white">
-                <table className="w-full table-fixed border-collapse text-xs">
+              <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.08)]">
+                <table className="w-full table-fixed border-collapse text-sm">
                   <colgroup>
-                    <col style={{ width: "5%" }} />
-                    <col style={{ width: "9%" }} />
-                    <col style={{ width: "9%" }} />
-                    <col style={{ width: "9%" }} />
-                    <col style={{ width: "20%" }} />
-                    <col style={{ width: "15%" }} />
-                    <col style={{ width: "15%" }} />
-                    <col style={{ width: "18%" }} />
+                    <col style={{ width: "6%" }} />
+                    <col style={{ width: "10%" }} />
+                    <col style={{ width: "11%" }} />
+                    <col style={{ width: "11%" }} />
+                    <col style={{ width: "14%" }} />
+                    <col style={{ width: "16%" }} />
+                    <col style={{ width: "16%" }} />
+                    <col style={{ width: "16%" }} />
                   </colgroup>
 
-                  <thead className="bg-(--primary) text-white">
+                  <thead className="bg-[#0d2d5f] text-white">
                     <tr>
-                      <th className="border border-white/30 px-2 py-2">
+                      <th className="border border-white/20 px-3 py-4 text-center text-sm font-semibold">
                         N°
                       </th>
-                      <th className="border border-white/30 px-2 py-2">
+                      <th className="border border-white/20 px-3 py-4 text-center text-sm font-semibold">
                         Dosage
                       </th>
-                      <th className="border border-white/30 px-2 py-2">
+                      <th className="border border-white/20 px-3 py-4 text-center text-sm font-semibold">
                         Ciment
                       </th>
-                      <th className="border border-white/30 px-2 py-2">
+                      <th className="border border-white/20 px-3 py-4 text-center text-sm font-semibold">
                         Adjuvant
                       </th>
-                      <th className="border border-white/30 px-2 py-2">
+                      <th className="border border-white/20 px-3 py-4 text-center text-sm font-semibold">
                         Désignation
                       </th>
-                      <th className="border border-white/30 px-2 py-2">
+                      <th className="border border-white/20 px-3 py-4 text-center text-sm font-semibold leading-tight">
                         Date coulage / prélèvement
                       </th>
-                      <th className="border border-white/30 px-2 py-2">
+                      <th className="border border-white/20 px-3 py-4 text-center text-sm font-semibold leading-tight">
                         Date d’envoi éprouvette
                       </th>
-                      <th className="no-print border border-white/30 px-2 py-2">
+                      <th className="no-print border border-white/20 px-3 py-4 text-center text-sm font-semibold">
                         Actions
                       </th>
                     </tr>
@@ -599,68 +607,68 @@ export default function CompressionSamplesTable({
 
                   <tbody>
                     <tr className="bg-white">
-                      <td className="border border-slate-300 px-2 py-2 text-center">
+                      <td className="border border-slate-200 px-3 py-5 text-center text-sm font-medium text-slate-900">
                         {sample.sequenceNumber}
                       </td>
-                      <td className="border border-slate-300 px-2 py-2">
+                      <td className="border border-slate-200 px-3 py-5 text-center text-sm font-medium text-slate-900">
                         {sample.dosage.trim() || "—"}
                       </td>
-                      <td className="border border-slate-300 px-2 py-2">
+                      <td className="border border-slate-200 px-3 py-5 text-center text-sm font-medium text-slate-900">
                         {sample.cement.trim() || "—"}
                       </td>
-                      <td className="border border-slate-300 px-2 py-2">
+                      <td className="border border-slate-200 px-3 py-5 text-center text-sm font-medium text-slate-900">
                         {sample.admixture?.trim() || "—"}
                       </td>
-                      <td className="border border-slate-300 px-2 py-2">
+                      <td className="border border-slate-200 px-3 py-5 text-center text-sm font-medium text-slate-900">
                         <div className="whitespace-pre-wrap break-words">
                           {sample.designation.trim() || "—"}
                         </div>
                       </td>
-                      <td className="border border-slate-300 px-2 py-2 text-center">
+                      <td className="border border-slate-200 px-3 py-5 text-center text-sm font-medium text-slate-900">
                         {formatDateOnly(sample.pourDate)}
                       </td>
-                      <td className="border border-slate-300 px-2 py-2 text-center">
+                      <td className="border border-slate-200 px-3 py-5 text-center text-sm font-medium text-slate-900">
                         {formatDateOnly(
                           sample.specimenSendDate,
                         )}
                       </td>
-                      <td className="no-print border border-slate-300 px-2 py-2">
+                      <td className="no-print border border-slate-200 px-3 py-5 text-center text-sm font-medium text-slate-900">
                         {!readOnly ? (
-                          <div className="flex flex-wrap items-center justify-center gap-1">
+                          <div className="flex flex-wrap items-center justify-center gap-3">
                             <button
                               type="button"
-                              className="ButtonSquare ButtonSquare--compact"
+                              className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-blue-300 bg-white text-blue-700 transition hover:bg-blue-50"
                               title="Modifier le prélèvement"
                               aria-label="Modifier le prélèvement"
                               onClick={() =>
                                 openEditSampleModal(sampleIndex)
                               }
                             >
-                              <FaRegEdit size={13} />
+                              <FaRegEdit size={18} />
                             </button>
 
                             <button
                               type="button"
-                              className="ButtonSquare ButtonSquare--compact"
+                              className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-blue-300 bg-white text-blue-700 transition hover:bg-blue-50"
                               title="Ajouter un écrasement"
                               aria-label="Ajouter un écrasement"
                               onClick={() =>
                                 openCreateSeriesModal(sampleIndex)
                               }
                             >
-                              <FaPlus size={12} />
+                              <FaPlus size={19} />
                             </button>
 
                             <button
                               type="button"
-                              className="ButtonSquareDelete ButtonSquareDelete--compact"
+                              className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-red-300 bg-white text-red-600 transition hover:bg-red-50"
                               title="Supprimer le prélèvement"
                               aria-label="Supprimer le prélèvement"
                               onClick={() =>
                                 removeSample(sampleIndex)
                               }
                             >
-                              <FaTrashAlt size={13} />
+                              <FaTrashAlt size={18} />
                             </button>
                           </div>
                         ) : null}
@@ -671,13 +679,13 @@ export default function CompressionSamplesTable({
               </div>
 
               {sample.series.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center">
+                <div className="rounded-xl border border-dashed border-slate-300 bg-white px-5 py-10 text-center shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
                   <div className="text-sm text-slate-500">
                     Aucun écrasement ajouté.
                   </div>
                 </div>
               ) : (
-              <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                 {sample.series.map((series, seriesIndex) => {
                   const maturity = calculatePreviewMaturity(
                     sample.pourDate,
@@ -697,55 +705,109 @@ export default function CompressionSamplesTable({
                   return (
                     <div
                       key={`${sampleIndex}-${seriesIndex}`}
-                      className="min-w-0 overflow-hidden rounded-lg border border-slate-300 bg-white"
+                      className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.08)]"
                     >
-                      <table className="w-full table-fixed border-collapse text-[10px] leading-tight">
-                        <colgroup>
-                          <col style={{ width: "20%" }} />
-                          <col style={{ width: "28%" }} />
-                          <col style={{ width: "32%" }} />
-                          <col style={{ width: "20%" }} />
-                        </colgroup>
+                      <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-4">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0d2d5f] text-white">
+                            <FaChartBar size={18} />
+                          </div>
 
-                        <thead className="bg-(--primary) text-white">
-                          <tr>
-                            <th className="border border-white/30 px-1 py-1 text-center whitespace-normal break-words">
-                              Maturité JRS
-                            </th>
-                            <th className="border border-white/30 px-1 py-1 text-center whitespace-normal break-words">
+                          <h3 className="truncate text-sm font-bold text-[#0d2d5f]">
+                            Résultats des éprouvettes
+                          </h3>
+                        </div>
+
+                        {!readOnly ? (
+                          <div className="flex shrink-0 items-center gap-2">
+                            <button
+                              type="button"
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-blue-300 bg-white text-blue-700 transition hover:bg-blue-50"
+                              title="Modifier l’écrasement"
+                              aria-label="Modifier l’écrasement"
+                              onClick={() =>
+                                openEditSeriesModal(
+                                  sampleIndex,
+                                  seriesIndex,
+                                )
+                              }
+                            >
+                              <FaRegEdit size={16} />
+                            </button>
+
+                            {sample.series.length > 1 ? (
+                              <button
+                                type="button"
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-300 bg-white text-red-600 transition hover:bg-red-50"
+                                title="Supprimer l’écrasement"
+                                aria-label="Supprimer l’écrasement"
+                                onClick={() =>
+                                  removeSeries(
+                                    sampleIndex,
+                                    seriesIndex,
+                                  )
+                                }
+                              >
+                                <FaTrashAlt size={16} />
+                              </button>
+                            ) : null}
+                          </div>
+                        ) : null}
+                      </div>
+
+                      <div className="px-4 py-3">
+                        <div className="grid grid-cols-2 border-b border-slate-200">
+                          <div className="border-r border-slate-200 px-3 py-3">
+                            <div className="text-[11px] font-semibold text-slate-500">
+                              Maturité (JRS)
+                            </div>
+
+                            <div className="mt-1 text-sm font-bold text-[#0d2d5f]">
+                              {maturity === null
+                                ? "—"
+                                : `${maturity} jour${maturity > 1 ? "s" : ""}`}
+                            </div>
+                          </div>
+
+                          <div className="px-3 py-3">
+                            <div className="text-[11px] font-semibold text-slate-500">
                               Date d’écrasement
-                            </th>
-                            <th className="border border-white/30 px-1 py-1 text-center whitespace-normal break-words">
-                              Référence
-                            </th>
-                            <th className="border border-white/30 px-1 py-1 text-center whitespace-normal break-words">
-                              Nbr éprouvettes
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="border border-slate-300 px-1 py-1 text-center">
-                              {maturity === null ? "—" : maturity}
-                            </td>
-                            <td className="border border-slate-300 px-1 py-1 text-center">
+                            </div>
+
+                            <div className="mt-1 text-sm font-bold text-[#0d2d5f]">
                               {formatDateOnly(
                                 series.crushingDate,
                               )}
-                            </td>
-                            <td className="border border-slate-300 px-1 py-1 text-center break-words">
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2">
+                          <div className="border-r border-slate-200 px-3 py-3">
+                            <div className="text-[11px] font-semibold text-slate-500">
+                              Référence
+                            </div>
+
+                            <div className="mt-1 break-words text-sm font-bold text-[#0d2d5f]">
                               {series.reference?.trim() || "—"}
-                            </td>
-                            <td className="border border-slate-300 px-1 py-1 text-center">
+                            </div>
+                          </div>
+
+                          <div className="px-3 py-3">
+                            <div className="text-[11px] font-semibold text-slate-500">
+                              Nombre d’éprouvettes
+                            </div>
+
+                            <div className="mt-1 text-sm font-bold text-[#0d2d5f]">
                               {sample.specimenCount}
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
 
                       <div className="overflow-x-auto">
                         <table
-                          className="w-full table-fixed border-collapse text-[10px] leading-tight"
+                          className="w-full table-fixed border-collapse text-xs"
                           style={{
                             minWidth:
                               orderedResults.length > 4
@@ -753,13 +815,13 @@ export default function CompressionSamplesTable({
                                 : undefined,
                           }}
                         >
-                          <thead className="bg-(--primary) text-white">
+                          <thead className="bg-[#0d2d5f] text-white">
                             <tr>
                               {orderedResults.map(
                                 (result) => (
                                   <th
                                     key={`ep-header-${sampleIndex}-${seriesIndex}-${result.specimenNumber}`}
-                                    className="border border-white/30 px-1 py-1 text-center"
+                                    className="border border-white/20 px-3 py-3 text-center text-xs font-bold"
                                   >
                                     EP{result.specimenNumber}
                                   </th>
@@ -773,7 +835,7 @@ export default function CompressionSamplesTable({
                                 (result) => (
                                   <td
                                     key={`ep-value-${sampleIndex}-${seriesIndex}-${result.specimenNumber}`}
-                                    className="border border-slate-300 px-1 py-1 text-center"
+                                    className="border border-slate-200 bg-white px-3 py-4 text-center text-sm font-semibold text-blue-800"
                                   >
                                     {displayResult(result)}
                                   </td>
@@ -784,73 +846,15 @@ export default function CompressionSamplesTable({
                         </table>
                       </div>
 
-                      <table className="w-full table-fixed border-collapse text-[10px] leading-tight">
-                        <thead className="bg-(--primary) text-white">
-                          <tr>
-                            <th className="border border-white/30 px-1 py-1">
-                              Moyenne
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="border border-slate-300 px-1 py-1 text-center font-semibold">
-                              {formatCompressionNumber(average)}
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
+                      <div className="flex items-center justify-between gap-4 bg-blue-50 px-5 py-4 text-[#0d2d5f]">
+                        <span className="text-sm font-bold">
+                          Moyenne
+                        </span>
 
-                      {!readOnly ? (
-                        <table className="no-print w-full table-fixed border-collapse text-[10px] leading-tight">
-                          <thead className="bg-(--primary) text-white">
-                            <tr>
-                              <th className="border border-white/30 px-1 py-1">
-                                Actions
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr>
-                              <td className="border border-slate-300 px-1 py-1">
-                                <div className="flex items-center justify-center gap-1">
-                                  <button
-                                    type="button"
-                                    className="ButtonSquare ButtonSquare--compact"
-                                    title="Modifier l’écrasement"
-                                    aria-label="Modifier l’écrasement"
-                                    onClick={() =>
-                                      openEditSeriesModal(
-                                        sampleIndex,
-                                        seriesIndex,
-                                      )
-                                    }
-                                  >
-                                    <FaRegEdit size={13} />
-                                  </button>
-
-                                  {sample.series.length > 1 ? (
-                                    <button
-                                      type="button"
-                                      className="ButtonSquareDelete ButtonSquareDelete--compact"
-                                      title="Supprimer l’écrasement"
-                                      aria-label="Supprimer l’écrasement"
-                                      onClick={() =>
-                                        removeSeries(
-                                          sampleIndex,
-                                          seriesIndex,
-                                        )
-                                      }
-                                    >
-                                      <FaTrashAlt size={13} />
-                                    </button>
-                                  ) : null}
-                                </div>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      ) : null}
+                        <span className="text-lg font-bold">
+                          {formatCompressionNumber(average)}
+                        </span>
+                      </div>
                     </div>
                   );
                 })}
