@@ -1,6 +1,7 @@
 // src/components/ferraillage/Edit/EditCalculeTotalFerraillage.tsx
 import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
-import { FaRegEdit, FaTrashAlt } from "react-icons/fa";
+import { FaTrashAlt } from "react-icons/fa";
+import { FiEdit3 } from "react-icons/fi";
 import { FaSpinner } from "react-icons/fa6";
 import { LuCopy, LuPlus } from "react-icons/lu";
 import { IoIosArrowDropdown, IoIosArrowDropup } from "react-icons/io";
@@ -1223,7 +1224,7 @@ function NiveauBlock({
 
             <div className="flex items-center gap-2">
               <button type="button" className="ButtonSquare" title="Modifier" onClick={onEdit}>
-                <FaRegEdit size={14} />
+                <FiEdit3 size={14} />
               </button>
 
               <button type="button" onClick={onDelete} className="ButtonSquareDelete" title="Supprimer">
@@ -1372,7 +1373,7 @@ function NiveauBlock({
                               onEditRow(row.id);
                             }}
                           >
-                            <FaRegEdit size={13} />
+                            <FiEdit3 size={13} />
                           </button>
 
                           <button

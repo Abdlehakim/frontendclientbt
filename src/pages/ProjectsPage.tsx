@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FaRegEdit, FaRegEye, FaTrashAlt } from "react-icons/fa";
+import { FaRegEye, FaTrashAlt } from "react-icons/fa";
+import { FiEdit3 } from "react-icons/fi";
 import { FaSpinner } from "react-icons/fa6";
 import DeleteConfirmModal from "@/components/common/DeleteConfirmModal";
 import CreateProjetWizard from "@/components/ferraillage/CreateProjetWizard";
@@ -297,7 +298,7 @@ export default function ProjectsPage() {
                           title="Modifier"
                           type="button"
                         >
-                          <FaRegEdit size={14} />
+                          <FiEdit3 size={14} />
                         </button>
                         <button
                           onClick={() => onView(project.id)}

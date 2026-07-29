@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { FaRegEdit, FaRegEye, FaTrashAlt } from "react-icons/fa";
+import { FaRegEye, FaTrashAlt } from "react-icons/fa";
+import { FiEdit3 } from "react-icons/fi";
 import { FaSpinner } from "react-icons/fa6";
 import DeleteConfirmModal from "@/components/common/DeleteConfirmModal";
 import CompressionReportEditor from "@/components/compression/CompressionReportEditor";
@@ -259,7 +260,7 @@ export default function ProjectTrackingPage() {
                           openEditor("edit", report.id)
                         }
                       >
-                        <FaRegEdit size={14} />
+                        <FiEdit3 size={14} />
                       </button>
                       <button
                         type="button"

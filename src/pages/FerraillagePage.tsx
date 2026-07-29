@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FaRegEdit, FaRegEye, FaTrashAlt } from "react-icons/fa";
+import { FaRegEye, FaTrashAlt } from "react-icons/fa";
+import { FiEdit3 } from "react-icons/fi";
 import { FaSpinner } from "react-icons/fa6";
 import DeleteConfirmModal from "@/components/common/DeleteConfirmModal";
 import CreateRapportModal from "@/components/ferraillage/CreateRapportModal";
@@ -364,7 +365,7 @@ export default function FerraillagePage() {
                           title="Modifier"
                           type="button"
                         >
-                          <FaRegEdit size={14} />
+                          <FiEdit3 size={14} />
                         </button>
                         <button
                           onClick={() => onView(report)}
