@@ -54,7 +54,7 @@ export function createEmptyCompressionResults(
   return Array.from({ length: count }, (_, index) => ({
     specimenNumber: index + 1,
     value: null,
-    status: "VALID",
+    status: "NOT_TESTED",
     note: null,
   }));
 }
@@ -67,6 +67,8 @@ export function createEmptyCompressionSeries(
     crushingDate: "",
     reference: "",
     sortOrder,
+    showInPlanning: true,
+    planningTime: "10:00",
     results: createEmptyCompressionResults(resultColumnCount),
   };
 }

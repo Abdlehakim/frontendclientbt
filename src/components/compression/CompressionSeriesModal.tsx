@@ -137,7 +137,7 @@ function createResult(
   return {
     specimenNumber,
     value: null,
-    status: "VALID",
+    status: "NOT_TESTED",
     note: null,
   };
 }
@@ -150,18 +150,27 @@ function normalizeSeries(
 
   const normalizedResults =
     sourceResults.length > 0
-      ? sourceResults.map(
-          (result, index) => ({
+      ? sourceResults.map((result, index) => {
+          const hasNumericValue =
+            typeof result.value === "number" &&
+            Number.isFinite(result.value);
+
+          return {
             specimenNumber: index + 1,
-            value:
-              typeof result.value === "number" &&
-              Number.isFinite(result.value)
-                ? result.value
-                : null,
-            status: "VALID" as const,
-            note: null,
-          }),
-        )
+            value: hasNumericValue
+              ? result.value
+              : null,
+            status: hasNumericValue
+              ? result.status === "VALID" ||
+                result.status === "INVALID"
+                ? result.status
+                : "VALID"
+              : result.status === "INVALID"
+                ? "INVALID"
+                : "NOT_TESTED",
+            note: result.note ?? null,
+          };
+        })
       : Array.from(
           { length: 4 },
           (_, index) =>
@@ -175,8 +184,28 @@ function normalizeSeries(
       initialValue?.reference ?? "",
     sortOrder:
       initialValue?.sortOrder ?? 0,
+    showInPlanning:
+      initialValue?.showInPlanning ?? true,
+    planningTime:
+      initialValue?.planningTime ?? "10:00",
     results: normalizedResults,
   };
+}
+
+function isValidPlanningTime(value: string): boolean {
+  if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)) {
+    return false;
+  }
+
+  const [hours, minutes] = value
+    .split(":")
+    .map(Number);
+  const totalMinutes = hours * 60 + minutes;
+
+  return (
+    totalMinutes >= 8 * 60 &&
+    totalMinutes < 18 * 60
+  );
 }
 
 function validateSeries(
@@ -190,11 +219,22 @@ function validateSeries(
     return "Ajoutez au moins un résultat.";
   }
 
+  if (
+    series.showInPlanning &&
+    !isValidPlanningTime(series.planningTime)
+  ) {
+    return "L’heure d’écrasement doit être comprise entre 08:00 et 17:59.";
+  }
+
   for (const result of series.results) {
     if (
-      typeof result.value !== "number" ||
-      !Number.isFinite(result.value) ||
-      result.value < 0
+      result.value !== null &&
+      result.value !== undefined &&
+      (
+        typeof result.value !== "number" ||
+        !Number.isFinite(result.value) ||
+        result.value < 0
+      )
     ) {
       return `EP${result.specimenNumber} doit contenir une valeur valide.`;
     }
@@ -446,6 +486,8 @@ export default function CompressionSeriesModal({
       ...series,
       crushingDate:
         calculatedCrushingDate,
+      planningTime:
+        series.planningTime.trim(),
     };
 
     const validationError =
@@ -455,6 +497,10 @@ export default function CompressionSeriesModal({
       setError(validationError);
       return;
     }
+
+    const normalizedPlanningTime =
+      normalizedSeries.planningTime ||
+      "10:00";
 
     const normalizedSpecimenCount =
       Number(specimenCount);
@@ -483,13 +529,30 @@ export default function CompressionSeriesModal({
             ?.trim() || null,
         sortOrder:
           normalizedSeries.sortOrder,
+        showInPlanning:
+          normalizedSeries.showInPlanning,
+        planningTime:
+          normalizedPlanningTime,
         results: normalizedSeries.results.map(
-          (result, index) => ({
-            specimenNumber: index + 1,
-            value: result.value,
-            status: "VALID",
-            note: null,
-          }),
+          (result, index) => {
+            const hasNumericValue =
+              typeof result.value === "number" &&
+              Number.isFinite(result.value);
+
+            return {
+              specimenNumber: index + 1,
+              value: hasNumericValue
+                ? result.value
+                : null,
+              status:
+                result.status === "INVALID"
+                  ? "INVALID"
+                  : hasNumericValue
+                    ? "VALID"
+                    : "NOT_TESTED",
+              note: result.note ?? null,
+            };
+          },
         ),
       },
     });
@@ -547,7 +610,7 @@ export default function CompressionSeriesModal({
                 Informations série
               </div>
 
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
               <div className="flex flex-col">
                 <label className="mb-1 text-xs font-semibold text-gray-700">
                   Maturité JRS
@@ -621,6 +684,55 @@ export default function CompressionSeriesModal({
                   className={fieldClass}
                 />
               </div>
+
+              <div className="flex flex-col justify-end">
+                <label
+                  htmlFor="compression-series-show-in-planning"
+                  className={`${fieldClass} inline-flex cursor-pointer items-center gap-3`}
+                >
+                  <input
+                    id="compression-series-show-in-planning"
+                    type="checkbox"
+                    checked={series.showInPlanning}
+                    onChange={(event) => {
+                      setSeries((current) => ({
+                        ...current,
+                        showInPlanning:
+                          event.target.checked,
+                      }));
+                      setError("");
+                    }}
+                    className="h-4 w-4 accent-emerald-600"
+                  />
+                  <span>
+                    Afficher dans la planification
+                  </span>
+                </label>
+              </div>
+
+              <div className="flex flex-col">
+                <label
+                  htmlFor="compression-series-planning-time"
+                  className="mb-1 text-xs font-semibold text-gray-700"
+                >
+                  Heure d’écrasement
+                </label>
+                <input
+                  id="compression-series-planning-time"
+                  type="time"
+                  step={60}
+                  value={series.planningTime}
+                  onChange={(event) => {
+                    setSeries((current) => ({
+                      ...current,
+                      planningTime:
+                        event.target.value,
+                    }));
+                    setError("");
+                  }}
+                  className={fieldClass}
+                />
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -673,14 +785,20 @@ export default function CompressionSeriesModal({
                       step="0.001"
                       value={result.value ?? ""}
                       onChange={(event) => {
+                        const inputValue =
+                          event.target.value;
+
                         updateResult(resultIndex, {
                           specimenNumber:
                             result.specimenNumber,
                           value:
-                            event.target.value === ""
+                            inputValue === ""
                               ? null
-                              : Number(event.target.value),
-                          status: "VALID",
+                              : Number(inputValue),
+                          status:
+                            inputValue === ""
+                              ? "NOT_TESTED"
+                              : "VALID",
                           note: null,
                         });
 

@@ -1,4 +1,8 @@
-import { useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   FiCalendar,
   FiChevronDown,
@@ -8,6 +12,10 @@ import {
   FiPlus,
   FiSettings,
 } from "react-icons/fi";
+import {
+  compressionApi,
+  type CompressionPlanningEventDTO,
+} from "@/lib/compressionApi";
 
 type PlanningCategory =
   | "CALL"
@@ -18,11 +26,13 @@ type PlanningCategory =
 
 type PlanningEvent = {
   id: string;
-  dayIndex: number;
+  dayIndex?: number;
+  date?: string;
   start: string;
-  end: string;
+  end?: string;
   title: string;
   category: PlanningCategory;
+  source?: "STATIC" | "COMPRESSION";
 };
 
 const START_HOUR = 8;
@@ -245,6 +255,17 @@ function formatDayDate(value: Date): string {
   return `${day}/${month}`;
 }
 
+function formatLocalDateOnly(value: Date): string {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(
+    2,
+    "0",
+  );
+  const day = String(value.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 function formatDateRange(
   rangeStart: Date,
   rangeEnd: Date,
@@ -326,10 +347,17 @@ function getEventPosition(event: PlanningEvent): {
   height: number;
 } {
   const startMinutes = timeToMinutes(event.start);
-  const endMinutes = timeToMinutes(event.end);
-
   const top =
     ((startMinutes - START_HOUR * 60) / 60) * HOUR_HEIGHT;
+
+  if (!event.end) {
+    return {
+      top,
+      height: 46,
+    };
+  }
+
+  const endMinutes = timeToMinutes(event.end);
   const rawHeight =
     ((endMinutes - startMinutes) / 60) * HOUR_HEIGHT;
 
@@ -339,11 +367,28 @@ function getEventPosition(event: PlanningEvent): {
   };
 }
 
+function mapCompressionPlanningEvent(
+  item: CompressionPlanningEventDTO,
+): PlanningEvent {
+  return {
+    id: `compression-${item.id}`,
+    date: item.crushingDate.slice(0, 10),
+    start: item.planningTime,
+    title: `Écrasement – ${item.designation}`,
+    category: "CHANTIER",
+    source: "COMPRESSION",
+  };
+}
+
 export default function ProjectPlanningPage() {
   const [centerDate, setCenterDate] =
     useState(() =>
       startOfLocalDay(new Date()),
     );
+  const [compressionEvents, setCompressionEvents] =
+    useState<PlanningEvent[]>([]);
+  const [planningError, setPlanningError] =
+    useState("");
   const today = new Date();
 
   const visibleDays = useMemo(
@@ -355,6 +400,42 @@ export default function ProjectPlanningPage() {
       ] as const,
     [centerDate],
   );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const from =
+      formatLocalDateOnly(visibleDays[0]);
+    const to =
+      formatLocalDateOnly(visibleDays[2]);
+
+    setPlanningError("");
+
+    void compressionApi
+      .listPlanningEvents(from, to)
+      .then((response) => {
+        if (cancelled) return;
+
+        setCompressionEvents(
+          response.items.map(
+            mapCompressionPlanningEvent,
+          ),
+        );
+        setPlanningError("");
+      })
+      .catch(() => {
+        if (cancelled) return;
+
+        setCompressionEvents([]);
+        setPlanningError(
+          "Impossible de charger les écrasements planifiés.",
+        );
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [visibleDays]);
 
   const hourLabels = useMemo(
     () =>
@@ -456,6 +537,15 @@ export default function ProjectPlanningPage() {
         </div>
       </div>
 
+      {planningError ? (
+        <div
+          role="status"
+          className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
+        >
+          {planningError}
+        </div>
+      ) : null}
+
       <div className="overflow-x-auto rounded-xl">
         <div
           role="region"
@@ -550,6 +640,19 @@ export default function ProjectPlanningPage() {
                 isSameLocalDay(day, today);
               const planningDayIndex =
                 getPlanningDayIndex(day);
+              const localDateKey =
+                formatLocalDateOnly(day);
+              const dayEvents = [
+                ...PLANNING_EVENTS.filter(
+                  (event) =>
+                    event.dayIndex ===
+                    planningDayIndex,
+                ),
+                ...compressionEvents.filter(
+                  (event) =>
+                    event.date === localDateKey,
+                ),
+              ];
 
               return (
                 <div
@@ -596,29 +699,34 @@ export default function ProjectPlanningPage() {
                     ),
                   )}
 
-                  {PLANNING_EVENTS.filter(
-                    (event) =>
-                      event.dayIndex ===
-                      planningDayIndex,
-                  ).map((event) => {
+                  {dayEvents.map((event) => {
                     const position = getEventPosition(event);
                     const config = CATEGORY_CONFIG[event.category];
 
                     return (
                       <div
                         key={event.id}
-                        aria-label={`${event.title}, ${event.start} à ${event.end}`}
+                        aria-label={
+                          event.end
+                            ? `${event.title}, ${event.start} à ${event.end}`
+                            : `${event.title}, ${event.start}`
+                        }
                         className={[
                           "absolute z-10 overflow-hidden rounded-md border border-l-4 px-2.5 py-2 pr-7 text-xs shadow-sm",
                           config.cardClass,
                           config.accentClass,
                         ].join(" ")}
                         style={{
-                          top: position.top + 4,
-                          height: Math.max(
-                            position.height - 8,
-                            34,
-                          ),
+                          top:
+                            event.source === "COMPRESSION"
+                              ? position.top
+                              : position.top + 4,
+                          height: event.end
+                            ? Math.max(
+                                position.height - 8,
+                                34,
+                              )
+                            : position.height,
                           left: 10,
                           right: 10,
                         }}
@@ -633,7 +741,9 @@ export default function ProjectPlanningPage() {
                           </div>
                         </div>
                         <div className="mt-1 text-[11px] font-medium leading-tight text-slate-600">
-                          {event.start} – {event.end}
+                          {event.end
+                            ? `${event.start} – ${event.end}`
+                            : event.start}
                         </div>
                         <FiMoreHorizontal
                           aria-hidden="true"

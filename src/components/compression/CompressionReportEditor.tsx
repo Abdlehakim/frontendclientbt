@@ -122,6 +122,8 @@ function mapReportToForm(
         crushingDate: toDateInput(series.crushingDate),
         reference: series.reference ?? "",
         sortOrder: series.sortOrder,
+        showInPlanning: series.showInPlanning,
+        planningTime: series.planningTime,
         results: series.results.map((result) => ({
           specimenNumber: result.specimenNumber,
           value:
@@ -129,8 +131,8 @@ function mapReportToForm(
             Number.isFinite(result.value)
               ? result.value
               : null,
-          status: "VALID",
-          note: null,
+          status: result.status,
+          note: result.note,
         })),
       })),
     }),
@@ -153,6 +155,22 @@ function readableError(error: unknown): string {
     return error.message;
   }
   return "Une erreur inattendue est survenue.";
+}
+
+function isValidPlanningTime(value: string): boolean {
+  if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)) {
+    return false;
+  }
+
+  const [hours, minutes] = value
+    .split(":")
+    .map(Number);
+  const totalMinutes = hours * 60 + minutes;
+
+  return (
+    totalMinutes >= 8 * 60 &&
+    totalMinutes < 18 * 60
+  );
 }
 
 function validateForm(form: CompressionEditorForm): string {
@@ -194,15 +212,25 @@ function validateForm(form: CompressionEditorForm): string {
       if (!series.crushingDate) {
         return `${prefix} : la date d’écrasement est obligatoire.`;
       }
+      if (
+        series.showInPlanning &&
+        !isValidPlanningTime(series.planningTime)
+      ) {
+        return `${prefix} : l’heure d’écrasement doit être comprise entre 08:00 et 17:59.`;
+      }
       if (series.results.length === 0) {
         return `${prefix} : ajoutez au moins un résultat.`;
       }
 
       for (const result of series.results) {
         if (
-          (typeof result.value !== "number" ||
+          result.value !== null &&
+          result.value !== undefined &&
+          (
+            typeof result.value !== "number" ||
             !Number.isFinite(result.value) ||
-            result.value < 0)
+            result.value < 0
+          )
         ) {
           return `${prefix}, EP${result.specimenNumber} : saisissez une valeur numérique valide.`;
         }
@@ -235,12 +263,27 @@ function buildPayload(
         crushingDate: series.crushingDate,
         reference: series.reference?.trim() || null,
         sortOrder: series.sortOrder,
-        results: series.results.map((result, index) => ({
-          specimenNumber: index + 1,
-          value: result.value ?? null,
-          status: "VALID",
-          note: null,
-        })),
+        showInPlanning: series.showInPlanning,
+        planningTime: series.planningTime || "10:00",
+        results: series.results.map((result, index) => {
+          const hasNumericValue =
+            typeof result.value === "number" &&
+            Number.isFinite(result.value);
+
+          return {
+            specimenNumber: index + 1,
+            value: hasNumericValue
+              ? result.value
+              : null,
+            status:
+              result.status === "INVALID"
+                ? "INVALID"
+                : hasNumericValue
+                  ? "VALID"
+                  : "NOT_TESTED",
+            note: result.note ?? null,
+          };
+        }),
       })),
     })),
   };

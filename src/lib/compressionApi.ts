@@ -42,6 +42,8 @@ export type CompressionSeriesDTO = {
   maturityDays: number;
   average: number | null;
   sortOrder: number;
+  showInPlanning: boolean;
+  planningTime: string;
   results: CompressionResultDTO[];
 };
 
@@ -64,6 +66,21 @@ export type CompressionReportDetailDTO =
     samples: CompressionSampleDTO[];
   };
 
+export type CompressionPlanningEventDTO = {
+  id: string;
+  crushingDate: string;
+  planningTime: string;
+  maturityDays: number;
+  reference: string | null;
+  sampleId: string;
+  sampleSequenceNumber: number;
+  designation: string;
+  reportId: string;
+  reportTitle: string | null;
+  projectId: string;
+  projectName: string;
+};
+
 export type CompressionResultInput = {
   specimenNumber: number;
   value?: number | null;
@@ -75,6 +92,8 @@ export type CompressionSeriesInput = {
   crushingDate: string;
   reference?: string | null;
   sortOrder: number;
+  showInPlanning: boolean;
+  planningTime: string;
   results: CompressionResultInput[];
 };
 
@@ -138,6 +157,13 @@ function isNullableNumber(
   return (
     value === null ||
     (typeof value === "number" && Number.isFinite(value))
+  );
+}
+
+function isPlanningTime(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)
   );
 }
 
@@ -247,8 +273,32 @@ function isCompressionSeriesDTO(
     isNullableNumber(value.average) &&
     typeof value.sortOrder === "number" &&
     Number.isInteger(value.sortOrder) &&
+    typeof value.showInPlanning === "boolean" &&
+    isPlanningTime(value.planningTime) &&
     Array.isArray(value.results) &&
     value.results.every(isCompressionResultDTO)
+  );
+}
+
+function isCompressionPlanningEventDTO(
+  value: unknown,
+): value is CompressionPlanningEventDTO {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.crushingDate === "string" &&
+    isPlanningTime(value.planningTime) &&
+    typeof value.maturityDays === "number" &&
+    Number.isInteger(value.maturityDays) &&
+    isNullableString(value.reference) &&
+    typeof value.sampleId === "string" &&
+    typeof value.sampleSequenceNumber === "number" &&
+    Number.isInteger(value.sampleSequenceNumber) &&
+    typeof value.designation === "string" &&
+    typeof value.reportId === "string" &&
+    isNullableString(value.reportTitle) &&
+    typeof value.projectId === "string" &&
+    typeof value.projectName === "string"
   );
 }
 
@@ -319,6 +369,23 @@ function parseDetailResponse(
   return { item: value.item };
 }
 
+function parsePlanningEventsResponse(
+  value: unknown,
+): { items: CompressionPlanningEventDTO[] } {
+  if (
+    !isRecord(value) ||
+    !Array.isArray(value.items) ||
+    !value.items.every(isCompressionPlanningEventDTO)
+  ) {
+    throw new CompressionApiError(
+      500,
+      "Invalid compression planning response",
+    );
+  }
+
+  return { items: value.items };
+}
+
 function normalizeReportId(reportId: string): string {
   const normalized = reportId.trim();
   if (!normalized) {
@@ -340,6 +407,18 @@ export const compressionApi = {
       `${BASE}${query ? `?q=${encodeURIComponent(query)}` : ""}`,
     );
     return parseListResponse(response);
+  },
+
+  listPlanningEvents: async (
+    from: string,
+    to: string,
+  ) => {
+    const response = await request(
+      `${BASE}/planning?from=${encodeURIComponent(
+        from,
+      )}&to=${encodeURIComponent(to)}`,
+    );
+    return parsePlanningEventsResponse(response);
   },
 
   getReport: async (reportId: string) => {
