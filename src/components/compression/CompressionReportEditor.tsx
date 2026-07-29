@@ -1,6 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { createPortal } from "react-dom";
 import { FaSpinner } from "react-icons/fa6";
+import {
+  FiCalendar,
+  FiFileText,
+  FiLayers,
+  FiMapPin,
+  FiType,
+  FiUser,
+} from "react-icons/fi";
 import CompressionSamplesTable from "@/components/compression/CompressionSamplesTable";
 import ProjectModalShell from "@/components/ferraillage/ProjectModalShell";
 import {
@@ -233,6 +246,58 @@ function buildPayload(
   };
 }
 
+type DetailItemProps = {
+  icon: ReactNode;
+  label: string;
+  value: ReactNode;
+  className?: string;
+  valueClassName?: string;
+};
+
+function DetailItem({
+  icon,
+  label,
+  value,
+  className = "",
+  valueClassName = "",
+}: DetailItemProps) {
+  return (
+    <div
+      className={[
+        "flex min-w-0 items-center gap-4",
+        className,
+      ].join(" ")}
+    >
+      <div
+        className="
+          flex h-14 w-14 shrink-0
+          items-center justify-center
+          rounded-full bg-emerald-100/70
+          text-emerald-950
+        "
+        aria-hidden="true"
+      >
+        {icon}
+      </div>
+
+      <div className="min-w-0">
+        <div className="text-sm text-slate-600">
+          {label}
+        </div>
+
+        <div
+          className={[
+            "mt-1 break-words text-lg font-semibold text-slate-950",
+            valueClassName,
+          ].join(" ")}
+        >
+          {value}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CompressionReportEditorPanel({
   mode,
   reportId,
@@ -431,67 +496,107 @@ function CompressionReportEditorPanel({
             </div>
 
             {tab === "DETAILS_CHANTIER" ? (
-              <div className="space-y-4">
-                <div className="rounded bg-white p-4 shadow">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <div>
-                      <div className="text-xs text-gray-500">
-                        Chantier
-                      </div>
-                      <div className="font-semibold text-gray-900">
-                        {selectedProject?.chantierName?.trim() || "—"}
-                      </div>
-                    </div>
+              <div className="px-4 py-6 sm:px-8 lg:px-12">
+                <div
+                  className="
+                    grid grid-cols-1
+                    gap-x-12 gap-y-8
+                    md:grid-cols-2
+                    xl:grid-cols-3
+                  "
+                >
+                  <DetailItem
+                    icon={
+                      <FiMapPin
+                        size={26}
+                        strokeWidth={1.8}
+                      />
+                    }
+                    label="Chantier"
+                    value={
+                      selectedProject?.chantierName?.trim() ||
+                      "—"
+                    }
+                  />
 
-                    <div>
-                      <div className="text-xs text-gray-500">
-                        Responsable
-                      </div>
-                      <div className="font-semibold text-gray-900">
-                        {selectedProject?.responsable?.trim() || "—"}
-                      </div>
-                    </div>
+                  <DetailItem
+                    icon={
+                      <FiUser
+                        size={26}
+                        strokeWidth={1.8}
+                      />
+                    }
+                    label="Responsable"
+                    value={
+                      selectedProject?.responsable?.trim() ||
+                      "—"
+                    }
+                  />
 
-                    <div>
-                      <div className="text-xs text-gray-500">
-                        Type d&apos;acier
-                      </div>
-                      <div className="font-semibold text-gray-900">
-                        {selectedProject?.acierType ?? "—"}
-                      </div>
-                    </div>
+                  <DetailItem
+                    icon={
+                      <FiLayers
+                        size={26}
+                        strokeWidth={1.8}
+                      />
+                    }
+                    label="Type d’acier"
+                    value={
+                      selectedProject?.acierType ??
+                      "—"
+                    }
+                  />
 
-                    <div className="md:col-span-3">
-                      <div className="text-xs text-gray-500">
-                        Note
-                      </div>
-                      <div className="whitespace-pre-wrap text-gray-900">
-                        {selectedProject?.note?.trim() || "—"}
-                      </div>
-                    </div>
-                  </div>
+                  <DetailItem
+                    icon={
+                      <FiFileText
+                        size={26}
+                        strokeWidth={1.8}
+                      />
+                    }
+                    label="Note"
+                    value={
+                      selectedProject?.note?.trim() ||
+                      "—"
+                    }
+                    className="md:col-span-2 xl:col-span-3"
+                    valueClassName="whitespace-pre-wrap"
+                  />
                 </div>
 
-                <div className="rounded-lg border border-slate-200 bg-white p-4">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div>
-                      <div className="text-xs text-gray-500">
-                        Date du rapport
-                      </div>
-                      <div className="font-semibold text-gray-900">
-                        {formatDateOnly(form.reportDate)}
-                      </div>
-                    </div>
+                <div className="my-8 border-t border-slate-200" />
 
-                    <div>
-                      <div className="text-xs text-gray-500">
-                        Titre
-                      </div>
-                      <div className="font-semibold text-gray-900">
-                        {form.title?.trim() || "—"}
-                      </div>
-                    </div>
-                  </div>
+                <div
+                  className="
+                    grid grid-cols-1
+                    gap-x-12 gap-y-8
+                    md:grid-cols-2
+                  "
+                >
+                  <DetailItem
+                    icon={
+                      <FiCalendar
+                        size={26}
+                        strokeWidth={1.8}
+                      />
+                    }
+                    label="Date du rapport"
+                    value={formatDateOnly(form.reportDate)}
+                  />
+
+                  <DetailItem
+                    icon={
+                      <FiType
+                        size={26}
+                        strokeWidth={1.8}
+                      />
+                    }
+                    label="Titre"
+                    value={
+                      form.title?.trim() ||
+                      "—"
+                    }
+                  />
                 </div>
               </div>
             ) : (
