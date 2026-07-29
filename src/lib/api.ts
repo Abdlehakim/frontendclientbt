@@ -85,6 +85,9 @@ export type MeResponse = {
     complete: boolean;
   } | null;
   onboardingComplete: boolean;
+  session: {
+    expiresAt: string;
+  } | null;
 };
 
 export type SelectModulesPayload = {
@@ -145,6 +148,14 @@ export const api = {
     }),
 
   logout: () => request<{ ok: true }>("/auth/logout", { method: "POST" }),
+
+  continueSession: () =>
+    request<{
+      ok: true;
+      expiresAt: string;
+    }>("/auth/continue-session", {
+      method: "POST",
+    }),
 
   selectPlan: (plan: Plan, billingCycle: BillingCycle) =>
     request<{ ok: true }>("/onboarding/plan", {

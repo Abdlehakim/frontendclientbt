@@ -3,8 +3,9 @@ import { FaRegEye, FaTrashAlt } from "react-icons/fa";
 import { FiEdit3 } from "react-icons/fi";
 import { FaSpinner } from "react-icons/fa6";
 import DeleteConfirmModal from "@/components/common/DeleteConfirmModal";
+import CompressionReportEditor from "@/components/compression/CompressionReportEditor";
 import CreateProjetWizard from "@/components/ferraillage/CreateProjetWizard";
-import ViewProjectData from "@/components/ferraillage/ViewProjectData";
+import ProjectOverviewModal from "@/components/projects/ProjectOverviewModal";
 import TablePagination from "@/components/tablePagination";
 import { useProjectSelection } from "@/contexts/ProjectSelectionContext";
 import {
@@ -43,6 +44,12 @@ export default function ProjectsPage() {
     useState<FerRapportDTO | null>(null);
   const [viewOpen, setViewOpen] = useState(false);
   const [viewItem, setViewItem] = useState<FerRapportDTO | null>(null);
+  const [compressionViewOpen, setCompressionViewOpen] =
+    useState(false);
+  const [
+    compressionViewReportId,
+    setCompressionViewReportId,
+  ] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
@@ -121,6 +128,24 @@ export default function ProjectsPage() {
     const target = items.find((item) => item.id === id) ?? null;
     setViewItem(target);
     setViewOpen(true);
+  }
+
+  function closeProjectOverview() {
+    setViewOpen(false);
+    setViewItem(null);
+  }
+
+  function handleViewCompressionReport(
+    reportId: string,
+  ) {
+    setViewOpen(false);
+    setCompressionViewReportId(reportId);
+    setCompressionViewOpen(true);
+  }
+
+  function closeCompressionView() {
+    setCompressionViewOpen(false);
+    setCompressionViewReportId(null);
   }
 
   function onEdit(item: FerRapportDTO) {
@@ -378,14 +403,20 @@ export default function ProjectsPage() {
         onConfirm={() => void confirmDelete()}
         onCancel={closeDeleteModal}
       />
-      <ViewProjectData
+      <ProjectOverviewModal
         open={viewOpen}
         projectId={viewItem?.id ?? null}
         projectName={viewItem?.chantierName ?? ""}
-        onClose={() => {
-          setViewOpen(false);
-          setViewItem(null);
-        }}
+        onClose={closeProjectOverview}
+        onViewCompressionReport={
+          handleViewCompressionReport
+        }
+      />
+      <CompressionReportEditor
+        open={compressionViewOpen}
+        mode="view"
+        reportId={compressionViewReportId}
+        onClose={closeCompressionView}
       />
     </div>
   );

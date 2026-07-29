@@ -332,7 +332,7 @@ export default function CreateCompressionReportModal({
 
     if (!normalizedName) {
       setError(
-        "Le nom de l’essai à la compression est obligatoire.",
+        "Le titre de l’essai à la compression est obligatoire.",
       );
       return;
     }
@@ -441,7 +441,7 @@ export default function CreateCompressionReportModal({
                     htmlFor="compression-report-name"
                     className="text-xs font-semibold text-gray-700 mb-1"
                   >
-                    Nom de l’essai à la compression
+                    Titre de l’essai à la compression
                   </label>
                   <input
                     id="compression-report-name"

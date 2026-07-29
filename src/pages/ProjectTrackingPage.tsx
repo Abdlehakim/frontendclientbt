@@ -217,17 +217,17 @@ export default function ProjectTrackingPage() {
         <table className="w-full table-fixed">
           <thead className="sticky top-0 z-5 bg-(--primary) text-white">
             <tr>
-              <th className="w-28 py-2 text-center text-sm font-medium">
-                Date
+              <th className="py-2 text-center text-sm font-medium">
+                Titre
               </th>
               <th className="py-2 text-center text-sm font-medium">
                 Chantier
               </th>
               <th className="py-2 text-center text-sm font-medium">
-                Titre
+                Créé par
               </th>
               <th className="w-28 py-2 text-center text-sm font-medium">
-                Prélèvements
+                Créé le
               </th>
               <th className="w-28 py-2 text-center text-sm font-medium">
                 MàJ le
@@ -256,8 +256,8 @@ export default function ProjectTrackingPage() {
                   key={report.id}
                   className={index % 2 ? "bg-gray-100" : "bg-white"}
                 >
-                  <td className="px-2 py-2 text-center">
-                    {formatDate(report.reportDate)}
+                  <td className="truncate px-2 py-2 text-center">
+                    {report.title ?? "—"}
                   </td>
                   <td className="px-2 py-2 text-center">
                     <div className="truncate font-semibold">
@@ -265,10 +265,10 @@ export default function ProjectTrackingPage() {
                     </div>
                   </td>
                   <td className="truncate px-2 py-2 text-center">
-                    {report.title ?? "—"}
+                    {report.createdByName || "—"}
                   </td>
                   <td className="px-2 py-2 text-center">
-                    {report.sampleCount}
+                    {formatDate(report.createdAt)}
                   </td>
                   <td className="px-2 py-2 text-center">
                     {formatDate(report.updatedAt)}
