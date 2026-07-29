@@ -262,10 +262,16 @@ export default function CompressionSampleModal({
               </div>
 
               <div className="flex flex-col md:col-span-3">
-                <label className="mb-1 text-xs font-semibold text-gray-700">
+                <label
+                  htmlFor="compression-sample-designation"
+                  className="mb-1 text-xs font-semibold text-gray-700"
+                >
                   Désignation
                 </label>
-                <textarea
+
+                <input
+                  id="compression-sample-designation"
+                  type="text"
                   value={form.designation}
                   onChange={(event) => {
                     setForm((current) => ({
@@ -275,7 +281,7 @@ export default function CompressionSampleModal({
                     setError("");
                   }}
                   placeholder="Ex: Semelles axe C et axe D"
-                  className={`${fieldClass} min-h-24 resize-y`}
+                  className={fieldClass}
                 />
               </div>
 
