@@ -607,33 +607,7 @@ export default function CompressionSeriesModal({
 
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
             <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-end">
-                <div className="w-full sm:max-w-sm">
-                  <div className="flex flex-col">
-                    <label
-                      htmlFor="compression-series-planning-time"
-                      className="mb-1 text-xs font-semibold text-gray-700"
-                    >
-                      Heure de planification
-                    </label>
-                    <input
-                      id="compression-series-planning-time"
-                      type="time"
-                      step={60}
-                      value={series.planningTime}
-                      onChange={(event) => {
-                        setSeries((current) => ({
-                          ...current,
-                          planningTime:
-                            event.target.value,
-                        }));
-                        setError("");
-                      }}
-                      className={fieldClass}
-                    />
-                  </div>
-                </div>
-
+              <div className="flex justify-end">
                 <button
                   type="button"
                   aria-pressed={series.showInPlanning}
@@ -687,7 +661,7 @@ export default function CompressionSeriesModal({
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
                 <div className="flex flex-col">
                   <label className="mb-1 text-xs font-semibold text-gray-700">
                     Maturité JRS
@@ -701,6 +675,30 @@ export default function CompressionSeriesModal({
                       updateMaturityDays(
                         event.target.value,
                       );
+                    }}
+                    className={fieldClass}
+                  />
+                </div>
+
+                <div className="flex flex-col">
+                  <label
+                    htmlFor="compression-series-planning-time"
+                    className="mb-1 text-xs font-semibold text-gray-700"
+                  >
+                    Heure de planification
+                  </label>
+                  <input
+                    id="compression-series-planning-time"
+                    type="time"
+                    step={60}
+                    value={series.planningTime}
+                    onChange={(event) => {
+                      setSeries((current) => ({
+                        ...current,
+                        planningTime:
+                          event.target.value,
+                      }));
+                      setError("");
                     }}
                     className={fieldClass}
                   />
