@@ -285,7 +285,6 @@ export default function CreateCompressionReportModal({
                 }}
                 disabled={submitting}
                 className="w-full"
-                inputClassName={fieldClass}
               />
             </div>
           </div>

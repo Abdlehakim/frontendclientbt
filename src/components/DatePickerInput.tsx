@@ -662,20 +662,26 @@ export function DatePickerInput({
     </div>
   );
 
-  const wrapperClassName = `swb-date-picker${
-    isOpen ? " is-open" : ""
-  }${className ? ` ${className}` : ""}`;
-  const resolvedInputClassName = inputClassName ?? "";
-
   return (
     <div
       ref={wrapperRef}
-      className={wrapperClassName}
+      className={[
+        "swb-date-picker",
+        isOpen ? "is-open" : "",
+        className ?? "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
       data-date-picker
     >
       <input
         id={id}
-        className={resolvedInputClassName}
+        className={[
+          "swb-date-picker__input",
+          inputClassName ?? "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
         type="text"
         inputMode="numeric"
         placeholder={placeholder}
