@@ -226,8 +226,8 @@ export default function CreateRapportModal({
             </div>
           </div>
 
-          <div className="rounded-b-xl bg-gray-50 border-t border-slate-900/10 px-3.5 pt-2.5 pb-3.5 flex items-center justify-between gap-3">
-            <div className="flex items-center justify-start gap-2 flex-1">
+          <div className="rounded-b-xl border-slate-900/10 px-3.5 pt-2.5 pb-3.5 flex items-center justify-between gap-3">
+
               <button
                 type="button"
                 onClick={onClose}
@@ -236,12 +236,12 @@ export default function CreateRapportModal({
               >
                 Annuler
               </button>
-            </div>
 
-            <div className="flex items-center justify-end gap-2 flex-1 whitespace-nowrap">
+
+
               <button
                 type="submit"
-                className="stepper__nav"
+                className="btn-fit-white-outline"
                 disabled={
                   loadingProjects ||
                   submitting ||
@@ -257,7 +257,6 @@ export default function CreateRapportModal({
                   "Enregistrer"
                 )}
               </button>
-            </div>
           </div>
         </form>
       </div>
