@@ -606,134 +606,132 @@ export default function CompressionSeriesModal({
 
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
             <div className="flex flex-col gap-4">
-              <div className="text-sm font-semibold text-gray-800">
-                Informations série
-              </div>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div className="flex flex-col justify-end">
+                  <label
+                    htmlFor="compression-series-show-in-planning"
+                    className={`${fieldClass} inline-flex cursor-pointer items-center gap-3`}
+                  >
+                    <input
+                      id="compression-series-show-in-planning"
+                      type="checkbox"
+                      checked={series.showInPlanning}
+                      onChange={(event) => {
+                        setSeries((current) => ({
+                          ...current,
+                          showInPlanning:
+                            event.target.checked,
+                        }));
+                        setError("");
+                      }}
+                      className="h-4 w-4 accent-emerald-600"
+                    />
+                    <span>
+                      Afficher dans la planification
+                    </span>
+                  </label>
+                </div>
 
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-              <div className="flex flex-col">
-                <label className="mb-1 text-xs font-semibold text-gray-700">
-                  Maturité JRS
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  value={maturityDays}
-                  onChange={(event) => {
-                    updateMaturityDays(
-                      event.target.value,
-                    );
-                  }}
-                  className={fieldClass}
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <label
-                  htmlFor="compression-series-crushing-date"
-                  className="mb-1 text-xs font-semibold text-gray-700"
-                >
-                  Date d’écrasement
-                </label>
-
-                <DatePickerInput
-                  id="compression-series-crushing-date"
-                  value={series.crushingDate}
-                  onChange={updateCrushingDate}
-                  className="w-full"
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <label className="mb-1 text-xs font-semibold text-gray-700">
-                  Référence
-                </label>
-                <input
-                  type="text"
-                  value={series.reference ?? ""}
-                  placeholder="Optionnel"
-                  onChange={(event) => {
-                    setSeries((current) => ({
-                      ...current,
-                      reference:
-                        event.target.value,
-                    }));
-                    setError("");
-                  }}
-                  className={fieldClass}
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <label className="mb-1 text-xs font-semibold text-gray-700">
-                  Nombre d’éprouvettes
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  max={100}
-                  step={1}
-                  value={specimenCount}
-                  onChange={(event) => {
-                    setSpecimenCount(
-                      event.target.value,
-                    );
-                    setError("");
-                  }}
-                  className={fieldClass}
-                />
-              </div>
-
-              <div className="flex flex-col justify-end">
-                <label
-                  htmlFor="compression-series-show-in-planning"
-                  className={`${fieldClass} inline-flex cursor-pointer items-center gap-3`}
-                >
+                <div className="flex flex-col">
+                  <label
+                    htmlFor="compression-series-planning-time"
+                    className="mb-1 text-xs font-semibold text-gray-700"
+                  >
+                    Heure d’écrasement
+                  </label>
                   <input
-                    id="compression-series-show-in-planning"
-                    type="checkbox"
-                    checked={series.showInPlanning}
+                    id="compression-series-planning-time"
+                    type="time"
+                    step={60}
+                    value={series.planningTime}
                     onChange={(event) => {
                       setSeries((current) => ({
                         ...current,
-                        showInPlanning:
-                          event.target.checked,
+                        planningTime:
+                          event.target.value,
                       }));
                       setError("");
                     }}
-                    className="h-4 w-4 accent-emerald-600"
+                    className={fieldClass}
                   />
-                  <span>
-                    Afficher dans la planification
-                  </span>
-                </label>
+                </div>
               </div>
 
-              <div className="flex flex-col">
-                <label
-                  htmlFor="compression-series-planning-time"
-                  className="mb-1 text-xs font-semibold text-gray-700"
-                >
-                  Heure d’écrasement
-                </label>
-                <input
-                  id="compression-series-planning-time"
-                  type="time"
-                  step={60}
-                  value={series.planningTime}
-                  onChange={(event) => {
-                    setSeries((current) => ({
-                      ...current,
-                      planningTime:
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <div className="flex flex-col">
+                  <label className="mb-1 text-xs font-semibold text-gray-700">
+                    Maturité JRS
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={maturityDays}
+                    onChange={(event) => {
+                      updateMaturityDays(
                         event.target.value,
-                    }));
-                    setError("");
-                  }}
-                  className={fieldClass}
-                />
+                      );
+                    }}
+                    className={fieldClass}
+                  />
+                </div>
+
+                <div className="flex flex-col">
+                  <label
+                    htmlFor="compression-series-crushing-date"
+                    className="mb-1 text-xs font-semibold text-gray-700"
+                  >
+                    Date d’écrasement
+                  </label>
+
+                  <DatePickerInput
+                    id="compression-series-crushing-date"
+                    value={series.crushingDate}
+                    onChange={updateCrushingDate}
+                    className="w-full"
+                  />
+                </div>
+
+                <div className="flex flex-col">
+                  <label className="mb-1 text-xs font-semibold text-gray-700">
+                    Référence
+                  </label>
+                  <input
+                    type="text"
+                    value={series.reference ?? ""}
+                    placeholder="Optionnel"
+                    onChange={(event) => {
+                      setSeries((current) => ({
+                        ...current,
+                        reference:
+                          event.target.value,
+                      }));
+                      setError("");
+                    }}
+                    className={fieldClass}
+                  />
+                </div>
+
+                <div className="flex flex-col">
+                  <label className="mb-1 text-xs font-semibold text-gray-700">
+                    Nombre d’éprouvettes
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={100}
+                    step={1}
+                    value={specimenCount}
+                    onChange={(event) => {
+                      setSpecimenCount(
+                        event.target.value,
+                      );
+                      setError("");
+                    }}
+                    className={fieldClass}
+                  />
+                </div>
               </div>
-            </div>
 
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="text-sm font-semibold text-slate-700">
