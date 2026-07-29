@@ -4,7 +4,6 @@ import {
   useState,
 } from "react";
 import {
-  FiCalendar,
   FiChevronDown,
   FiChevronLeft,
   FiChevronRight,
@@ -28,13 +27,11 @@ type PlanningCategory =
 type PlanningEvent = {
   id: string;
   projectId?: string;
-  dayIndex?: number;
   date?: string;
   start: string;
   end?: string;
   title: string;
   category: PlanningCategory;
-  source?: "STATIC" | "COMPRESSION";
 };
 
 const START_HOUR = 8;
@@ -42,137 +39,6 @@ const END_HOUR = 18;
 const HOUR_HEIGHT = 58;
 const TOTAL_HOURS = END_HOUR - START_HOUR;
 const CALENDAR_HEIGHT = TOTAL_HOURS * HOUR_HEIGHT;
-
-const PLANNING_EVENTS: PlanningEvent[] = [
-  {
-    id: "monday-site-meeting",
-    dayIndex: 0,
-    start: "09:00",
-    end: "10:30",
-    title: "Réunion de chantier",
-    category: "CALL",
-  },
-  {
-    id: "monday-concrete-study",
-    dayIndex: 0,
-    start: "11:00",
-    end: "12:30",
-    title: "Étude béton",
-    category: "CHANTIER",
-  },
-  {
-    id: "monday-plan-check",
-    dayIndex: 0,
-    start: "14:00",
-    end: "15:30",
-    title: "Vérification plans",
-    category: "DEVIS",
-  },
-  {
-    id: "monday-supplier-call",
-    dayIndex: 0,
-    start: "16:00",
-    end: "17:00",
-    title: "Appel fournisseur",
-    category: "ACHAT",
-  },
-  {
-    id: "tuesday-supply-follow-up",
-    dayIndex: 1,
-    start: "10:00",
-    end: "11:30",
-    title: "Suivi approvisionnement",
-    category: "ACHAT",
-  },
-  {
-    id: "tuesday-formwork-preparation",
-    dayIndex: 1,
-    start: "13:30",
-    end: "15:30",
-    title: "Préparation coffrage",
-    category: "SUIVI",
-  },
-  {
-    id: "tuesday-progress-point",
-    dayIndex: 1,
-    start: "16:00",
-    end: "17:00",
-    title: "Point d’avancement",
-    category: "CALL",
-  },
-  {
-    id: "wednesday-quality-control",
-    dayIndex: 2,
-    start: "09:00",
-    end: "10:30",
-    title: "Contrôle qualité",
-    category: "DEVIS",
-  },
-  {
-    id: "wednesday-team-meeting",
-    dayIndex: 2,
-    start: "11:00",
-    end: "12:00",
-    title: "Réunion équipe",
-    category: "CALL",
-  },
-  {
-    id: "wednesday-rebar-study",
-    dayIndex: 2,
-    start: "14:00",
-    end: "16:00",
-    title: "Étude ferraillage",
-    category: "CHANTIER",
-  },
-  {
-    id: "thursday-material-delivery",
-    dayIndex: 3,
-    start: "08:30",
-    end: "10:00",
-    title: "Livraison matériel",
-    category: "ACHAT",
-  },
-  {
-    id: "thursday-site-follow-up",
-    dayIndex: 3,
-    start: "11:00",
-    end: "12:30",
-    title: "Suivi chantier",
-    category: "SUIVI",
-  },
-  {
-    id: "thursday-client-meeting",
-    dayIndex: 3,
-    start: "15:00",
-    end: "16:30",
-    title: "Réunion client",
-    category: "CALL",
-  },
-  {
-    id: "friday-concrete-quantity",
-    dayIndex: 4,
-    start: "09:00",
-    end: "10:30",
-    title: "Métré béton",
-    category: "CHANTIER",
-  },
-  {
-    id: "friday-technical-analysis",
-    dayIndex: 4,
-    start: "13:30",
-    end: "15:00",
-    title: "Analyse technique",
-    category: "DEVIS",
-  },
-  {
-    id: "friday-weekly-report",
-    dayIndex: 4,
-    start: "16:00",
-    end: "17:00",
-    title: "Rapport hebdo",
-    category: "ACHAT",
-  },
-];
 
 const CATEGORY_CONFIG: Record<
   PlanningCategory,
@@ -330,15 +196,6 @@ function isWeekend(value: Date): boolean {
   return value.getDay() === 0 || value.getDay() === 6;
 }
 
-function getPlanningDayIndex(
-  value: Date,
-): number {
-  const nativeDay = value.getDay();
-  return nativeDay === 0
-    ? 6
-    : nativeDay - 1;
-}
-
 function timeToMinutes(value: string): number {
   const [hours = "0", minutes = "0"] = value.split(":");
   return Number(hours) * 60 + Number(minutes);
@@ -379,7 +236,6 @@ function mapCompressionPlanningEvent(
     start: item.planningTime,
     title: `Écrasement – ${item.designation}`,
     category: "CHANTIER",
-    source: "COMPRESSION",
   };
 }
 
@@ -471,38 +327,16 @@ export default function ProjectPlanningPage() {
   return (
     <div className="mx-auto px-4 py-4 flex flex-col gap-4 min-h-full rounded-xl bg-green-50">
 
-      <div className="grid grid-cols-1 items-center gap-3 px-0 py-1 lg:grid-cols-[1fr_auto_1fr]">
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            aria-label="Afficher les trois jours précédents"
-            title="Trois jours précédents"
-            onClick={goToPreviousPeriod}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
-          >
-            <FiChevronLeft aria-hidden="true" size={20} />
-          </button>
-
-          <button
-            type="button"
-            aria-label="Afficher les trois jours suivants"
-            title="Trois jours suivants"
-            onClick={goToNextPeriod}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
-          >
-            <FiChevronRight aria-hidden="true" size={20} />
-          </button>
-
-          <button
-            type="button"
-            aria-label="Revenir à aujourd’hui"
-            title="Aujourd'hui"
-            onClick={goToToday}
-            className="inline-flex h-10 items-center justify-center rounded-md border border-slate-200 bg-white px-4 font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
-          >
-            Aujourd&apos;hui
-          </button>
-        </div>
+      <div className="flex flex-wrap items-center gap-2 px-0 py-1">
+        <button
+          type="button"
+          aria-label="Afficher les trois jours précédents"
+          title="Trois jours précédents"
+          onClick={goToPreviousPeriod}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
+        >
+          <FiChevronLeft aria-hidden="true" size={20} />
+        </button>
 
         <div className="flex items-center justify-center gap-2 whitespace-nowrap text-lg font-bold text-slate-900">
           <span>
@@ -518,27 +352,25 @@ export default function ProjectPlanningPage() {
           />
         </div>
 
-        <div className="flex justify-start lg:justify-end">
-          <button
-            type="button"
-            disabled
-            aria-disabled="true"
-            title="Vue sur trois jours"
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-4 font-medium text-slate-700 opacity-100 shadow-sm disabled:cursor-not-allowed disabled:opacity-100"
-          >
-            <FiCalendar
-              aria-hidden="true"
-              className="text-slate-500"
-              size={17}
-            />
-            3 jours
-            <FiChevronDown
-              aria-hidden="true"
-              className="text-slate-500"
-              size={16}
-            />
-          </button>
-        </div>
+        <button
+          type="button"
+          aria-label="Afficher les trois jours suivants"
+          title="Trois jours suivants"
+          onClick={goToNextPeriod}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
+        >
+          <FiChevronRight aria-hidden="true" size={20} />
+        </button>
+
+        <button
+          type="button"
+          aria-label="Revenir à aujourd’hui"
+          title="Aujourd'hui"
+          onClick={goToToday}
+          className="inline-flex h-10 items-center justify-center rounded-md border border-slate-200 bg-white px-4 font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
+        >
+          Aujourd&apos;hui
+        </button>
       </div>
 
       {planningError ? (
@@ -642,29 +474,18 @@ export default function ProjectPlanningPage() {
             {visibleDays.map((day, visibleDayIndex) => {
               const isCurrentDay =
                 isSameLocalDay(day, today);
-              const planningDayIndex =
-                getPlanningDayIndex(day);
               const localDateKey =
                 formatLocalDateOnly(day);
-              const staticEvents = selectedProjectId
-                ? []
-                : PLANNING_EVENTS.filter(
-                    (event) =>
-                      event.dayIndex ===
-                      planningDayIndex,
-                  );
-              const projectCompressionEvents =
+              const dayEvents =
                 compressionEvents.filter(
                   (event) =>
                     event.date === localDateKey &&
-                    (!selectedProjectId ||
+                    (
+                      !selectedProjectId ||
                       event.projectId ===
-                        selectedProjectId),
+                        selectedProjectId
+                    ),
                 );
-              const dayEvents = [
-                ...staticEvents,
-                ...projectCompressionEvents,
-              ];
 
               return (
                 <div
@@ -729,10 +550,7 @@ export default function ProjectPlanningPage() {
                           config.accentClass,
                         ].join(" ")}
                         style={{
-                          top:
-                            event.source === "COMPRESSION"
-                              ? position.top
-                              : position.top + 4,
+                          top: position.top,
                           height: event.end
                             ? Math.max(
                                 position.height - 8,

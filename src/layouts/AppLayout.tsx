@@ -12,9 +12,14 @@ import {
 } from "react-router-dom";
 import {
   FiBell,
+  FiCheck,
   FiChevronDown,
   FiFolder,
 } from "react-icons/fi";
+import {
+  IoIosArrowDropdown,
+  IoIosArrowDropup,
+} from "react-icons/io";
 import {
   LuArrowBigLeft,
   LuArrowBigRight,
@@ -53,6 +58,7 @@ function AppLayoutContent() {
   } = useAuth();
   const {
     projects,
+    selectedProject,
     selectedProjectId,
     projectsLoading,
     projectsError,
@@ -95,9 +101,13 @@ function AppLayoutContent() {
 
   const [profileMenuOpen, setProfileMenuOpen] =
     useState(false);
+  const [projectMenuOpen, setProjectMenuOpen] =
+    useState(false);
   const [signingOut, setSigningOut] =
     useState(false);
 
+  const projectMenuRef =
+    useRef<HTMLDivElement | null>(null);
   const profileMenuRef =
     useRef<HTMLDivElement | null>(null);
 
@@ -154,7 +164,10 @@ function AppLayoutContent() {
         : null;
 
   useEffect(() => {
-    if (!profileMenuOpen) {
+    if (
+      !profileMenuOpen &&
+      !projectMenuOpen
+    ) {
       return;
     }
 
@@ -164,11 +177,22 @@ function AppLayoutContent() {
       const target =
         event.target as Node | null;
 
+      if (!target) {
+        return;
+      }
+
       if (
-        target &&
+        profileMenuOpen &&
         !profileMenuRef.current?.contains(target)
       ) {
         setProfileMenuOpen(false);
+      }
+
+      if (
+        projectMenuOpen &&
+        !projectMenuRef.current?.contains(target)
+      ) {
+        setProjectMenuOpen(false);
       }
     };
 
@@ -183,10 +207,16 @@ function AppLayoutContent() {
         handlePointerDown,
       );
     };
-  }, [profileMenuOpen]);
+  }, [
+    profileMenuOpen,
+    projectMenuOpen,
+  ]);
 
   useEffect(() => {
-    if (!profileMenuOpen) {
+    if (
+      !profileMenuOpen &&
+      !projectMenuOpen
+    ) {
       return;
     }
 
@@ -195,6 +225,7 @@ function AppLayoutContent() {
     ) => {
       if (event.key === "Escape") {
         setProfileMenuOpen(false);
+        setProjectMenuOpen(false);
       }
     };
 
@@ -209,7 +240,10 @@ function AppLayoutContent() {
         handleKeyDown,
       );
     };
-  }, [profileMenuOpen]);
+  }, [
+    profileMenuOpen,
+    projectMenuOpen,
+  ]);
 
   const handleSignOut = async () => {
     if (signingOut) {
@@ -238,7 +272,7 @@ function AppLayoutContent() {
           items-center justify-between gap-3
         "
       >
-        <div className="flex min-w-0 items-center gap-4">
+        <div className="flex min-w-0 items-center gap-2">
           <IconButton
             icon={
               sidebarCollapsed ? (
@@ -257,64 +291,228 @@ function AppLayoutContent() {
             className="shrink-0"
           />
 
-          <div className="relative min-w-48 max-w-72 flex-1 sm:flex-none">
-            <FiFolder
-              aria-hidden="true"
-              size={18}
-              className="
-                pointer-events-none
-                absolute left-3 top-1/2 z-10
-                -translate-y-1/2 text-slate-500
-              "
-            />
+          <div
+            className="
+              inline-flex h-10 w-10 shrink-0
+              items-center justify-center
+              rounded-md border border-emerald-200
+              bg-emerald-50 text-emerald-800
+            "
+            aria-hidden="true"
+          >
+            <FiFolder size={18} />
+          </div>
 
-            <select
+          <div
+            ref={projectMenuRef}
+            className="relative w-60 sm:w-64"
+          >
+            <button
+              type="button"
+              aria-haspopup="listbox"
+              aria-expanded={projectMenuOpen}
+              aria-controls="app-project-menu"
               aria-label="Sélectionner un projet"
-              aria-invalid={projectsError ? true : undefined}
-              title={projectsError || undefined}
-              value={selectedProjectId}
-              onChange={(event) =>
-                setSelectedProjectId(event.target.value)
+              aria-invalid={
+                projectsError ? true : undefined
+              }
+              title={
+                projectsError ||
+                selectedProject?.chantierName ||
+                "Tous les projets"
               }
               disabled={projectsLoading}
-              className="
-                h-10 w-full appearance-none
-                rounded-lg border border-slate-200
-                bg-white pl-10 pr-9
-                text-sm text-slate-700
-                transition-colors
-                disabled:cursor-wait disabled:opacity-70
-                focus-visible:outline-none
-                focus-visible:ring-2
-                focus-visible:ring-(--primary)
-                focus-visible:ring-offset-2
-              "
+              onClick={() => {
+                setProfileMenuOpen(false);
+                setProjectMenuOpen(
+                  (current) => !current,
+                );
+              }}
+              className={[
+                "flex h-10 w-full items-center",
+                "justify-between gap-3 px-3",
+                "rounded-md border",
+                "bg-emerald-50",
+                "text-sm font-medium text-emerald-800",
+                "transition-colors",
+                "hover:bg-emerald-100",
+                "disabled:cursor-wait",
+                "disabled:opacity-70",
+                "focus-visible:outline-none",
+                "focus-visible:ring-2",
+                "focus-visible:ring-emerald-400",
+                projectMenuOpen
+                  ? [
+                      "border-emerald-400",
+                      "ring-2 ring-emerald-400",
+                    ].join(" ")
+                  : "border-emerald-200",
+              ].join(" ")}
             >
-              <option value="">
+              <span className="min-w-0 truncate">
                 {projectsLoading
                   ? "Chargement..."
-                  : "Tous les projets"}
-              </option>
+                  : selectedProject?.chantierName ||
+                    "Tous les projets"}
+              </span>
 
-              {projects.map((project) => (
-                <option
-                  key={project.id}
-                  value={project.id}
+              {projectMenuOpen ? (
+                <IoIosArrowDropup
+                  className="shrink-0"
+                  size={18}
+                  aria-hidden="true"
+                />
+              ) : (
+                <IoIosArrowDropdown
+                  className="shrink-0"
+                  size={18}
+                  aria-hidden="true"
+                />
+              )}
+            </button>
+
+            {projectMenuOpen &&
+            !projectsLoading ? (
+              <div
+                id="app-project-menu"
+                role="listbox"
+                aria-label="Sélectionner un projet"
+                className="
+                  absolute left-0 top-full z-50 mt-1
+                  w-full overflow-hidden
+                  rounded-md border border-emerald-200
+                  bg-white shadow-lg
+                "
+              >
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={
+                    selectedProjectId === ""
+                  }
+                  onClick={() => {
+                    setSelectedProjectId("");
+                    setProjectMenuOpen(false);
+                  }}
+                  className={[
+                    "flex w-full items-center gap-3",
+                    "px-3 py-2 text-left text-sm",
+                    "transition-colors",
+                    "hover:bg-emerald-50",
+                    selectedProjectId === ""
+                      ? [
+                          "bg-emerald-50",
+                          "text-emerald-800",
+                        ].join(" ")
+                      : "text-slate-700",
+                  ].join(" ")}
                 >
-                  {project.chantierName}
-                </option>
-              ))}
-            </select>
+                  <span
+                    className={[
+                      "inline-flex h-4 w-4 shrink-0",
+                      "items-center justify-center",
+                      "rounded-sm border",
+                      selectedProjectId === ""
+                        ? [
+                            "border-emerald-500",
+                            "bg-emerald-500",
+                            "text-white",
+                          ].join(" ")
+                        : [
+                            "border-slate-300",
+                            "bg-white",
+                          ].join(" "),
+                    ].join(" ")}
+                  >
+                    {selectedProjectId === "" ? (
+                      <FiCheck
+                        aria-hidden="true"
+                        size={12}
+                        strokeWidth={3}
+                      />
+                    ) : null}
+                  </span>
 
-            <FiChevronDown
-              aria-hidden="true"
-              size={17}
-              className="
-                pointer-events-none
-                absolute right-3 top-1/2
-                -translate-y-1/2 text-slate-500
-              "
-            />
+                  <span className="truncate">
+                    Tous les projets
+                  </span>
+                </button>
+
+                {projects.map((project) => {
+                  const selected =
+                    project.id === selectedProjectId;
+
+                  return (
+                    <button
+                      key={project.id}
+                      type="button"
+                      role="option"
+                      aria-selected={selected}
+                      onClick={() => {
+                        setSelectedProjectId(
+                          project.id,
+                        );
+                        setProjectMenuOpen(false);
+                      }}
+                      className={[
+                        "flex w-full items-center gap-3",
+                        "px-3 py-2 text-left text-sm",
+                        "transition-colors",
+                        "hover:bg-emerald-50",
+                        selected
+                          ? [
+                              "bg-emerald-50",
+                              "text-emerald-800",
+                            ].join(" ")
+                          : "text-slate-700",
+                      ].join(" ")}
+                    >
+                      <span
+                        className={[
+                          "inline-flex h-4 w-4 shrink-0",
+                          "items-center justify-center",
+                          "rounded-sm border",
+                          selected
+                            ? [
+                                "border-emerald-500",
+                                "bg-emerald-500",
+                                "text-white",
+                              ].join(" ")
+                            : [
+                                "border-slate-300",
+                                "bg-white",
+                              ].join(" "),
+                        ].join(" ")}
+                      >
+                        {selected ? (
+                          <FiCheck
+                            aria-hidden="true"
+                            size={12}
+                            strokeWidth={3}
+                          />
+                        ) : null}
+                      </span>
+
+                      <span className="truncate">
+                        {project.chantierName}
+                      </span>
+                    </button>
+                  );
+                })}
+
+                {projects.length === 0 ? (
+                  <div
+                    className="
+                      border-t border-emerald-100
+                      px-3 py-2
+                      text-xs text-slate-500
+                    "
+                  >
+                    Aucun projet disponible.
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -352,6 +550,7 @@ function AppLayoutContent() {
                 aria-expanded={profileMenuOpen}
                 aria-controls="app-profile-menu"
                 onClick={() => {
+                  setProjectMenuOpen(false);
                   setProfileMenuOpen(
                     (current) => !current,
                   );
