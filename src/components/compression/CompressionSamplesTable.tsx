@@ -677,7 +677,7 @@ export default function CompressionSamplesTable({
                   </div>
                 </div>
               ) : (
-              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
                 {sample.series.map((series, seriesIndex) => {
                   const maturity = calculatePreviewMaturity(
                     sample.pourDate,
@@ -694,32 +694,49 @@ export default function CompressionSamplesTable({
                       second.specimenNumber,
                   );
 
-                  void maturity;
-
                   return (
                     <div
                       key={`${sampleIndex}-${seriesIndex}`}
-                      className="overflow-hidden rounded-lg border border-slate-300 bg-white"
+                      className="min-w-0 overflow-hidden rounded-lg border border-slate-300 bg-white"
                     >
-                      <table className="w-full table-fixed border-collapse text-xs">
+                      <table className="w-full table-fixed border-collapse text-[10px] leading-tight">
+                        <colgroup>
+                          <col style={{ width: "20%" }} />
+                          <col style={{ width: "28%" }} />
+                          <col style={{ width: "32%" }} />
+                          <col style={{ width: "20%" }} />
+                        </colgroup>
+
                         <thead className="bg-(--primary) text-white">
                           <tr>
-                            <th className="border border-white/30 px-2 py-2">
+                            <th className="border border-white/30 px-1 py-1 text-center whitespace-normal break-words">
+                              Maturité JRS
+                            </th>
+                            <th className="border border-white/30 px-1 py-1 text-center whitespace-normal break-words">
                               Date d’écrasement
                             </th>
-                            <th className="border border-white/30 px-2 py-2">
+                            <th className="border border-white/30 px-1 py-1 text-center whitespace-normal break-words">
+                              Référence
+                            </th>
+                            <th className="border border-white/30 px-1 py-1 text-center whitespace-normal break-words">
                               Nbr éprouvettes
                             </th>
                           </tr>
                         </thead>
                         <tbody>
                           <tr>
-                            <td className="border border-slate-300 px-2 py-2 text-center">
+                            <td className="border border-slate-300 px-1 py-1 text-center">
+                              {maturity === null ? "—" : maturity}
+                            </td>
+                            <td className="border border-slate-300 px-1 py-1 text-center">
                               {formatDateOnly(
                                 series.crushingDate,
                               )}
                             </td>
-                            <td className="border border-slate-300 px-2 py-2 text-center">
+                            <td className="border border-slate-300 px-1 py-1 text-center break-words">
+                              {series.reference?.trim() || "—"}
+                            </td>
+                            <td className="border border-slate-300 px-1 py-1 text-center">
                               {sample.specimenCount}
                             </td>
                           </tr>
@@ -728,7 +745,7 @@ export default function CompressionSamplesTable({
 
                       <div className="overflow-x-auto">
                         <table
-                          className="w-full table-fixed border-collapse text-xs"
+                          className="w-full table-fixed border-collapse text-[10px] leading-tight"
                           style={{
                             minWidth:
                               orderedResults.length > 4
@@ -742,7 +759,7 @@ export default function CompressionSamplesTable({
                                 (result) => (
                                   <th
                                     key={`ep-header-${sampleIndex}-${seriesIndex}-${result.specimenNumber}`}
-                                    className="border border-white/30 px-2 py-2"
+                                    className="border border-white/30 px-1 py-1 text-center"
                                   >
                                     EP{result.specimenNumber}
                                   </th>
@@ -756,7 +773,7 @@ export default function CompressionSamplesTable({
                                 (result) => (
                                   <td
                                     key={`ep-value-${sampleIndex}-${seriesIndex}-${result.specimenNumber}`}
-                                    className="border border-slate-300 px-2 py-2 text-center"
+                                    className="border border-slate-300 px-1 py-1 text-center"
                                   >
                                     {displayResult(result)}
                                   </td>
@@ -767,17 +784,17 @@ export default function CompressionSamplesTable({
                         </table>
                       </div>
 
-                      <table className="w-full table-fixed border-collapse text-xs">
+                      <table className="w-full table-fixed border-collapse text-[10px] leading-tight">
                         <thead className="bg-(--primary) text-white">
                           <tr>
-                            <th className="border border-white/30 px-2 py-2">
+                            <th className="border border-white/30 px-1 py-1">
                               Moyenne
                             </th>
                           </tr>
                         </thead>
                         <tbody>
                           <tr>
-                            <td className="border border-slate-300 px-2 py-2 text-center font-semibold">
+                            <td className="border border-slate-300 px-1 py-1 text-center font-semibold">
                               {formatCompressionNumber(average)}
                             </td>
                           </tr>
@@ -785,17 +802,17 @@ export default function CompressionSamplesTable({
                       </table>
 
                       {!readOnly ? (
-                        <table className="no-print w-full table-fixed border-collapse text-xs">
+                        <table className="no-print w-full table-fixed border-collapse text-[10px] leading-tight">
                           <thead className="bg-(--primary) text-white">
                             <tr>
-                              <th className="border border-white/30 px-2 py-2">
+                              <th className="border border-white/30 px-1 py-1">
                                 Actions
                               </th>
                             </tr>
                           </thead>
                           <tbody>
                             <tr>
-                              <td className="border border-slate-300 px-2 py-2">
+                              <td className="border border-slate-300 px-1 py-1">
                                 <div className="flex items-center justify-center gap-1">
                                   <button
                                     type="button"
