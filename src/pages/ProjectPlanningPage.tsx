@@ -211,14 +211,9 @@ const LEGEND_CATEGORIES: PlanningCategory[] = [
   "ACHAT",
 ];
 
-function startOfWeek(value: Date): Date {
+function startOfLocalDay(value: Date): Date {
   const date = new Date(value);
   date.setHours(0, 0, 0, 0);
-
-  const currentDay = date.getDay();
-  const offset = currentDay === 0 ? -6 : 1 - currentDay;
-
-  date.setDate(date.getDate() + offset);
   return date;
 }
 
@@ -250,38 +245,54 @@ function formatDayDate(value: Date): string {
   return `${day}/${month}`;
 }
 
-function formatWeekRange(weekStart: Date): string {
-  const weekEnd = addDays(weekStart, 6);
-  const sameYear = weekStart.getFullYear() === weekEnd.getFullYear();
-  const sameMonth =
-    sameYear && weekStart.getMonth() === weekEnd.getMonth();
+function formatDateRange(
+  rangeStart: Date,
+  rangeEnd: Date,
+): string {
+  const sameYear =
+    rangeStart.getFullYear() ===
+    rangeEnd.getFullYear();
 
-  const day = new Intl.DateTimeFormat("fr-FR", {
-    day: "numeric",
-  });
-  const dayAndMonth = new Intl.DateTimeFormat("fr-FR", {
-    day: "numeric",
-    month: "long",
-  });
-  const fullDate = new Intl.DateTimeFormat("fr-FR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  const sameMonth =
+    sameYear &&
+    rangeStart.getMonth() ===
+      rangeEnd.getMonth();
+
+  const day = new Intl.DateTimeFormat(
+    "fr-FR",
+    {
+      day: "numeric",
+    },
+  );
+
+  const dayAndMonth =
+    new Intl.DateTimeFormat("fr-FR", {
+      day: "numeric",
+      month: "long",
+    });
+
+  const fullDate =
+    new Intl.DateTimeFormat("fr-FR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
 
   if (sameMonth) {
-    return `${day.format(weekStart)} – ${fullDate.format(weekEnd)}`;
+    return `${day.format(
+      rangeStart,
+    )} – ${fullDate.format(rangeEnd)}`;
   }
 
   if (sameYear) {
-    return `${dayAndMonth.format(weekStart)} – ${fullDate.format(
-      weekEnd,
-    )}`;
+    return `${dayAndMonth.format(
+      rangeStart,
+    )} – ${fullDate.format(rangeEnd)}`;
   }
 
-  return `${fullDate.format(weekStart)} – ${fullDate.format(
-    weekEnd,
-  )}`;
+  return `${fullDate.format(
+    rangeStart,
+  )} – ${fullDate.format(rangeEnd)}`;
 }
 
 function isSameLocalDay(left: Date, right: Date): boolean {
@@ -294,6 +305,15 @@ function isSameLocalDay(left: Date, right: Date): boolean {
 
 function isWeekend(value: Date): boolean {
   return value.getDay() === 0 || value.getDay() === 6;
+}
+
+function getPlanningDayIndex(
+  value: Date,
+): number {
+  const nativeDay = value.getDay();
+  return nativeDay === 0
+    ? 6
+    : nativeDay - 1;
 }
 
 function timeToMinutes(value: string): number {
@@ -320,17 +340,20 @@ function getEventPosition(event: PlanningEvent): {
 }
 
 export default function ProjectPlanningPage() {
-  const [weekStart, setWeekStart] = useState(() =>
-    startOfWeek(new Date()),
-  );
+  const [centerDate, setCenterDate] =
+    useState(() =>
+      startOfLocalDay(new Date()),
+    );
   const today = new Date();
 
-  const weekDays = useMemo(
+  const visibleDays = useMemo(
     () =>
-      Array.from({ length: 7 }, (_, index) =>
-        addDays(weekStart, index),
-      ),
-    [weekStart],
+      [
+        addDays(centerDate, -1),
+        centerDate,
+        addDays(centerDate, 1),
+      ] as const,
+    [centerDate],
   );
 
   const hourLabels = useMemo(
@@ -342,16 +365,22 @@ export default function ProjectPlanningPage() {
     [],
   );
 
-  function goToPreviousWeek() {
-    setWeekStart((current) => addDays(current, -7));
+  function goToPreviousPeriod() {
+    setCenterDate((current) =>
+      addDays(current, -3),
+    );
   }
 
-  function goToNextWeek() {
-    setWeekStart((current) => addDays(current, 7));
+  function goToNextPeriod() {
+    setCenterDate((current) =>
+      addDays(current, 3),
+    );
   }
 
   function goToToday() {
-    setWeekStart(startOfWeek(new Date()));
+    setCenterDate(
+      startOfLocalDay(new Date()),
+    );
   }
 
   return (
@@ -361,9 +390,9 @@ export default function ProjectPlanningPage() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            aria-label="Afficher la semaine précédente"
-            title="Semaine précédente"
-            onClick={goToPreviousWeek}
+            aria-label="Afficher les trois jours précédents"
+            title="Trois jours précédents"
+            onClick={goToPreviousPeriod}
             className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
           >
             <FiChevronLeft aria-hidden="true" size={20} />
@@ -371,9 +400,9 @@ export default function ProjectPlanningPage() {
 
           <button
             type="button"
-            aria-label="Afficher la semaine suivante"
-            title="Semaine suivante"
-            onClick={goToNextWeek}
+            aria-label="Afficher les trois jours suivants"
+            title="Trois jours suivants"
+            onClick={goToNextPeriod}
             className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
           >
             <FiChevronRight aria-hidden="true" size={20} />
@@ -381,7 +410,7 @@ export default function ProjectPlanningPage() {
 
           <button
             type="button"
-            aria-label="Revenir à la semaine actuelle"
+            aria-label="Revenir à aujourd’hui"
             title="Aujourd'hui"
             onClick={goToToday}
             className="inline-flex h-10 items-center justify-center rounded-md border border-slate-200 bg-white px-4 font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
@@ -391,7 +420,12 @@ export default function ProjectPlanningPage() {
         </div>
 
         <div className="flex items-center justify-center gap-2 whitespace-nowrap text-lg font-bold text-slate-900">
-          <span>{formatWeekRange(weekStart)}</span>
+          <span>
+            {formatDateRange(
+              visibleDays[0],
+              visibleDays[2],
+            )}
+          </span>
           <FiChevronDown
             aria-hidden="true"
             className="shrink-0 text-slate-500"
@@ -404,7 +438,7 @@ export default function ProjectPlanningPage() {
             type="button"
             disabled
             aria-disabled="true"
-            title="Sélection de vue bientôt disponible"
+            title="Vue sur trois jours"
             className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-4 font-medium text-slate-700 opacity-100 shadow-sm disabled:cursor-not-allowed disabled:opacity-100"
           >
             <FiCalendar
@@ -412,7 +446,7 @@ export default function ProjectPlanningPage() {
               className="text-slate-500"
               size={17}
             />
-            Semaine
+            3 jours
             <FiChevronDown
               aria-hidden="true"
               className="text-slate-500"
@@ -425,18 +459,18 @@ export default function ProjectPlanningPage() {
       <div className="overflow-x-auto rounded-xl">
         <div
           role="region"
-          aria-label="Calendrier hebdomadaire de planification"
-          className="min-w-[1100px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
+          aria-label="Calendrier de planification sur trois jours"
+          className="min-w-[760px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
         >
           <div
             className="grid border-b border-slate-200"
             style={{
               gridTemplateColumns:
-                "72px repeat(7, minmax(145px, 1fr))",
+                "72px repeat(3, minmax(220px, 1fr))",
             }}
           >
             <div className="h-12 border-r border-slate-200 bg-white" />
-            {weekDays.map((day, index) => {
+            {visibleDays.map((day, index) => {
               const isCurrentDay = isSameLocalDay(day, today);
               const weekend = isWeekend(day);
 
@@ -448,7 +482,7 @@ export default function ProjectPlanningPage() {
                     isCurrentDay
                       ? "bg-emerald-50"
                       : "bg-white",
-                    index < weekDays.length - 1
+                    index < visibleDays.length - 1
                       ? "border-r border-slate-200"
                       : "",
                   ].join(" ")}
@@ -477,7 +511,7 @@ export default function ProjectPlanningPage() {
             className="grid"
             style={{
               gridTemplateColumns:
-                "72px repeat(7, minmax(145px, 1fr))",
+                "72px repeat(3, minmax(220px, 1fr))",
             }}
           >
             <div
@@ -511,8 +545,11 @@ export default function ProjectPlanningPage() {
               })}
             </div>
 
-            {weekDays.map((day, dayIndex) => {
-              const isCurrentDay = isSameLocalDay(day, today);
+            {visibleDays.map((day, visibleDayIndex) => {
+              const isCurrentDay =
+                isSameLocalDay(day, today);
+              const planningDayIndex =
+                getPlanningDayIndex(day);
 
               return (
                 <div
@@ -522,7 +559,8 @@ export default function ProjectPlanningPage() {
                     isCurrentDay
                       ? "bg-emerald-50/50"
                       : "bg-white",
-                    dayIndex < weekDays.length - 1
+                    visibleDayIndex <
+                      visibleDays.length - 1
                       ? "border-r border-slate-200"
                       : "",
                   ].join(" ")}
@@ -559,7 +597,9 @@ export default function ProjectPlanningPage() {
                   )}
 
                   {PLANNING_EVENTS.filter(
-                    (event) => event.dayIndex === dayIndex,
+                    (event) =>
+                      event.dayIndex ===
+                      planningDayIndex,
                   ).map((event) => {
                     const position = getEventPosition(event);
                     const config = CATEGORY_CONFIG[event.category];
