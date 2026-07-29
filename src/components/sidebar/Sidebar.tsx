@@ -464,7 +464,7 @@ export default function Sidebar() {
                           }}
                           aria-expanded={isOpen}
                           className={[
-                            "flex items-center px-8 h-12 cursor-pointer text-xs select-none my-0.5 mx-2 rounded",
+                            "flex items-center px-8 h-10 cursor-pointer text-xs select-none my-0.5 mx-2 rounded",
                             isSectionActive(item)
                               ? "bg-white text-black"
                               : "hover:bg-white hover:text-(--hoverText) active:bg-white active:text-black focus:bg-white focus:text-(--hoverText)",
@@ -559,7 +559,7 @@ export default function Sidebar() {
                         onTouchStart={() => {}}
                         aria-current={isHrefActive(item.to) ? "page" : undefined}
                         className={[
-                          "flex items-center px-8 h-12 transform transition-transform duration-200 ease-in-out text-xs mx-2 my-0.5 rounded",
+                          "flex items-center px-8 h-10 transform transition-transform duration-200 ease-in-out text-xs mx-2 my-0.5 rounded",
                           isHrefActive(item.to)
                             ? "bg-white text-black"
                             : "hover:bg-white hover:text-(--hoverText) active:bg-white active:text-black focus:bg-white focus:text-(--hoverText)",
