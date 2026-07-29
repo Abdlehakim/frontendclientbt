@@ -74,11 +74,7 @@ export default function ProjectModalShell({
             className="
               project-print-modal-footer
               modal-footer
-              no-print
-              rounded-b-xl bg-gray-50
-              border-t border-slate-900/10
-              px-3.5 pt-2.5 pb-3.5
-              flex items-center justify-between gap-3
+              no-printrounded-b-xl px-3.5 pt-2.5 pb-3.5 flex items-center justify-between gap-3
             "
             aria-label="Actions"
           >

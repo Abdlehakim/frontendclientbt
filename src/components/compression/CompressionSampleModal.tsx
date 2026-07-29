@@ -283,7 +283,6 @@ export default function CompressionSampleModal({
                 />
               </div>
 
-              <div className="flex flex-col">
                 <label className="mb-1 text-xs font-semibold text-gray-700">
                   Date d’envoi éprouvette
                 </label>
@@ -299,7 +298,6 @@ export default function CompressionSampleModal({
                   }}
                   className={fieldClass}
                 />
-              </div>
 
             </div>
 
@@ -311,15 +309,10 @@ export default function CompressionSampleModal({
           </div>
 
           <div
-            className="
-              rounded-b-xl bg-gray-50
-              border-t border-slate-900/10
-              px-3.5 pt-2.5 pb-3.5
-              flex items-center justify-between gap-3
+            className="rounded-b-xl px-3.5 pt-2.5 pb-3.5 flex items-center justify-between gap-3
             "
             aria-label="Actions du formulaire"
           >
-            <div className="flex flex-1 items-center justify-start gap-2">
               <button
                 type="button"
                 className="stepper__nav"
@@ -338,7 +331,6 @@ export default function CompressionSampleModal({
                   ? "Enregistrer"
                   : "Ajouter"}
               </button>
-            </div>
           </div>
         </form>
       </div>
