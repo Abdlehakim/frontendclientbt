@@ -294,9 +294,12 @@ export function DatePickerInput({
     const gap = 6;
     const gutter = 12;
     const wrapperRect = wrapper.getBoundingClientRect();
+    const panelMinWidth = 220;
+    const panelMaxWidth = 280;
+
     const width = Math.min(
-      320,
-      Math.max(wrapperRect.width, 220),
+      panelMaxWidth,
+      Math.max(wrapperRect.width, panelMinWidth),
     );
     const left = Math.min(
       Math.max(wrapperRect.left, gutter),
@@ -362,7 +365,7 @@ export function DatePickerInput({
       top: `${Math.round(top)}px`,
       width: `${Math.round(width)}px`,
       minWidth: `${Math.round(width)}px`,
-      maxWidth: "320px",
+      maxWidth: `${panelMaxWidth}px`,
       maxHeight,
       overflowY,
       zIndex: 100020,

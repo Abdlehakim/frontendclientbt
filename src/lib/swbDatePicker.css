@@ -14,7 +14,6 @@
 
 .swb-date-picker__header {
   display: grid;
-  grid-template-columns: 40px 1fr 40px;
   align-items: center;
   gap: 8px;
   margin-bottom: 10px;

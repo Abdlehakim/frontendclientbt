@@ -117,12 +117,12 @@
   z-index: 50;
   pointer-events: auto;
   min-width: 220px;
-  max-width: 320px;
+  max-width: 280px;
   width: max(220px, 100%);
-  padding: 12px;
+  padding: 8px;
   border: 1px solid
     rgba(15, 23, 42, 0.15);
-  border-radius: 10px;
+  border-radius: 2px;
   background: #fff;
   box-shadow:
     0 18px 30px
@@ -143,8 +143,8 @@
   grid-template-columns:
     auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 8px;
+  gap: 4px;
+  margin-bottom: 6px;
 }
 
 .swb-date-picker__month {
@@ -166,12 +166,12 @@
 
 .swb-date-picker__nav {
   border: none;
-  border-radius: 6px;
+  border-radius: 2px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   padding: 0;
   background: #f1f5f9;
   color: #0f172a;
@@ -207,14 +207,14 @@
   display: grid;
   grid-template-columns:
     repeat(7, minmax(0, 1fr));
-  gap: 4px;
-  margin-bottom: 10px;
+  gap: 3px;
+  margin-bottom: 8px;
 }
 
 .swb-date-picker__day {
   border: none;
-  border-radius: 6px;
-  padding: 6px 0;
+  border-radius: 2px;
+  padding: 5px 0;
   font-size: 10px;
   line-height: 1;
   width: 100%;
@@ -254,14 +254,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
 }
 
 .swb-date-picker__footer-btn {
   flex: 1;
   border: 1px solid #cbd5f5;
-  border-radius: 6px;
-  padding: 6px 10px;
+  border-radius: 2px;
+  padding: 5px 8px;
   font-size: 10px;
   font-weight: 600;
   background: #eef2ff;
