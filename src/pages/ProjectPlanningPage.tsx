@@ -27,7 +27,7 @@ type PlanningEvent = {
 
 const START_HOUR = 8;
 const END_HOUR = 18;
-const HOUR_HEIGHT = 62;
+const HOUR_HEIGHT = 50;
 const TOTAL_HOURS = END_HOUR - START_HOUR;
 const CALENDAR_HEIGHT = TOTAL_HOURS * HOUR_HEIGHT;
 
@@ -355,23 +355,7 @@ export default function ProjectPlanningPage() {
   }
 
   return (
-    <div className="mx-auto px-4 py-4 flex flex-col gap-4 min-h-full rounded-xl bg-[#f5fbf7]">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-4xl font-bold uppercase leading-none">
-          Planification
-        </h1>
-
-        <button
-          type="button"
-          disabled
-          aria-disabled="true"
-          title="Ajout de tâche bientôt disponible"
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-(--primary) px-5 font-medium text-white opacity-100 shadow-sm transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-100"
-        >
-          <FiPlus aria-hidden="true" size={18} />
-          Ajouter une tâche
-        </button>
-      </div>
+    <div className="mx-auto px-4 py-4 flex flex-col gap-4 min-h-full rounded-xl bg-green-50">
 
       <div className="grid grid-cols-1 items-center gap-3 px-0 py-1 lg:grid-cols-[1fr_auto_1fr]">
         <div className="flex flex-wrap items-center gap-2">
@@ -451,7 +435,7 @@ export default function ProjectPlanningPage() {
                 "72px repeat(7, minmax(145px, 1fr))",
             }}
           >
-            <div className="h-16 border-r border-slate-200 bg-white" />
+            <div className="h-12 border-r border-slate-200 bg-white" />
             {weekDays.map((day, index) => {
               const isCurrentDay = isSameLocalDay(day, today);
               const weekend = isWeekend(day);
@@ -460,7 +444,7 @@ export default function ProjectPlanningPage() {
                 <div
                   key={day.toISOString()}
                   className={[
-                    "flex h-16 flex-col items-center justify-center px-2 text-center",
+                    "flex h-12 flex-col items-center justify-center px-2 text-center",
                     isCurrentDay
                       ? "bg-emerald-50"
                       : "bg-white",
