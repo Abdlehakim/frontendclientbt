@@ -6,6 +6,7 @@ import DeleteConfirmModal from "@/components/common/DeleteConfirmModal";
 import CompressionReportEditor from "@/components/compression/CompressionReportEditor";
 import CreateCompressionReportModal from "@/components/compression/CreateCompressionReportModal";
 import TablePagination from "@/components/tablePagination";
+import { useProjectSelection } from "@/contexts/ProjectSelectionContext";
 import {
   compressionApi,
   isCompressionApiError,
@@ -30,6 +31,7 @@ function formatDate(value: string | null | undefined): string {
 }
 
 export default function ProjectTrackingPage() {
+  const { selectedProjectId } = useProjectSelection();
   const [reports, setReports] =
     useState<CompressionReportSummaryDTO[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,18 +71,30 @@ export default function ProjectTrackingPage() {
 
   const filteredReports = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
-    if (!query) return reports;
 
-    return reports.filter((report) =>
-      [
+    return reports.filter((report) => {
+      if (
+        selectedProjectId &&
+        report.projectId !== selectedProjectId
+      ) {
+        return false;
+      }
+
+      if (!query) {
+        return true;
+      }
+
+      return [
         report.project.chantierName,
         report.project.responsable,
         report.title,
         report.companyName,
         report.createdByName,
-      ].some((value) => value?.toLowerCase().includes(query)),
-    );
-  }, [reports, searchTerm]);
+      ].some((value) =>
+        value?.toLowerCase().includes(query),
+      );
+    });
+  }, [reports, searchTerm, selectedProjectId]);
 
   const totalPages = Math.max(
     1,
@@ -95,6 +109,10 @@ export default function ProjectTrackingPage() {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedProjectId]);
 
   useEffect(() => {
     if (currentPage > totalPages) {

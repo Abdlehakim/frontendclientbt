@@ -16,6 +16,7 @@ import {
   compressionApi,
   type CompressionPlanningEventDTO,
 } from "@/lib/compressionApi";
+import { useProjectSelection } from "@/contexts/ProjectSelectionContext";
 
 type PlanningCategory =
   | "CALL"
@@ -26,6 +27,7 @@ type PlanningCategory =
 
 type PlanningEvent = {
   id: string;
+  projectId?: string;
   dayIndex?: number;
   date?: string;
   start: string;
@@ -372,6 +374,7 @@ function mapCompressionPlanningEvent(
 ): PlanningEvent {
   return {
     id: `compression-${item.id}`,
+    projectId: item.projectId,
     date: item.crushingDate.slice(0, 10),
     start: item.planningTime,
     title: `Écrasement – ${item.designation}`,
@@ -381,6 +384,7 @@ function mapCompressionPlanningEvent(
 }
 
 export default function ProjectPlanningPage() {
+  const { selectedProjectId } = useProjectSelection();
   const [centerDate, setCenterDate] =
     useState(() =>
       startOfLocalDay(new Date()),
@@ -642,16 +646,24 @@ export default function ProjectPlanningPage() {
                 getPlanningDayIndex(day);
               const localDateKey =
                 formatLocalDateOnly(day);
+              const staticEvents = selectedProjectId
+                ? []
+                : PLANNING_EVENTS.filter(
+                    (event) =>
+                      event.dayIndex ===
+                      planningDayIndex,
+                  );
+              const projectCompressionEvents =
+                compressionEvents.filter(
+                  (event) =>
+                    event.date === localDateKey &&
+                    (!selectedProjectId ||
+                      event.projectId ===
+                        selectedProjectId),
+                );
               const dayEvents = [
-                ...PLANNING_EVENTS.filter(
-                  (event) =>
-                    event.dayIndex ===
-                    planningDayIndex,
-                ),
-                ...compressionEvents.filter(
-                  (event) =>
-                    event.date === localDateKey,
-                ),
+                ...staticEvents,
+                ...projectCompressionEvents,
               ];
 
               return (

@@ -234,9 +234,6 @@ export default function Sidebar() {
     [search, collapsed]
   );
 
-  const displayName = useMemo(() => "SmartWebify", []);
-  const initials = useMemo(() => "SW", []);
-
   const toggleCollapse = () => setCollapsed((c) => !c);
 
   const toggleExpand = (name: string) =>
@@ -355,49 +352,55 @@ export default function Sidebar() {
           ${collapsed ? "-translate-x-full w-15" : "translate-x-0 w-[70%] md:w-70"}
           md:sticky md:top-0 md:self-start md:translate-x-0`}
       >
+        <IconButton
+          icon={
+            collapsed ? (
+              <LuArrowBigRight size={20} />
+            ) : (
+              <LuArrowBigLeft size={20} />
+            )
+          }
+          onClick={toggleCollapse}
+          ariaLabel={
+            collapsed
+              ? "Ouvrir la barre latérale"
+              : "Fermer la barre latérale"
+          }
+          className="absolute top-4 -right-6"
+          floating={false}
+        />
+
+        {!collapsed && (
+          <button
+            type="button"
+            onClick={() => setCollapsed(true)}
+            aria-label="Fermer le menu"
+            title="Fermer le menu"
+            className="
+              absolute right-4 top-4 z-50
+              inline-flex h-8 w-8
+              items-center justify-center
+              text-white
+              hover:bg-white/20
+              active:scale-95 md:hidden
+            "
+          >
+            <LuArrowBigLeft size={30} />
+          </button>
+        )}
+
         <div className="flex flex-col justify-between h-screen">
-          <div className="flex items-center justify-center h-20 border-b-2 z-50">
-            <div className="flex items-center gap-2">
-              <div className="text-xl text-white flex items-center justify-center font-semibold border-y-2">{initials}</div>
-
-              {!collapsed && (
-                <>
-                  <div className="flex flex-col transition-all whitespace-nowrap duration-500 ease-in-out">
-                    <span className="capitalize">{displayName}</span>
-                    <span className="text-[8px] font-light">{user?.email ?? "—"}</span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setCollapsed(true)}
-                    aria-label="Fermer le menu"
-                    title="Fermer le menu"
-                    className="ml-4 md:hidden inline-flex h-8 w-8 items-center justify-center text-white hover:bg-white/20 active:scale-95"
-                  >
-                    <LuArrowBigLeft size={30} />
-                  </button>
-                </>
-              )}
-            </div>
-
-            <IconButton
-              icon={collapsed ? <LuArrowBigRight size={20} /> : <LuArrowBigLeft size={20} />}
-              onClick={toggleCollapse}
-              ariaLabel={collapsed ? "Ouvrir la barre latérale" : "Fermer la barre latérale"}
-            />
-          </div>
-
           {!collapsed && (
             <div
               aria-hidden
               className={`pointer-events-none absolute left-0 right-0 h-4 transition-opacity duration-200
                 bg-linear-to-b from-black/50 to-transparent
-                ${showTopShadow ? "opacity-100" : "opacity-0"} top-20`}
+                ${showTopShadow ? "opacity-100" : "opacity-0"} top-0`}
             />
           )}
 
           {!collapsed && showTopShadow && (
-            <div className="pointer-events-none hidden md:block absolute right-3 top-21.25">
+            <div className="pointer-events-none hidden md:block absolute right-3 top-1">
               <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/15 text-[8px] uppercase tracking-wide">
                 <BiChevronUp size={8} />
                 <span>Top</span>
@@ -407,7 +410,7 @@ export default function Sidebar() {
 
           <nav
             ref={navRef}
-            className={`flex-1 flex-col h-[40%] py-4
+            className={`flex-1 flex-col h-[40%] pt-12 pb-4 md:pt-4
               ${collapsed ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"}
               [&::-webkit-scrollbar]:w-1
               [&::-webkit-scrollbar-track]:bg-transparent

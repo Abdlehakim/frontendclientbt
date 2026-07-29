@@ -6,6 +6,7 @@ import DeleteConfirmModal from "@/components/common/DeleteConfirmModal";
 import CreateProjetWizard from "@/components/ferraillage/CreateProjetWizard";
 import ViewProjectData from "@/components/ferraillage/ViewProjectData";
 import TablePagination from "@/components/tablePagination";
+import { useProjectSelection } from "@/contexts/ProjectSelectionContext";
 import {
   ferraillageApi,
   type FerRapportDTO,
@@ -27,6 +28,7 @@ function fmtDate(iso: string | null | undefined) {
 }
 
 export default function ProjectsPage() {
+  const { selectedProjectId } = useProjectSelection();
   const [items, setItems] = useState<FerRapportDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -73,13 +75,24 @@ export default function ProjectsPage() {
 
   const filtered = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
-    if (!q) return items;
+
     return items.filter((project) => {
+      if (
+        selectedProjectId &&
+        project.id !== selectedProjectId
+      ) {
+        return false;
+      }
+
+      if (!q) {
+        return true;
+      }
+
       const chantierName = (project.chantierName || "").toLowerCase();
       const responsable = (project.responsable || "").toLowerCase();
       return chantierName.includes(q) || responsable.includes(q);
     });
-  }, [items, searchTerm]);
+  }, [items, searchTerm, selectedProjectId]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
 
@@ -99,6 +112,10 @@ export default function ProjectsPage() {
       if (debounceRef.current) window.clearTimeout(debounceRef.current);
     };
   }, [searchTerm]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedProjectId]);
 
   function onView(id: string) {
     const target = items.find((item) => item.id === id) ?? null;

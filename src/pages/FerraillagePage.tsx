@@ -7,6 +7,7 @@ import CreateRapportModal from "@/components/ferraillage/CreateRapportModal";
 import EditRapportWizard from "@/components/ferraillage/EditProjectData";
 import ViewProjectData from "@/components/ferraillage/ViewProjectData";
 import TablePagination from "@/components/tablePagination";
+import { useProjectSelection } from "@/contexts/ProjectSelectionContext";
 import {
   ferraillageApi,
   type FerRapportDTO,
@@ -29,6 +30,7 @@ function fmtDate(iso: string | null | undefined) {
 }
 
 export default function FerraillagePage() {
+  const { selectedProjectId } = useProjectSelection();
   const [items, setItems] = useState<FerraillageReportDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -83,9 +85,19 @@ export default function FerraillagePage() {
 
   const filtered = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
-    if (!q) return items;
 
     return items.filter((report) => {
+      if (
+        selectedProjectId &&
+        report.projectId !== selectedProjectId
+      ) {
+        return false;
+      }
+
+      if (!q) {
+        return true;
+      }
+
       const project =
         report &&
         typeof report === "object" &&
@@ -118,7 +130,7 @@ export default function FerraillagePage() {
         createdByName.includes(q)
       );
     });
-  }, [items, searchTerm]);
+  }, [items, searchTerm, selectedProjectId]);
 
   const totalPages = Math.max(
     1,
@@ -148,6 +160,10 @@ export default function FerraillagePage() {
       }
     };
   }, [searchTerm]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedProjectId]);
 
   function onEdit(report: FerraillageReportDTO) {
     if (!report.project?.id) {
