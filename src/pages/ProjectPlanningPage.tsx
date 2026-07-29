@@ -4,7 +4,6 @@ import {
   useState,
 } from "react";
 import {
-  FiChevronDown,
   FiChevronLeft,
   FiChevronRight,
   FiMoreHorizontal,
@@ -328,46 +327,43 @@ export default function ProjectPlanningPage() {
     <div className="mx-auto px-4 py-4 flex flex-col gap-4 min-h-full rounded-xl bg-green-50">
 
       <div className="flex flex-wrap items-center gap-2 px-0 py-1">
-        <button
-          type="button"
-          aria-label="Afficher les trois jours précédents"
-          title="Trois jours précédents"
-          onClick={goToPreviousPeriod}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
-        >
-          <FiChevronLeft aria-hidden="true" size={20} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-label="Afficher les trois jours précédents"
+            title="Trois jours précédents"
+            onClick={goToPreviousPeriod}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
+          >
+            <FiChevronLeft aria-hidden="true" size={20} />
+          </button>
 
-        <div className="flex items-center justify-center gap-2 whitespace-nowrap text-lg font-bold text-slate-900">
-          <span>
-            {formatDateRange(
-              visibleDays[0],
-              visibleDays[2],
-            )}
-          </span>
-          <FiChevronDown
-            aria-hidden="true"
-            className="shrink-0 text-slate-500"
-            size={18}
-          />
+          <div className="flex h-10 w-full items-center justify-center whitespace-nowrap px-3 text-lg font-bold text-slate-900 sm:w-72">
+            <span>
+              {formatDateRange(
+                visibleDays[0],
+                visibleDays[2],
+              )}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            aria-label="Afficher les trois jours suivants"
+            title="Trois jours suivants"
+            onClick={goToNextPeriod}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
+          >
+            <FiChevronRight aria-hidden="true" size={20} />
+          </button>
         </div>
-
-        <button
-          type="button"
-          aria-label="Afficher les trois jours suivants"
-          title="Trois jours suivants"
-          onClick={goToNextPeriod}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
-        >
-          <FiChevronRight aria-hidden="true" size={20} />
-        </button>
 
         <button
           type="button"
           aria-label="Revenir à aujourd’hui"
           title="Aujourd'hui"
           onClick={goToToday}
-          className="inline-flex h-10 items-center justify-center rounded-md border border-slate-200 bg-white px-4 font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
+          className="ml-auto inline-flex h-10 items-center justify-center rounded-md border border-slate-200 bg-white px-4 font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
         >
           Aujourd&apos;hui
         </button>
