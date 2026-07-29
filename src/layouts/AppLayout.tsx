@@ -14,6 +14,8 @@ import {
   FiBell,
   FiCheck,
   FiChevronDown,
+  FiChevronLeft,
+  FiChevronRight,
   FiFolder,
 } from "react-icons/fi";
 import {
@@ -41,6 +43,8 @@ import {
 
 const DISMISSED_NOTIFICATIONS_KEY_PREFIX =
   "projectbt:calendar-notifications:dismissed:";
+const NOTIFICATIONS_PER_PAGE = 3;
+const NOTIFICATION_MINUTE_MS = 60_000;
 
 function formatLocalDateOnly(value: Date): string {
   const year = value.getFullYear();
@@ -74,6 +78,65 @@ function getNotificationDismissalKey(
     event.crushingDate,
     event.planningTime,
   ].join("|");
+}
+
+function getNotificationScheduledAt(
+  notification: CompressionPlanningEventDTO,
+): number | null {
+  const dateOnly =
+    notification.crushingDate.slice(0, 10);
+  const time =
+    notification.planningTime.trim();
+
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(dateOnly) ||
+    !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)
+  ) {
+    return null;
+  }
+
+  const [yearValue, monthValue, dayValue] =
+    dateOnly.split("-");
+  const [hourValue, minuteValue] =
+    time.split(":");
+
+  const year = Number(yearValue);
+  const month = Number(monthValue);
+  const day = Number(dayValue);
+  const hours = Number(hourValue);
+  const minutes = Number(minuteValue);
+
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day) ||
+    !Number.isInteger(hours) ||
+    !Number.isInteger(minutes)
+  ) {
+    return null;
+  }
+
+  const scheduledDate = new Date(
+    year,
+    month - 1,
+    day,
+    hours,
+    minutes,
+    0,
+    0,
+  );
+
+  if (
+    scheduledDate.getFullYear() !== year ||
+    scheduledDate.getMonth() !== month - 1 ||
+    scheduledDate.getDate() !== day ||
+    scheduledDate.getHours() !== hours ||
+    scheduledDate.getMinutes() !== minutes
+  ) {
+    return null;
+  }
+
+  return scheduledDate.getTime();
 }
 
 function isStringArray(
@@ -177,6 +240,10 @@ function AppLayoutContent() {
     dismissedNotificationKeys,
     setDismissedNotificationKeys,
   ] = useState<Set<string>>(() => new Set());
+  const [notificationNow, setNotificationNow] =
+    useState(() => Date.now());
+  const [notificationPage, setNotificationPage] =
+    useState(0);
   const [signingOut, setSigningOut] =
     useState(false);
 
@@ -242,21 +309,91 @@ function AppLayoutContent() {
   const visibleNotifications = useMemo(
     () =>
       calendarNotifications.filter(
-        (notification) =>
-          !dismissedNotificationKeys.has(
+        (notification) => {
+          const scheduledAt =
+            getNotificationScheduledAt(
+              notification,
+            );
+
+          if (
+            scheduledAt === null ||
+            scheduledAt > notificationNow
+          ) {
+            return false;
+          }
+
+          return !dismissedNotificationKeys.has(
             getNotificationDismissalKey(
               notification,
             ),
-          ),
+          );
+        },
       ),
     [
       calendarNotifications,
       dismissedNotificationKeys,
+      notificationNow,
     ],
   );
 
+  const notificationPageCount = Math.max(
+    1,
+    Math.ceil(
+      visibleNotifications.length /
+        NOTIFICATIONS_PER_PAGE,
+    ),
+  );
+
+  const paginatedNotifications = useMemo(() => {
+    const start =
+      notificationPage *
+      NOTIFICATIONS_PER_PAGE;
+
+    return visibleNotifications.slice(
+      start,
+      start + NOTIFICATIONS_PER_PAGE,
+    );
+  }, [
+    notificationPage,
+    visibleNotifications,
+  ]);
+
   const notificationCount =
     visibleNotifications.length;
+
+  useEffect(() => {
+    let intervalId: number | null = null;
+
+    const now = Date.now();
+    const delayUntilNextMinute =
+      NOTIFICATION_MINUTE_MS -
+      (now % NOTIFICATION_MINUTE_MS);
+
+    const timeoutId = window.setTimeout(() => {
+      setNotificationNow(Date.now());
+
+      intervalId = window.setInterval(() => {
+        setNotificationNow(Date.now());
+      }, NOTIFICATION_MINUTE_MS);
+    }, delayUntilNextMinute);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+
+      if (intervalId !== null) {
+        window.clearInterval(intervalId);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    setNotificationPage((current) =>
+      Math.min(
+        current,
+        notificationPageCount - 1,
+      ),
+    );
+  }, [notificationPageCount]);
 
   async function loadCalendarNotifications(
     isCancelled?: () => boolean,
@@ -765,11 +902,13 @@ function AppLayoutContent() {
                   !notificationMenuOpen;
                 setNotificationMenuOpen(next);
 
-                if (
-                  next &&
-                  !notificationsLoading
-                ) {
-                  void loadCalendarNotifications();
+                if (next) {
+                  setNotificationPage(0);
+                  setNotificationNow(Date.now());
+
+                  if (!notificationsLoading) {
+                    void loadCalendarNotifications();
+                  }
                 }
               }}
               className="
@@ -833,85 +972,54 @@ function AppLayoutContent() {
                   </div>
                 </div>
 
-                {notificationsLoading ? (
-                  <div className="border-b border-slate-100 px-4 py-3 text-sm text-slate-600">
-                    Chargement des notifications...
-                  </div>
-                ) : null}
-
-                {notificationsError ? (
-                  <div
-                    role="alert"
-                    className="border-b border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-                  >
-                    {notificationsError}
-                  </div>
-                ) : null}
-
-                {!notificationsLoading &&
-                visibleNotifications.length === 0 ? (
-                  <div className="px-4 py-8 text-center text-sm text-slate-500">
-                    Aucune notification.
-                  </div>
-                ) : null}
-
-                {visibleNotifications.length > 0 ? (
-                  <div className="max-h-96 divide-y divide-slate-200 overflow-y-auto">
-                    {visibleNotifications.map(
+                <div className="h-48 overflow-hidden">
+                  {notificationsLoading ? (
+                    <div className="flex h-full items-center justify-center px-4 text-sm text-slate-600">
+                      Chargement des notifications...
+                    </div>
+                  ) : notificationsError ? (
+                    <div
+                      role="alert"
+                      className="flex h-full items-center justify-center bg-red-50 px-4 text-center text-sm text-red-700"
+                    >
+                      {notificationsError}
+                    </div>
+                  ) : visibleNotifications.length ===
+                    0 ? (
+                    <div className="flex h-full items-center justify-center px-4 text-sm text-slate-500">
+                      Aucune notification.
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-slate-200">
+                      {paginatedNotifications.map(
                       (notification) => (
                         <div
                           key={getNotificationDismissalKey(
                             notification,
                           )}
-                          className="flex items-start gap-3 px-4 py-3"
+                          className="flex h-16 items-center gap-3 px-4"
                         >
                           <div className="min-w-0 flex-1">
-                            <div className="font-semibold text-slate-900">
+                            <div className="truncate text-sm font-semibold text-slate-900">
                               Écrasement –{" "}
                               {
                                 notification.designation
                               }
                             </div>
 
-                            <div className="mt-1 truncate text-sm text-slate-600">
+                            <div className="mt-1 truncate text-xs text-slate-500">
                               {
                                 notification.projectName
                               }
+                              {" • "}
+                              {formatNotificationDate(
+                                notification.crushingDate,
+                              )}
+                              {" • "}
+                              {
+                                notification.planningTime
+                              }
                             </div>
-
-                            <div className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-slate-500">
-                              <span>
-                                {formatNotificationDate(
-                                  notification.crushingDate,
-                                )}
-                              </span>
-                              <span aria-hidden="true">
-                                •
-                              </span>
-                              <span>
-                                {
-                                  notification.planningTime
-                                }
-                              </span>
-                            </div>
-
-                            {notification.reportTitle ? (
-                              <div className="mt-1 truncate text-xs text-slate-500">
-                                Rapport :{" "}
-                                {
-                                  notification.reportTitle
-                                }
-                              </div>
-                            ) : null}
-
-                            {notification.reference ? (
-                              <div className="mt-1 truncate text-xs text-slate-500">
-                                Référence :{" "}
-                                {
-                                  notification.reference
-                                }
-                              </div>
-                            ) : null}
                           </div>
 
                           <button
@@ -947,9 +1055,81 @@ function AppLayoutContent() {
                           </button>
                         </div>
                       ),
-                    )}
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex h-11 items-center justify-between border-t border-slate-200 px-3">
+                  <button
+                    type="button"
+                    aria-label="Page précédente"
+                    title="Page précédente"
+                    disabled={notificationPage === 0}
+                    onClick={() => {
+                      setNotificationPage((current) =>
+                        Math.max(0, current - 1),
+                      );
+                    }}
+                    className="
+                      inline-flex h-8 w-8
+                      items-center justify-center
+                      rounded-md text-slate-600
+                      transition-colors
+                      hover:bg-slate-100
+                      focus-visible:outline-none
+                      focus-visible:ring-2
+                      focus-visible:ring-(--primary)
+                      disabled:cursor-not-allowed
+                      disabled:opacity-40
+                    "
+                  >
+                    <FiChevronLeft
+                      aria-hidden="true"
+                      size={18}
+                    />
+                  </button>
+
+                  <div className="text-xs font-medium text-slate-500">
+                    {notificationPage + 1} /{" "}
+                    {notificationPageCount}
                   </div>
-                ) : null}
+
+                  <button
+                    type="button"
+                    aria-label="Page suivante"
+                    title="Page suivante"
+                    disabled={
+                      notificationPage >=
+                      notificationPageCount - 1
+                    }
+                    onClick={() => {
+                      setNotificationPage((current) =>
+                        Math.min(
+                          notificationPageCount - 1,
+                          current + 1,
+                        ),
+                      );
+                    }}
+                    className="
+                      inline-flex h-8 w-8
+                      items-center justify-center
+                      rounded-md text-slate-600
+                      transition-colors
+                      hover:bg-slate-100
+                      focus-visible:outline-none
+                      focus-visible:ring-2
+                      focus-visible:ring-(--primary)
+                      disabled:cursor-not-allowed
+                      disabled:opacity-40
+                    "
+                  >
+                    <FiChevronRight
+                      aria-hidden="true"
+                      size={18}
+                    />
+                  </button>
+                </div>
               </div>
             ) : null}
           </div>
