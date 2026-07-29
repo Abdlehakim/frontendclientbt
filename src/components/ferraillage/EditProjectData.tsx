@@ -363,7 +363,7 @@ function EditProjectDataPanel({
       ) : (
         <>
           <div>
-            <div className="flex flex-wrap justify-center gap-2 border-b-transparent p-3">
+            <div className="flex flex-wrap justify-center gap-2 border-b-transparent">
               {TABS.map((t) => {
                 const active = t.key === tab;
 

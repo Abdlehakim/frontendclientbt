@@ -139,7 +139,7 @@ export default function ProjectDetailViewContent({
       </div>
 
       <div>
-        <div className="no-print flex flex-wrap justify-center gap-2 border-b-transparent p-3">
+        <div className="no-print flex flex-wrap justify-center gap-2 border-b-transparent">
           {TABS.map((item) => {
             const active = item.key === tab;
 

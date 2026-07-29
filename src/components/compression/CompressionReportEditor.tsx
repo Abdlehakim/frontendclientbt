@@ -517,7 +517,7 @@ function CompressionReportEditorPanel({
               </div>
             ) : null}
 
-            <div className="flex flex-wrap justify-center gap-2 border-b-transparent p-3">
+            <div className="flex flex-wrap justify-center gap-2 border-b-transparent">
               {TABS.map((item) => {
                 const active = item.key === tab;
 
