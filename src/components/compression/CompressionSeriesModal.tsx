@@ -6,6 +6,9 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { CiCircleRemove } from "react-icons/ci";
+import {
+  DatePickerInput,
+} from "@/components/DatePickerInput";
 import type {
   CompressionResultInput,
   CompressionSeriesInput,
@@ -513,9 +516,9 @@ export default function CompressionSeriesModal({
         <form
           onSubmit={submit}
           onMouseDown={(event) => event.stopPropagation()}
-          className="w-full max-w-5xl rounded-xl border border-gray-200 bg-white shadow-xl flex flex-col overflow-hidden"
+          className="w-full max-w-4xl max-h-[95vh] rounded-xl border border-gray-200 bg-white shadow-xl flex flex-col"
         >
-          <div className="px-5 py-3 bg-gray-50 rounded-t-xl border-b border-gray-200 flex items-center justify-between">
+          <div className="px-5 py-2 bg-gray-50 rounded-t-xl border-b border-gray-200 flex items-center justify-between">
             <div className="text-sm font-semibold text-gray-900">
               {mode === "edit"
                 ? "Modifier la série"
@@ -528,12 +531,23 @@ export default function CompressionSeriesModal({
               title="Fermer"
               className="p-1 text-gray-700 hover:cursor-pointer hover:text-red-600 hover:scale-120 transition-transform"
             >
-              <CiCircleRemove size={26} />
+              <CiCircleRemove size={28} />
             </button>
           </div>
 
-          <div className="max-h-[75vh] overflow-y-auto p-5">
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {error ? (
+            <div className="px-5 -mt-2 text-sm text-red-600">
+              {error}
+            </div>
+          ) : null}
+
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+            <div className="flex flex-col gap-4">
+              <div className="text-sm font-semibold text-gray-800">
+                Informations série
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
               <div className="flex flex-col">
                 <label className="mb-1 text-xs font-semibold text-gray-700">
                   Maturité JRS
@@ -553,18 +567,18 @@ export default function CompressionSeriesModal({
               </div>
 
               <div className="flex flex-col">
-                <label className="mb-1 text-xs font-semibold text-gray-700">
+                <label
+                  htmlFor="compression-series-crushing-date"
+                  className="mb-1 text-xs font-semibold text-gray-700"
+                >
                   Date d’écrasement
                 </label>
-                <input
-                  type="date"
+
+                <DatePickerInput
+                  id="compression-series-crushing-date"
                   value={series.crushingDate}
-                  onChange={(event) => {
-                    updateCrushingDate(
-                      event.target.value,
-                    );
-                  }}
-                  className={fieldClass}
+                  onChange={updateCrushingDate}
+                  className="w-full"
                 />
               </div>
 
@@ -609,7 +623,7 @@ export default function CompressionSeriesModal({
               </div>
             </div>
 
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="text-sm font-semibold text-slate-700">
                 Résultats des éprouvettes
               </div>
@@ -635,73 +649,60 @@ export default function CompressionSeriesModal({
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-              {series.results.map(
-                (result, resultIndex) => (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {series.results.map((result, resultIndex) => {
+                const inputId =
+                  `compression-series-result-${result.specimenNumber}`;
+
+                return (
                   <div
                     key={result.specimenNumber}
-                    className="rounded-lg border border-slate-200 bg-slate-50 p-3"
+                    className="flex flex-col"
                   >
-                    <div className="mb-2 font-semibold text-slate-800">
+                    <label
+                      htmlFor={inputId}
+                      className="mb-1 text-xs font-semibold text-gray-700"
+                    >
                       EP{result.specimenNumber}
-                    </div>
+                    </label>
 
                     <input
+                      id={inputId}
                       type="number"
                       min={0}
                       step="0.001"
                       value={result.value ?? ""}
                       onChange={(event) => {
-                        updateResult(
-                          resultIndex,
-                          {
-                            specimenNumber:
-                              result.specimenNumber,
-                            value:
-                              event.target.value === ""
-                                ? null
-                                : Number(
-                                    event.target.value,
-                                  ),
-                            status: "VALID",
-                            note: null,
-                          },
-                        );
+                        updateResult(resultIndex, {
+                          specimenNumber:
+                            result.specimenNumber,
+                          value:
+                            event.target.value === ""
+                              ? null
+                              : Number(event.target.value),
+                          status: "VALID",
+                          note: null,
+                        });
+
                         setError("");
                       }}
                       className={fieldClass}
                     />
                   </div>
-                ),
-              )}
+                );
+              })}
             </div>
-
-            {error ? (
-              <div className="mt-4 text-sm text-red-600">
-                {error}
-              </div>
-            ) : null}
+            </div>
           </div>
 
           <div
-            className="rounded-b-xl px-3.5 pt-2.5 pb-3.5 flex items-center justify-between gap-3
-            "
+            className="rounded-b-xl px-3.5 pt-2.5 pb-3.5 flex items-center justify-between gap-3"
             aria-label="Actions du formulaire"
           >
-            <div className="flex flex-1 items-center justify-start gap-2">
-              <button
-                type="button"
-                className="stepper__nav"
-                onClick={onClose}
-              >
-                Annuler
-              </button>
-            </div>
-
             <div className="flex flex-1 items-center justify-end gap-2 whitespace-nowrap">
               <button
                 type="submit"
-                className="stepper__nav"
+                className="btn-fit-white-outline"
               >
                 {mode === "edit"
                   ? "Enregistrer"
