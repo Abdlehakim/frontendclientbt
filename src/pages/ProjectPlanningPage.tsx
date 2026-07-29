@@ -27,7 +27,7 @@ type PlanningEvent = {
 
 const START_HOUR = 8;
 const END_HOUR = 18;
-const HOUR_HEIGHT = 50;
+const HOUR_HEIGHT = 58;
 const TOTAL_HOURS = END_HOUR - START_HOUR;
 const CALENDAR_HEIGHT = TOTAL_HOURS * HOUR_HEIGHT;
 
@@ -608,42 +608,6 @@ export default function ProjectPlanningPage() {
             })}
           </div>
         </div>
-      </div>
-
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
-        <div className="flex flex-1 flex-wrap items-center justify-around gap-x-6 gap-y-3 rounded-md border border-slate-200 bg-white px-5 py-3 text-sm text-slate-700">
-          {LEGEND_CATEGORIES.map((category) => {
-            const config = CATEGORY_CONFIG[category];
-
-            return (
-              <div
-                key={category}
-                className="flex items-center gap-2"
-              >
-                <span
-                  aria-hidden="true"
-                  className={`h-3.5 w-3.5 shrink-0 rounded-sm ${config.dotClass}`}
-                />
-                <span>{config.label}</span>
-              </div>
-            );
-          })}
-        </div>
-
-        <button
-          type="button"
-          disabled
-          aria-disabled="true"
-          title="Gestion des catégories bientôt disponible"
-          className="inline-flex h-12 items-center justify-center gap-2 self-stretch rounded-md border border-slate-200 bg-white px-5 font-medium text-slate-700 opacity-100 disabled:cursor-not-allowed disabled:opacity-100 sm:self-auto"
-        >
-          <FiSettings
-            aria-hidden="true"
-            className="text-slate-500"
-            size={17}
-          />
-          Gérer les catégories
-        </button>
       </div>
     </div>
   );

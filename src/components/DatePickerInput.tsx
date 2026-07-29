@@ -1,12 +1,11 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import {
-  LuCalendarDays,
-  LuChevronLeft,
-  LuChevronRight,
-  LuChevronsLeft,
-  LuChevronsRight,
-} from "react-icons/lu";
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from "lucide-react";
 
 type DatePickerInputProps = {
   value: string;
@@ -197,6 +196,26 @@ function getDayLabel(date: Date, locale: string): string {
   }
 }
 
+function CalendarIcon() {
+  return (
+    <svg
+      className="swb-date-picker__toggle-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M8 7V3m8 4V3m-11 8h14M5 7h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"
+      />
+    </svg>
+  );
+}
+
 export function DatePickerInput({
   value,
   onChange,
@@ -292,6 +311,8 @@ export function DatePickerInput({
     let overflowY: React.CSSProperties["overflowY"];
 
     if (panelHeight) {
+      const aboveTop =
+        wrapperRect.top - panelHeight - gap;
       const availableAbove = Math.max(
         0,
         wrapperRect.top - gap - gutter,
@@ -307,7 +328,14 @@ export function DatePickerInput({
       const fitsBelow = panelHeight <= availableBelow;
 
       if (!fitsBelow && fitsAbove) {
-        top = wrapperRect.top - panelHeight - gap;
+        top = aboveTop;
+        maxHeight = availableAbove
+          ? `${Math.round(availableAbove)}px`
+          : undefined;
+        overflowY =
+          panelHeight > availableAbove
+            ? "auto"
+            : undefined;
       } else {
         top = Math.max(
           gutter,
@@ -318,16 +346,13 @@ export function DatePickerInput({
               gutter,
           ),
         );
-      }
-
-      const availableHeight =
-        !fitsBelow && fitsAbove
-          ? availableAbove
-          : availableBelow;
-
-      if (panelHeight > availableHeight) {
-        maxHeight = `${Math.round(availableHeight)}px`;
-        overflowY = "auto";
+        maxHeight = availableBelow
+          ? `${Math.round(availableBelow)}px`
+          : undefined;
+        overflowY =
+          panelHeight > availableBelow
+            ? "auto"
+            : undefined;
       }
     }
 
@@ -556,7 +581,7 @@ export function DatePickerInput({
             aria-label="Année précédente"
             onClick={() => changeViewMonth(-12)}
           >
-            <LuChevronsLeft
+            <ChevronsLeft
               className="swb-date-picker__nav-icon"
               aria-hidden="true"
             />
@@ -567,7 +592,7 @@ export function DatePickerInput({
             aria-label="Mois précédent"
             onClick={() => changeViewMonth(-1)}
           >
-            <LuChevronLeft
+            <ChevronLeft
               className="swb-date-picker__nav-icon"
               aria-hidden="true"
             />
@@ -588,7 +613,7 @@ export function DatePickerInput({
             aria-label="Mois suivant"
             onClick={() => changeViewMonth(1)}
           >
-            <LuChevronRight
+            <ChevronRight
               className="swb-date-picker__nav-icon"
               aria-hidden="true"
             />
@@ -599,7 +624,7 @@ export function DatePickerInput({
             aria-label="Année suivante"
             onClick={() => changeViewMonth(12)}
           >
-            <LuChevronsRight
+            <ChevronsRight
               className="swb-date-picker__nav-icon"
               aria-hidden="true"
             />
@@ -729,10 +754,7 @@ export function DatePickerInput({
           togglePanel();
         }}
       >
-        <LuCalendarDays
-          className="swb-date-picker__toggle-icon"
-          aria-hidden="true"
-        />
+        <CalendarIcon />
       </button>
 
       {!isOpen ? (
