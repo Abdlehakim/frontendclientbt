@@ -641,16 +641,18 @@ export default function CompressionSamplesTable({
                 <th className="border border-white/20 px-2 py-2 text-center text-sm font-semibold leading-tight">
                   Date d’envoi éprouvette
                 </th>
-                <th className="no-print border border-white/20 px-2 py-2 text-center text-sm font-semibold">
-                  Actions
-                </th>
+                {!readOnly ? (
+                  <th className="no-print border border-white/20 px-2 py-2 text-center text-sm font-semibold">
+                    Actions
+                  </th>
+                ) : null}
               </tr>
             </thead>
 
             <tbody>
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={readOnly ? 7 : 8}
                   className="px-2 py-2 text-center text-sm text-slate-500"
                 >
                   Aucun prélèvement ajouté.
@@ -669,14 +671,28 @@ export default function CompressionSamplesTable({
               <div className="overflow-hidden rounded-lg bg-white">
                 <table className="w-full table-fixed border-collapse text-sm">
                   <colgroup>
-                    <col style={{ width: "6%" }} />
-                    <col style={{ width: "10%" }} />
-                    <col style={{ width: "11%" }} />
-                    <col style={{ width: "11%" }} />
-                    <col style={{ width: "14%" }} />
-                    <col style={{ width: "16%" }} />
-                    <col style={{ width: "16%" }} />
-                    <col style={{ width: "16%" }} />
+                    {readOnly ? (
+                      <>
+                        <col style={{ width: "6%" }} />
+                        <col style={{ width: "11%" }} />
+                        <col style={{ width: "12%" }} />
+                        <col style={{ width: "12%" }} />
+                        <col style={{ width: "17%" }} />
+                        <col style={{ width: "21%" }} />
+                        <col style={{ width: "21%" }} />
+                      </>
+                    ) : (
+                      <>
+                        <col style={{ width: "6%" }} />
+                        <col style={{ width: "10%" }} />
+                        <col style={{ width: "11%" }} />
+                        <col style={{ width: "11%" }} />
+                        <col style={{ width: "14%" }} />
+                        <col style={{ width: "16%" }} />
+                        <col style={{ width: "16%" }} />
+                        <col style={{ width: "16%" }} />
+                      </>
+                    )}
                   </colgroup>
 
                   <thead className="bg-[#0d2d5f] text-white">
@@ -702,9 +718,11 @@ export default function CompressionSamplesTable({
                       <th className="border border-white/20 px-2 py-2 text-center text-sm font-semibold leading-tight">
                         Date d’envoi éprouvette
                       </th>
-                      <th className="no-print border border-white/20 px-2 py-2 text-center text-sm font-semibold">
-                        Actions
-                      </th>
+                      {!readOnly ? (
+                        <th className="no-print border border-white/20 px-2 py-2 text-center text-sm font-semibold">
+                          Actions
+                        </th>
+                      ) : null}
                     </tr>
                   </thead>
 
@@ -735,8 +753,8 @@ export default function CompressionSamplesTable({
                           sample.specimenSendDate,
                         )}
                       </td>
-                      <td className="no-print border border-slate-200 px-2 py-2 text-center text-sm font-medium text-slate-900">
-                        {!readOnly ? (
+                      {!readOnly ? (
+                        <td className="no-print border border-slate-200 px-2 py-2 text-center text-sm font-medium text-slate-900">
                           <div className="flex flex-wrap items-center justify-center gap-3">
                             <button
                               type="button"
@@ -777,8 +795,8 @@ export default function CompressionSamplesTable({
                               <FaTrashAlt size={18} />
                             </button>
                           </div>
-                        ) : null}
-                      </td>
+                        </td>
+                      ) : null}
                     </tr>
                   </tbody>
                 </table>
