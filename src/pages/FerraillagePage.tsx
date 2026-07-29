@@ -268,7 +268,7 @@ export default function FerraillagePage() {
 
   return (
     <div className="mx-auto px-4 py-4 flex flex-col gap-4 h-full bg-green-50 rounded-xl">
-      <div className="flex h-16 justify-between items-start">
+      <div className="flex h-12  justify-between items-start">
         <h1 className="text-3xl font-bold uppercase">Ferraillage</h1>
 
         <div className="flex items-center gap-2">
@@ -282,7 +282,7 @@ export default function FerraillagePage() {
         </div>
       </div>
 
-      <div className="flex justify-between items-end gap-6 h-17.5">
+      <div className="flex justify-between items-center gap-6 h-12">
         <div className="flex items-center gap-2">
           <label className="font-medium">Recherche:</label>
           <input

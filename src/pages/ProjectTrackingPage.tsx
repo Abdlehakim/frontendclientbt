@@ -157,7 +157,7 @@ export default function ProjectTrackingPage() {
 
   return (
     <div className="mx-auto px-4 py-4 flex flex-col gap-4 h-full bg-green-50 rounded-xl">
-      <div className="flex h-16 items-start justify-between gap-4">
+      <div className="flex h-12 items-start justify-between gap-4">
         <h1 className="text-3xl font-bold uppercase">
           Essai à la compression
         </h1>
@@ -171,7 +171,7 @@ export default function ProjectTrackingPage() {
         </button>
       </div>
 
-      <div className="flex min-h-17.5 items-end justify-between gap-6">
+      <div className="flex min-h-12 items-center justify-between gap-6">
         <div className="flex flex-wrap items-center gap-2">
           <label htmlFor="compression-report-search" className="font-medium">
             Recherche:
