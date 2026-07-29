@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate, type To } from "react-router-dom";
 
 import { LuArrowBigLeft, LuArrowBigRight } from "react-icons/lu";
 import { BiChevronRight, BiChevronDown, BiChevronUp } from "react-icons/bi";
-import { VscSignOut } from "react-icons/vsc";
 import { FaBars } from "react-icons/fa6";
 
 import IconButton from "@/components/sidebar/IconButton";
@@ -54,8 +53,7 @@ export default function Sidebar() {
   const nav = useNavigate();
   const { pathname, search } = useLocation();
 
-  const { logout, user, modules, subModules, subscription } = useAuth() as unknown as {
-    logout: () => Promise<void>;
+  const { user, modules, subModules, subscription } = useAuth() as unknown as {
     user: { email?: string; role?: string } | null;
     modules?: ModuleKey[];
     subModules?: SubModuleKey[];
@@ -116,7 +114,6 @@ export default function Sidebar() {
   });
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const [signingOut, setSigningOut] = useState(false);
 
   const navRef = useRef<HTMLDivElement | null>(null);
   const [showTopShadow, setShowTopShadow] = useState(false);
@@ -247,17 +244,6 @@ export default function Sidebar() {
       const isOpen = !!prev[name];
       return isOpen ? {} : { [name]: true };
     });
-
-  const handleSignOut = async () => {
-    if (signingOut) return;
-    setSigningOut(true);
-    try {
-      await logout();
-    } finally {
-      nav("/login", { replace: true });
-      setSigningOut(false);
-    }
-  };
 
   const CollapsedRow = ({ item }: { item: SidebarItem }) => {
     const hasChildren = Array.isArray(item.children) && item.children.length > 0;
@@ -576,7 +562,7 @@ export default function Sidebar() {
           </nav>
 
           {!collapsed && atTop && showBottomShadow && (
-            <div className="pointer-events-none absolute right-3 bottom-27.5 md:bottom-41.25">
+            <div className="pointer-events-none absolute right-3 bottom-3">
               <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/25 text-[8px] uppercase tracking-wide">
                 <span>Scroll</span>
                 <BiChevronDown size={8} />
@@ -591,31 +577,9 @@ export default function Sidebar() {
                 transition-opacity duration-200 z-10
                 bg-linear-to-t from-black/50 to-transparent
                 ${showBottomShadow ? "opacity-100" : "opacity-0"}
-                bottom-25 md:bottom-40`}
+                bottom-0`}
             />
           )}
-
-          <div className="flex justify-center md:h-40 h-25">
-            <div className="flex items-start transition-all duration-300 ease-in-out cursor-pointer py-4">
-              <button
-                onClick={handleSignOut}
-                disabled={signingOut}
-                aria-busy={signingOut}
-                className={`flex justify-center items-start transition-colors duration-200 ease-in-out cursor-pointer w-full ${
-                  collapsed
-                    ? "gap-2 h-10 p-2 rounded hover:bg-white hover:text-(--hoverText) disabled:opacity-60"
-                    : "gap-2 h-10 w-fit p-2 border-y-2 border-2 rounded-md border-gray-200 hover:bg-white hover:text-(--hoverText) disabled:opacity-60"
-                }`}
-              >
-                <VscSignOut size={20} />
-                {!collapsed && (
-                  <span className="ml-2 duration-200 transition-opacity whitespace-nowrap text-sm w-fit">
-                    {signingOut ? "Déconnexion..." : "SE DÉCONNECTER"}
-                  </span>
-                )}
-              </button>
-            </div>
-          </div>
         </div>
       </aside>
     </>
