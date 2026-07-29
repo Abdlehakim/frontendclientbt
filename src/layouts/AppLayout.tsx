@@ -33,6 +33,60 @@ import {
   ProjectSelectionProvider,
   useProjectSelection,
 } from "@/contexts/ProjectSelectionContext";
+import {
+  compressionApi,
+  isCompressionApiError,
+  type CompressionPlanningEventDTO,
+} from "@/lib/compressionApi";
+
+const DISMISSED_NOTIFICATIONS_KEY_PREFIX =
+  "projectbt:calendar-notifications:dismissed:";
+
+function formatLocalDateOnly(value: Date): string {
+  const year = value.getFullYear();
+  const month = String(
+    value.getMonth() + 1,
+  ).padStart(2, "0");
+  const day = String(
+    value.getDate(),
+  ).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function formatNotificationDate(
+  value: string,
+): string {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+
+  return date.toLocaleDateString("fr-FR");
+}
+
+function getNotificationDismissalKey(
+  event: CompressionPlanningEventDTO,
+): string {
+  return [
+    event.id,
+    event.crushingDate,
+    event.planningTime,
+  ].join("|");
+}
+
+function isStringArray(
+  value: unknown,
+): value is string[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (entry: unknown) =>
+        typeof entry === "string",
+    )
+  );
+}
 
 export default function AppLayout() {
   return (
@@ -103,12 +157,34 @@ function AppLayoutContent() {
     useState(false);
   const [projectMenuOpen, setProjectMenuOpen] =
     useState(false);
+  const [
+    notificationMenuOpen,
+    setNotificationMenuOpen,
+  ] = useState(false);
+  const [
+    calendarNotifications,
+    setCalendarNotifications,
+  ] = useState<CompressionPlanningEventDTO[]>([]);
+  const [
+    notificationsLoading,
+    setNotificationsLoading,
+  ] = useState(false);
+  const [
+    notificationsError,
+    setNotificationsError,
+  ] = useState("");
+  const [
+    dismissedNotificationKeys,
+    setDismissedNotificationKeys,
+  ] = useState<Set<string>>(() => new Set());
   const [signingOut, setSigningOut] =
     useState(false);
 
   const projectMenuRef =
     useRef<HTMLDivElement | null>(null);
   const profileMenuRef =
+    useRef<HTMLDivElement | null>(null);
+  const notificationMenuRef =
     useRef<HTMLDivElement | null>(null);
 
   const profileName = useMemo(() => {
@@ -163,10 +239,145 @@ function AppLayoutContent() {
         ? "Membre"
         : null;
 
+  const visibleNotifications = useMemo(
+    () =>
+      calendarNotifications.filter(
+        (notification) =>
+          !dismissedNotificationKeys.has(
+            getNotificationDismissalKey(
+              notification,
+            ),
+          ),
+      ),
+    [
+      calendarNotifications,
+      dismissedNotificationKeys,
+    ],
+  );
+
+  const notificationCount =
+    visibleNotifications.length;
+
+  async function loadCalendarNotifications(
+    isCancelled?: () => boolean,
+  ) {
+    if (!user?.id) {
+      return;
+    }
+
+    setNotificationsLoading(true);
+    setNotificationsError("");
+
+    try {
+      const from =
+        formatLocalDateOnly(new Date());
+      const response =
+        await compressionApi.listPlanningEvents(
+          from,
+        );
+
+      if (isCancelled?.()) {
+        return;
+      }
+
+      setCalendarNotifications(response.items);
+    } catch (loadError: unknown) {
+      if (isCancelled?.()) {
+        return;
+      }
+
+      setNotificationsError(
+        isCompressionApiError(loadError)
+          ? loadError.message
+          : "Impossible de charger les notifications.",
+      );
+    } finally {
+      if (!isCancelled?.()) {
+        setNotificationsLoading(false);
+      }
+    }
+  }
+
+  function dismissNotification(
+    notification: CompressionPlanningEventDTO,
+  ) {
+    if (!user?.id) {
+      return;
+    }
+
+    const dismissalKey =
+      getNotificationDismissalKey(notification);
+    const nextSet = new Set(
+      dismissedNotificationKeys,
+    );
+    nextSet.add(dismissalKey);
+    setDismissedNotificationKeys(nextSet);
+
+    try {
+      const storageKey =
+        `${DISMISSED_NOTIFICATIONS_KEY_PREFIX}${user.id}`;
+      window.localStorage.setItem(
+        storageKey,
+        JSON.stringify(Array.from(nextSet)),
+      );
+    } catch {
+      // Keep the in-memory dismissal when storage is unavailable.
+    }
+  }
+
+  useEffect(() => {
+    if (!user?.id) {
+      setDismissedNotificationKeys(new Set());
+      return;
+    }
+
+    const storageKey =
+      `${DISMISSED_NOTIFICATIONS_KEY_PREFIX}${user.id}`;
+    let nextKeys = new Set<string>();
+
+    try {
+      const rawValue =
+        window.localStorage.getItem(storageKey);
+
+      if (rawValue) {
+        const parsed: unknown =
+          JSON.parse(rawValue);
+
+        if (isStringArray(parsed)) {
+          nextKeys = new Set(parsed);
+        }
+      }
+    } catch {
+      nextKeys = new Set();
+    }
+
+    setDismissedNotificationKeys(nextKeys);
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setCalendarNotifications([]);
+      setNotificationsLoading(false);
+      setNotificationsError("");
+      return;
+    }
+
+    let cancelled = false;
+
+    void loadCalendarNotifications(
+      () => cancelled,
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
   useEffect(() => {
     if (
       !profileMenuOpen &&
-      !projectMenuOpen
+      !projectMenuOpen &&
+      !notificationMenuOpen
     ) {
       return;
     }
@@ -194,6 +405,15 @@ function AppLayoutContent() {
       ) {
         setProjectMenuOpen(false);
       }
+
+      if (
+        notificationMenuOpen &&
+        !notificationMenuRef.current?.contains(
+          target,
+        )
+      ) {
+        setNotificationMenuOpen(false);
+      }
     };
 
     document.addEventListener(
@@ -210,12 +430,14 @@ function AppLayoutContent() {
   }, [
     profileMenuOpen,
     projectMenuOpen,
+    notificationMenuOpen,
   ]);
 
   useEffect(() => {
     if (
       !profileMenuOpen &&
-      !projectMenuOpen
+      !projectMenuOpen &&
+      !notificationMenuOpen
     ) {
       return;
     }
@@ -226,6 +448,7 @@ function AppLayoutContent() {
       if (event.key === "Escape") {
         setProfileMenuOpen(false);
         setProjectMenuOpen(false);
+        setNotificationMenuOpen(false);
       }
     };
 
@@ -243,6 +466,7 @@ function AppLayoutContent() {
   }, [
     profileMenuOpen,
     projectMenuOpen,
+    notificationMenuOpen,
   ]);
 
   const handleSignOut = async () => {
@@ -324,6 +548,7 @@ function AppLayoutContent() {
               disabled={projectsLoading}
               onClick={() => {
                 setProfileMenuOpen(false);
+                setNotificationMenuOpen(false);
                 setProjectMenuOpen(
                   (current) => !current,
                 );
@@ -517,10 +742,36 @@ function AppLayoutContent() {
         </div>
 
         <div className="flex items-center gap-3">
+          <div
+            ref={notificationMenuRef}
+            className="relative"
+          >
             <button
               type="button"
-              aria-label="Notifications"
+              aria-haspopup="dialog"
+              aria-expanded={notificationMenuOpen}
+              aria-controls="app-notifications-menu"
+              aria-label={
+                notificationCount > 0
+                  ? `Notifications, ${notificationCount} non traitées`
+                  : "Notifications"
+              }
               title="Notifications"
+              onClick={() => {
+                setProjectMenuOpen(false);
+                setProfileMenuOpen(false);
+
+                const next =
+                  !notificationMenuOpen;
+                setNotificationMenuOpen(next);
+
+                if (
+                  next &&
+                  !notificationsLoading
+                ) {
+                  void loadCalendarNotifications();
+                }
+              }}
               className="
                 relative inline-flex h-10 w-10
                 items-center justify-center
@@ -538,7 +789,170 @@ function AppLayoutContent() {
                 aria-hidden="true"
                 size={21}
               />
+
+              {notificationCount > 0 ? (
+                <span
+                  className="
+                    absolute -right-0.5 -top-0.5
+                    inline-flex min-w-5 h-5
+                    items-center justify-center
+                    rounded-full bg-red-600 px-1
+                    text-[10px] font-bold text-white
+                  "
+                  aria-hidden="true"
+                >
+                  {notificationCount > 99
+                    ? "99+"
+                    : notificationCount}
+                </span>
+              ) : null}
             </button>
+
+            {notificationMenuOpen ? (
+              <div
+                id="app-notifications-menu"
+                role="dialog"
+                aria-label="Notifications du calendrier"
+                className="
+                  absolute right-0 top-full z-50 mt-2
+                  w-96 max-w-[calc(100vw-2rem)]
+                  overflow-hidden rounded-lg
+                  border border-slate-200
+                  bg-white shadow-xl
+                "
+              >
+                <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+                  <div className="font-semibold text-slate-900">
+                    Notifications
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    {notificationCount} non traitée
+                    {notificationCount === 1
+                      ? ""
+                      : "s"}
+                  </div>
+                </div>
+
+                {notificationsLoading ? (
+                  <div className="border-b border-slate-100 px-4 py-3 text-sm text-slate-600">
+                    Chargement des notifications...
+                  </div>
+                ) : null}
+
+                {notificationsError ? (
+                  <div
+                    role="alert"
+                    className="border-b border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                  >
+                    {notificationsError}
+                  </div>
+                ) : null}
+
+                {!notificationsLoading &&
+                visibleNotifications.length === 0 ? (
+                  <div className="px-4 py-8 text-center text-sm text-slate-500">
+                    Aucune notification.
+                  </div>
+                ) : null}
+
+                {visibleNotifications.length > 0 ? (
+                  <div className="max-h-96 divide-y divide-slate-200 overflow-y-auto">
+                    {visibleNotifications.map(
+                      (notification) => (
+                        <div
+                          key={getNotificationDismissalKey(
+                            notification,
+                          )}
+                          className="flex items-start gap-3 px-4 py-3"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="font-semibold text-slate-900">
+                              Écrasement –{" "}
+                              {
+                                notification.designation
+                              }
+                            </div>
+
+                            <div className="mt-1 truncate text-sm text-slate-600">
+                              {
+                                notification.projectName
+                              }
+                            </div>
+
+                            <div className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-slate-500">
+                              <span>
+                                {formatNotificationDate(
+                                  notification.crushingDate,
+                                )}
+                              </span>
+                              <span aria-hidden="true">
+                                •
+                              </span>
+                              <span>
+                                {
+                                  notification.planningTime
+                                }
+                              </span>
+                            </div>
+
+                            {notification.reportTitle ? (
+                              <div className="mt-1 truncate text-xs text-slate-500">
+                                Rapport :{" "}
+                                {
+                                  notification.reportTitle
+                                }
+                              </div>
+                            ) : null}
+
+                            {notification.reference ? (
+                              <div className="mt-1 truncate text-xs text-slate-500">
+                                Référence :{" "}
+                                {
+                                  notification.reference
+                                }
+                              </div>
+                            ) : null}
+                          </div>
+
+                          <button
+                            type="button"
+                            title="Marquer comme traité"
+                            aria-label={`Marquer la notification ${notification.designation} comme traitée`}
+                            onClick={() => {
+                              dismissNotification(
+                                notification,
+                              );
+                            }}
+                            className="
+                              inline-flex h-8 w-8 shrink-0
+                              items-center justify-center
+                              rounded-full border
+                              border-emerald-300
+                              text-emerald-700
+                              transition-colors
+                              hover:border-emerald-600
+                              hover:bg-emerald-600
+                              hover:text-white
+                              focus-visible:outline-none
+                              focus-visible:ring-2
+                              focus-visible:ring-emerald-400
+                              focus-visible:ring-offset-2
+                            "
+                          >
+                            <FiCheck
+                              aria-hidden="true"
+                              size={17}
+                              strokeWidth={2.5}
+                            />
+                          </button>
+                        </div>
+                      ),
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
 
             <div
               ref={profileMenuRef}
@@ -551,6 +965,7 @@ function AppLayoutContent() {
                 aria-controls="app-profile-menu"
                 onClick={() => {
                   setProjectMenuOpen(false);
+                  setNotificationMenuOpen(false);
                   setProfileMenuOpen(
                     (current) => !current,
                   );

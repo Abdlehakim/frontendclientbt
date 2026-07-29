@@ -462,12 +462,18 @@ export const compressionApi = {
 
   listPlanningEvents: async (
     from: string,
-    to: string,
+    to?: string,
   ) => {
+    const params = new URLSearchParams({
+      from,
+    });
+
+    if (to?.trim()) {
+      params.set("to", to.trim());
+    }
+
     const response = await request(
-      `${BASE}/planning?from=${encodeURIComponent(
-        from,
-      )}&to=${encodeURIComponent(to)}`,
+      `${BASE}/planning?${params.toString()}`,
     );
     return parsePlanningEventsResponse(response);
   },
