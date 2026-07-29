@@ -68,6 +68,19 @@ function toDateInput(value: string | null | undefined): string {
   return value?.slice(0, 10) ?? "";
 }
 
+function formatDateOnly(
+  value: string | null | undefined,
+): string {
+  const normalized = value?.slice(0, 10) ?? "";
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(normalized);
+
+  if (!match) {
+    return "—";
+  }
+
+  return `${match[3]}/${match[2]}/${match[1]}`;
+}
+
 function createInitialForm(): CompressionEditorForm {
   return {
     projectId: "",
@@ -459,38 +472,26 @@ function CompressionReportEditorPanel({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-2">
-                  <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
-                    Date du rapport
-                    <input
-                      type="date"
-                      value={form.reportDate}
-                      disabled={readOnly || saving}
-                      onChange={(event) =>
-                        setForm((current) => ({
-                          ...current,
-                          reportDate: event.target.value,
-                        }))
-                      }
-                      className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 disabled:bg-slate-100"
-                    />
-                  </label>
+                <div className="rounded-lg border border-slate-200 bg-white p-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                      <div className="text-xs text-gray-500">
+                        Date du rapport
+                      </div>
+                      <div className="font-semibold text-gray-900">
+                        {formatDateOnly(form.reportDate)}
+                      </div>
+                    </div>
 
-                  <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
-                    Titre
-                    <input
-                      type="text"
-                      value={form.title ?? ""}
-                      disabled={readOnly || saving}
-                      onChange={(event) =>
-                        setForm((current) => ({
-                          ...current,
-                          title: event.target.value,
-                        }))
-                      }
-                      className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 disabled:bg-slate-100"
-                    />
-                  </label>
+                    <div>
+                      <div className="text-xs text-gray-500">
+                        Titre
+                      </div>
+                      <div className="font-semibold text-gray-900">
+                        {form.title?.trim() || "—"}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             ) : (

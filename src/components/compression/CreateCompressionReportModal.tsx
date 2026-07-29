@@ -31,6 +31,15 @@ const fieldClass =
   "border-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 " +
   "placeholder:text-emerald-800/60";
 
+function todayDateInput(): string {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 function readableError(error: unknown): string {
   if (
     isCompressionApiError(error) ||
@@ -49,6 +58,7 @@ export default function CreateCompressionReportModal({
   const [projects, setProjects] = useState<FerRapportDTO[]>([]);
   const [projectId, setProjectId] = useState("");
   const [name, setName] = useState("");
+  const [reportDate, setReportDate] = useState(todayDateInput);
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -60,6 +70,7 @@ export default function CreateCompressionReportModal({
     setProjects([]);
     setProjectId("");
     setName("");
+    setReportDate(todayDateInput());
     setError("");
     setSubmitting(false);
     setLoadingProjects(true);
@@ -117,6 +128,11 @@ export default function CreateCompressionReportModal({
       return;
     }
 
+    if (!reportDate) {
+      setError("La date du rapport est obligatoire.");
+      return;
+    }
+
     setSubmitting(true);
     setError("");
 
@@ -124,10 +140,12 @@ export default function CreateCompressionReportModal({
       const response = await compressionApi.createDraft({
         projectId,
         name: normalizedName,
+        reportDate,
       });
       await onCreated?.(response.item);
       setProjectId("");
       setName("");
+      setReportDate(todayDateInput());
       setError("");
       onClose();
     } catch (requestError: unknown) {
@@ -241,6 +259,31 @@ export default function CreateCompressionReportModal({
                 }}
                 placeholder="Ex: Essai fondations Bloc A"
                 disabled={submitting}
+              />
+            </div>
+
+            <div className="flex flex-col">
+              <label
+                htmlFor="compression-report-date"
+                className="mb-1 text-xs font-semibold text-gray-700"
+              >
+                Date du rapport
+              </label>
+
+              <input
+                id="compression-report-date"
+                type="date"
+                className={fieldClass}
+                value={reportDate}
+                onChange={(event) => {
+                  setReportDate(event.target.value);
+
+                  if (error) {
+                    setError("");
+                  }
+                }}
+                disabled={submitting}
+                required
               />
             </div>
           </div>

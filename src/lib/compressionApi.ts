@@ -105,6 +105,7 @@ export type CompressionReportUpdateInput = CompressionReportInput;
 export type CompressionReportDraftCreateInput = {
   projectId: string;
   name: string;
+  reportDate: string;
 };
 
 export class CompressionApiError extends Error {
