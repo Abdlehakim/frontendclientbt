@@ -238,7 +238,7 @@ function AppLayoutContent() {
           items-center justify-between gap-3
         "
       >
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 items-center gap-4">
           <IconButton
             icon={
               sidebarCollapsed ? (

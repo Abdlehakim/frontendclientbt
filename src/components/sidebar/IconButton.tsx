@@ -39,7 +39,7 @@ export default function IconButton({
     : false;
 
   const base =
-    "hidden md:inline-flex items-center justify-center h-12 w-12 rounded-md border-2 transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white/70 cursor-pointer z-50";
+    "hidden md:inline-flex items-center justify-center h-10 w-10 rounded-md border-2 transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white/70 cursor-pointer z-50";
 
   // Tailwind v4 canonical suggestion is NOT always safe here, so keep this exact value.
   const float = floating ? "absolute bottom-[10%] -right-8 md:top-auto md:-right-8 md:bottom-6" : "";
