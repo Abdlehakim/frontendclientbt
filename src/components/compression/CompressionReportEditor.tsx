@@ -459,41 +459,7 @@ function CompressionReportEditorPanel({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-2 xl:grid-cols-3">
-                  <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
-                    Projet
-                    <select
-                      value={form.projectId}
-                      disabled={readOnly || saving}
-                      onChange={(event) =>
-                        setForm((current) => ({
-                          ...current,
-                          projectId: event.target.value,
-                        }))
-                      }
-                      className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 disabled:bg-slate-100"
-                    >
-                      <option value="">Sélectionner un projet</option>
-                      {projects.map((project) => (
-                        <option key={project.id} value={project.id}>
-                          {project.chantierName} —{" "}
-                          {project.responsable?.trim() || "—"}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
-                    Chantier
-                    <div className="min-h-10 rounded border border-slate-300 bg-slate-50 px-3 py-2 text-slate-900">
-                      {selectedProject
-                        ? `${selectedProject.chantierName} — ${
-                            selectedProject.responsable?.trim() || "—"
-                          }`
-                        : "—"}
-                    </div>
-                  </label>
-
+                <div className="grid grid-cols-1 gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-2">
                   <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
                     Date du rapport
                     <input
@@ -525,23 +491,6 @@ function CompressionReportEditorPanel({
                       className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 disabled:bg-slate-100"
                     />
                   </label>
-
-                  <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
-                    Entreprise
-                    <input
-                      type="text"
-                      value={form.companyName ?? ""}
-                      disabled={readOnly || saving}
-                      onChange={(event) =>
-                        setForm((current) => ({
-                          ...current,
-                          companyName: event.target.value,
-                        }))
-                      }
-                      className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 disabled:bg-slate-100"
-                    />
-                  </label>
-
                 </div>
               </div>
             ) : (
