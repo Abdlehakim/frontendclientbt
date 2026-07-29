@@ -6,6 +6,9 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { CiCircleRemove } from "react-icons/ci";
+import {
+  DatePickerInput,
+} from "@/components/DatePickerInput";
 
 export type CompressionSampleModalPayload = {
   dosage: string;
@@ -169,9 +172,9 @@ export default function CompressionSampleModal({
         <form
           onSubmit={submit}
           onMouseDown={(event) => event.stopPropagation()}
-          className="w-full max-w-5xl rounded-xl border border-gray-200 bg-white shadow-xl flex flex-col overflow-hidden"
+          className="w-full max-w-4xl max-h-[95vh] overflow-visible rounded-xl border border-gray-200 bg-white shadow-xl flex flex-col"
         >
-          <div className="px-5 py-3 bg-gray-50 rounded-t-xl border-b border-gray-200 flex items-center justify-between">
+          <div className="px-5 py-2 bg-gray-50 rounded-t-xl border-b border-gray-200 flex items-center justify-between">
             <div className="text-sm font-semibold text-gray-900">
               {mode === "edit"
                 ? "Modifier le prélèvement"
@@ -184,12 +187,23 @@ export default function CompressionSampleModal({
               title="Fermer"
               className="p-1 text-gray-700 hover:cursor-pointer hover:text-red-600 hover:scale-120 transition-transform"
             >
-              <CiCircleRemove size={26} />
+              <CiCircleRemove size={28} />
             </button>
           </div>
 
-          <div className="p-5">
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          {error ? (
+            <div className="px-5 -mt-2 text-sm text-red-600">
+              {error}
+            </div>
+          ) : null}
+
+          <div className="px-5 py-4 overflow-visible">
+            <div className="flex flex-col gap-4">
+              <div className="text-sm font-semibold text-gray-800">
+                Informations prélèvement
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div className="flex flex-col">
                 <label className="mb-1 text-xs font-semibold text-gray-700">
                   Dosage
@@ -266,71 +280,66 @@ export default function CompressionSampleModal({
               </div>
 
               <div className="flex flex-col">
-                <label className="mb-1 text-xs font-semibold text-gray-700">
+                <label
+                  htmlFor="compression-sample-pour-date"
+                  className="mb-1 text-xs font-semibold text-gray-700"
+                >
                   Date coulage / prélèvement
                 </label>
-                <input
-                  type="date"
+
+                <DatePickerInput
+                  id="compression-sample-pour-date"
                   value={form.pourDate}
-                  onChange={(event) => {
+                  onChange={(value) => {
                     setForm((current) => ({
                       ...current,
-                      pourDate: event.target.value,
+                      pourDate: value,
                     }));
                     setError("");
                   }}
-                  className={fieldClass}
+                  className="w-full"
                 />
               </div>
 
-                <label className="mb-1 text-xs font-semibold text-gray-700">
+              <div className="flex flex-col">
+                <label
+                  htmlFor="compression-sample-send-date"
+                  className="mb-1 text-xs font-semibold text-gray-700"
+                >
                   Date d’envoi éprouvette
                 </label>
-                <input
-                  type="date"
+
+                <DatePickerInput
+                  id="compression-sample-send-date"
                   value={form.specimenSendDate}
-                  onChange={(event) => {
+                  onChange={(value) => {
                     setForm((current) => ({
                       ...current,
-                      specimenSendDate: event.target.value,
+                      specimenSendDate: value,
                     }));
                     setError("");
                   }}
-                  className={fieldClass}
+                  className="w-full"
                 />
-
-            </div>
-
-            {error ? (
-              <div className="mt-4 text-sm text-red-600">
-                {error}
               </div>
-            ) : null}
+              </div>
+            </div>
           </div>
 
           <div
-            className="rounded-b-xl px-3.5 pt-2.5 pb-3.5 flex items-center justify-between gap-3
-            "
+            className="rounded-b-xl px-3.5 pt-2.5 pb-3.5 flex items-center justify-between gap-3"
             aria-label="Actions du formulaire"
           >
-              <button
-                type="button"
-                className="stepper__nav"
-                onClick={onClose}
-              >
-                Annuler
-              </button>
-            </div>
-
             <div className="flex flex-1 items-center justify-end gap-2 whitespace-nowrap">
               <button
                 type="submit"
-                className="stepper__nav"
+                className="btn-fit-white-outline"
               >
                 {mode === "edit"
                   ? "Enregistrer"
                   : "Ajouter"}
               </button>
+            </div>
           </div>
         </form>
       </div>
