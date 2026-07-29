@@ -322,11 +322,14 @@ function isCompressionSampleDTO(
 function isCompressionReportDetailDTO(
   value: unknown,
 ): value is CompressionReportDetailDTO {
+  if (!isRecord(value)) return false;
+
+  const samples = value.samples;
+
   return (
     isCompressionReportSummaryDTO(value) &&
-    isRecord(value) &&
-    Array.isArray(value.samples) &&
-    value.samples.every(isCompressionSampleDTO)
+    Array.isArray(samples) &&
+    samples.every(isCompressionSampleDTO)
   );
 }
 

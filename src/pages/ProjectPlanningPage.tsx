@@ -7,8 +7,6 @@ import {
   FiChevronLeft,
   FiChevronRight,
   FiMoreHorizontal,
-  FiPlus,
-  FiSettings,
 } from "react-icons/fi";
 import {
   compressionApi,
@@ -79,14 +77,6 @@ const CATEGORY_CONFIG: Record<
     dotClass: "bg-amber-400",
   },
 };
-
-const LEGEND_CATEGORIES: PlanningCategory[] = [
-  "CALL",
-  "CHANTIER",
-  "SUIVI",
-  "DEVIS",
-  "ACHAT",
-];
 
 function startOfLocalDay(value: Date): Date {
   const date = new Date(value);

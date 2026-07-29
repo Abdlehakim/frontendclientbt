@@ -246,13 +246,21 @@ function isFerraillageReportDTO(
 function isFerProjectDetailDTO(
   value: unknown,
 ): value is FerProjectDetailDTO {
-  if (!isRecord(value) || !isFerRapportDTO(value)) return false;
+  if (!isRecord(value)) return false;
+
+  const {
+    etats,
+    restants,
+    lignes,
+    niveaux,
+  } = value;
 
   return (
-    Array.isArray(value.etats) &&
-    Array.isArray(value.restants) &&
-    Array.isArray(value.lignes) &&
-    Array.isArray(value.niveaux)
+    isFerRapportDTO(value) &&
+    Array.isArray(etats) &&
+    Array.isArray(restants) &&
+    Array.isArray(lignes) &&
+    Array.isArray(niveaux)
   );
 }
 

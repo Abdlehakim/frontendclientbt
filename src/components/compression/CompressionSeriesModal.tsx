@@ -12,6 +12,7 @@ import {
 } from "@/components/DatePickerInput";
 import type {
   CompressionResultInput,
+  CompressionResultStatus,
   CompressionSeriesInput,
 } from "@/lib/compressionApi";
 
@@ -149,29 +150,37 @@ function normalizeSeries(
   const sourceResults =
     initialValue?.results ?? [];
 
-  const normalizedResults =
+  const normalizedResults: CompressionResultInput[] =
     sourceResults.length > 0
-      ? sourceResults.map((result, index) => {
-          const hasNumericValue =
-            typeof result.value === "number" &&
-            Number.isFinite(result.value);
+      ? sourceResults.map(
+          (
+            result,
+            index,
+          ): CompressionResultInput => {
+            const hasNumericValue =
+              typeof result.value === "number" &&
+              Number.isFinite(result.value);
 
-          return {
-            specimenNumber: index + 1,
-            value: hasNumericValue
-              ? result.value
-              : null,
-            status: hasNumericValue
-              ? result.status === "VALID" ||
-                result.status === "INVALID"
-                ? result.status
-                : "VALID"
-              : result.status === "INVALID"
-                ? "INVALID"
-                : "NOT_TESTED",
-            note: result.note ?? null,
-          };
-        })
+            const status: CompressionResultStatus =
+              hasNumericValue
+                ? result.status === "VALID" ||
+                  result.status === "INVALID"
+                  ? result.status
+                  : "VALID"
+                : result.status === "INVALID"
+                  ? "INVALID"
+                  : "NOT_TESTED";
+
+            return {
+              specimenNumber: index + 1,
+              value: hasNumericValue
+                ? result.value
+                : null,
+              status,
+              note: result.note ?? null,
+            };
+          },
+        )
       : Array.from(
           { length: 4 },
           (_, index) =>
