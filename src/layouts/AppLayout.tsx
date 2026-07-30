@@ -40,11 +40,27 @@ import {
   isCompressionApiError,
   type CompressionPlanningEventDTO,
 } from "@/lib/compressionApi";
+import {
+  isPlanningTasksApiError,
+  planningTasksApi,
+  type PlanningTaskDTO,
+} from "@/lib/planningTasksApi";
 
 const DISMISSED_NOTIFICATIONS_KEY_PREFIX =
   "projectbt:calendar-notifications:dismissed:";
 const NOTIFICATIONS_PER_PAGE = 3;
 const NOTIFICATION_MINUTE_MS = 60_000;
+
+type CalendarNotification = {
+  kind: "COMPRESSION" | "TASK";
+  id: string;
+  title: string;
+  projectId: string;
+  projectName: string;
+  scheduledDate: string;
+  scheduledTime: string;
+  dismissalKey: string;
+};
 
 function formatLocalDateOnly(value: Date): string {
   const year = value.getFullYear();
@@ -61,32 +77,27 @@ function formatLocalDateOnly(value: Date): string {
 function formatNotificationDate(
   value: string,
 ): string {
-  const date = new Date(value);
+  const match =
+    /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
 
-  if (Number.isNaN(date.getTime())) {
-    return "—";
-  }
+  if (!match) return "—";
 
-  return date.toLocaleDateString("fr-FR");
+  return `${match[3]}/${match[2]}/${match[1]}`;
 }
 
 function getNotificationDismissalKey(
-  event: CompressionPlanningEventDTO,
+  notification: CalendarNotification,
 ): string {
-  return [
-    event.id,
-    event.crushingDate,
-    event.planningTime,
-  ].join("|");
+  return notification.dismissalKey;
 }
 
 function getNotificationScheduledAt(
-  notification: CompressionPlanningEventDTO,
+  notification: CalendarNotification,
 ): number | null {
   const dateOnly =
-    notification.crushingDate.slice(0, 10);
+    notification.scheduledDate.trim();
   const time =
-    notification.planningTime.trim();
+    notification.scheduledTime.trim();
 
   if (
     !/^\d{4}-\d{2}-\d{2}$/.test(dateOnly) ||
@@ -137,6 +148,66 @@ function getNotificationScheduledAt(
   }
 
   return scheduledDate.getTime();
+}
+
+function mapCompressionNotification(
+  event: CompressionPlanningEventDTO,
+): CalendarNotification | null {
+  const notification: CalendarNotification = {
+    kind: "COMPRESSION",
+    id: event.id,
+    title: `Écrasement – ${event.designation}`,
+    projectId: event.projectId,
+    projectName: event.projectName,
+    scheduledDate: event.crushingDate.slice(0, 10),
+    scheduledTime: event.planningTime,
+    dismissalKey:
+      `${event.id}|${event.crushingDate}|${event.planningTime}`,
+  };
+
+  return getNotificationScheduledAt(notification) ===
+    null
+    ? null
+    : notification;
+}
+
+function mapTaskNotification(
+  task: PlanningTaskDTO,
+): CalendarNotification | null {
+  const scheduledDate =
+    task.taskDate?.trim() ?? "";
+  const scheduledTime =
+    task.taskTime?.trim() ?? "";
+
+  if (
+    !scheduledDate ||
+    !scheduledTime ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(
+      scheduledDate,
+    ) ||
+    !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(
+      scheduledTime,
+    )
+  ) {
+    return null;
+  }
+
+  const notification: CalendarNotification = {
+    kind: "TASK",
+    id: task.id,
+    title: `Tâche – ${task.title}`,
+    projectId: task.projectId,
+    projectName: task.projectName,
+    scheduledDate,
+    scheduledTime,
+    dismissalKey:
+      `task|${task.id}|${scheduledDate}|${scheduledTime}`,
+  };
+
+  return getNotificationScheduledAt(notification) ===
+    null
+    ? null
+    : notification;
 }
 
 function isStringArray(
@@ -227,7 +298,7 @@ function AppLayoutContent() {
   const [
     calendarNotifications,
     setCalendarNotifications,
-  ] = useState<CompressionPlanningEventDTO[]>([]);
+  ] = useState<CalendarNotification[]>([]);
   const [
     notificationsLoading,
     setNotificationsLoading,
@@ -408,26 +479,78 @@ function AppLayoutContent() {
     try {
       const from =
         formatLocalDateOnly(new Date());
-      const response =
-        await compressionApi.listPlanningEvents(
-          from,
-        );
+      const [
+        compressionResult,
+        taskResult,
+      ] = await Promise.allSettled([
+        compressionApi.listPlanningEvents(from),
+        planningTasksApi.listTasks(),
+      ]);
 
       if (isCancelled?.()) {
         return;
       }
 
-      setCalendarNotifications(response.items);
-    } catch (loadError: unknown) {
-      if (isCancelled?.()) {
-        return;
+      const nextNotifications:
+        CalendarNotification[] = [];
+
+      if (compressionResult.status === "fulfilled") {
+        for (
+          const event
+          of compressionResult.value.items
+        ) {
+          const notification =
+            mapCompressionNotification(event);
+
+          if (notification) {
+            nextNotifications.push(notification);
+          }
+        }
       }
 
-      setNotificationsError(
-        isCompressionApiError(loadError)
-          ? loadError.message
-          : "Impossible de charger les notifications.",
+      if (taskResult.status === "fulfilled") {
+        for (const task of taskResult.value.items) {
+          const notification =
+            mapTaskNotification(task);
+
+          if (notification) {
+            nextNotifications.push(notification);
+          }
+        }
+      }
+
+      nextNotifications.sort(
+        (left, right) =>
+          (
+            getNotificationScheduledAt(left) ??
+            Number.MAX_SAFE_INTEGER
+          ) -
+          (
+            getNotificationScheduledAt(right) ??
+            Number.MAX_SAFE_INTEGER
+          ),
       );
+
+      setCalendarNotifications(nextNotifications);
+
+      if (
+        compressionResult.status === "rejected" &&
+        taskResult.status === "rejected"
+      ) {
+        setNotificationsError(
+          isCompressionApiError(
+            compressionResult.reason,
+          )
+            ? compressionResult.reason.message
+            : isPlanningTasksApiError(
+                  taskResult.reason,
+                )
+              ? taskResult.reason.message
+              : "Impossible de charger les notifications.",
+        );
+      } else {
+        setNotificationsError("");
+      }
     } finally {
       if (!isCancelled?.()) {
         setNotificationsLoading(false);
@@ -436,7 +559,7 @@ function AppLayoutContent() {
   }
 
   function dismissNotification(
-    notification: CompressionPlanningEventDTO,
+    notification: CalendarNotification,
   ) {
     if (!user?.id) {
       return;
@@ -1001,10 +1124,7 @@ function AppLayoutContent() {
                         >
                           <div className="min-w-0 flex-1">
                             <div className="truncate text-sm font-semibold text-slate-900">
-                              Écrasement –{" "}
-                              {
-                                notification.designation
-                              }
+                              {notification.title}
                             </div>
 
                             <div className="mt-1 truncate text-xs text-slate-500">
@@ -1013,11 +1133,11 @@ function AppLayoutContent() {
                               }
                               {" • "}
                               {formatNotificationDate(
-                                notification.crushingDate,
+                                notification.scheduledDate,
                               )}
                               {" • "}
                               {
-                                notification.planningTime
+                                notification.scheduledTime
                               }
                             </div>
                           </div>
@@ -1025,7 +1145,7 @@ function AppLayoutContent() {
                           <button
                             type="button"
                             title="Marquer comme traité"
-                            aria-label={`Marquer la notification ${notification.designation} comme traitée`}
+                            aria-label={`Marquer la notification ${notification.title} comme traitée`}
                             onClick={() => {
                               dismissNotification(
                                 notification,
