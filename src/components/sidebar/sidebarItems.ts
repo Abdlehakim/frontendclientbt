@@ -41,9 +41,20 @@ export const sidebarItems: SidebarItem[] = [
 
   {
     name: "Planification",
-    to: APP_HREFS.projectsPlanning,
     icon: FiCalendar,
     permission: "submodule:FERRAILLAGE",
+    children: [
+      {
+        name: "Calendrier",
+        to: APP_HREFS.projectsPlanningCalendar,
+        permission: "submodule:FERRAILLAGE",
+      },
+      {
+        name: "Tâches",
+        to: APP_HREFS.projectsPlanningTasks,
+        permission: "submodule:FERRAILLAGE",
+      },
+    ],
   },
 
   {

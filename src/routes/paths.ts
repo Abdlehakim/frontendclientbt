@@ -7,6 +7,10 @@ export const APP_PATHS = {
   projects: "projects",
   projectsList: "projects/liste",
   projectsPlanning: "projects/planification",
+  projectsPlanningCalendar:
+    "projects/planification/calendrier",
+  projectsPlanningTasks:
+    "projects/planification/taches",
   projectsTracking: "projects/suivi",
   module1Root: "models/module-1",
   ferraillage: "models/module-1/ferraillage",
@@ -21,6 +25,10 @@ export const APP_HREFS = {
   projects: `${APP_PATHS.root}/${APP_PATHS.projects}`,
   projectsList: `${APP_PATHS.root}/${APP_PATHS.projectsList}`,
   projectsPlanning: `${APP_PATHS.root}/${APP_PATHS.projectsPlanning}`,
+  projectsPlanningCalendar:
+    `${APP_PATHS.root}/${APP_PATHS.projectsPlanningCalendar}`,
+  projectsPlanningTasks:
+    `${APP_PATHS.root}/${APP_PATHS.projectsPlanningTasks}`,
   projectsTracking: `${APP_PATHS.root}/${APP_PATHS.projectsTracking}`,
   module1Root: `${APP_PATHS.root}/${APP_PATHS.module1Root}`,
   ferraillage: `${APP_PATHS.root}/${APP_PATHS.ferraillage}`,

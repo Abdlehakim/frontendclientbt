@@ -19,6 +19,7 @@ import FerRapportViewPage from "@/pages/FerRapportViewPage";
 import DashboardPage from "@/pages/DashboardPage";
 import UsersPage from "@/pages/UsersPage";
 import ProjectPlanningPage from "@/pages/ProjectPlanningPage";
+import ProjectPlanningTasksPage from "@/pages/ProjectPlanningTasksPage";
 import ProjectTrackingPage from "@/pages/ProjectTrackingPage";
 import ProjectsPage from "@/pages/ProjectsPage";
 
@@ -47,7 +48,23 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               <Route path={APP_PATHS.users} element={<UsersPage />} />
               <Route path={APP_PATHS.projects} element={<ProjectsPage />} />
               <Route path={APP_PATHS.projectsList} element={<ProjectsPage />} />
-              <Route path={APP_PATHS.projectsPlanning} element={<ProjectPlanningPage />} />
+              <Route
+                path={APP_PATHS.projectsPlanning}
+                element={
+                  <Navigate
+                    to={APP_HREFS.projectsPlanningCalendar}
+                    replace
+                  />
+                }
+              />
+              <Route
+                path={APP_PATHS.projectsPlanningCalendar}
+                element={<ProjectPlanningPage />}
+              />
+              <Route
+                path={APP_PATHS.projectsPlanningTasks}
+                element={<ProjectPlanningTasksPage />}
+              />
               <Route path={APP_PATHS.projectsTracking} element={<ProjectTrackingPage />} />
               <Route path={APP_PATHS.ferraillage} element={<FerraillagePage />} />
               <Route
