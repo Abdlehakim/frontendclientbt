@@ -12,6 +12,10 @@ import {
   compressionApi,
   type CompressionPlanningEventDTO,
 } from "@/lib/compressionApi";
+import {
+  planningTasksApi,
+  type PlanningTaskDTO,
+} from "@/lib/planningTasksApi";
 import { useProjectSelection } from "@/contexts/ProjectSelectionContext";
 
 type PlanningCategory =
@@ -19,7 +23,8 @@ type PlanningCategory =
   | "CHANTIER"
   | "DEVIS"
   | "SUIVI"
-  | "ACHAT";
+  | "ACHAT"
+  | "TASK";
 
 type PlanningEvent = {
   id: string;
@@ -31,11 +36,9 @@ type PlanningEvent = {
   category: PlanningCategory;
 };
 
-const START_HOUR = 8;
-const END_HOUR = 18;
+const DEFAULT_START_HOUR = 8;
+const DEFAULT_END_HOUR = 18;
 const HOUR_HEIGHT = 58;
-const TOTAL_HOURS = END_HOUR - START_HOUR;
-const CALENDAR_HEIGHT = TOTAL_HOURS * HOUR_HEIGHT;
 
 const CATEGORY_CONFIG: Record<
   PlanningCategory,
@@ -75,6 +78,12 @@ const CATEGORY_CONFIG: Record<
     cardClass: "border-amber-200 bg-amber-50 text-slate-900",
     accentClass: "border-l-amber-400",
     dotClass: "bg-amber-400",
+  },
+  TASK: {
+    label: "Tâche",
+    cardClass: "border-indigo-200 bg-indigo-50 text-slate-900",
+    accentClass: "border-l-indigo-500",
+    dotClass: "bg-indigo-500",
   },
 };
 
@@ -185,18 +194,48 @@ function isWeekend(value: Date): boolean {
   return value.getDay() === 0 || value.getDay() === 6;
 }
 
-function timeToMinutes(value: string): number {
-  const [hours = "0", minutes = "0"] = value.split(":");
-  return Number(hours) * 60 + Number(minutes);
+function timeToMinutes(value: string): number | null {
+  const match =
+    /^(\d{1,2}):(\d{2})$/.exec(value.trim());
+
+  if (!match) return null;
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+
+  if (
+    !Number.isInteger(hours) ||
+    !Number.isInteger(minutes) ||
+    hours < 0 ||
+    hours > 23 ||
+    minutes < 0 ||
+    minutes > 59
+  ) {
+    return null;
+  }
+
+  return hours * 60 + minutes;
 }
 
-function getEventPosition(event: PlanningEvent): {
+function getEventPosition(
+  event: PlanningEvent,
+  startHour: number,
+): {
   top: number;
   height: number;
 } {
   const startMinutes = timeToMinutes(event.start);
+
+  if (startMinutes === null) {
+    return {
+      top: 0,
+      height: 46,
+    };
+  }
+
   const top =
-    ((startMinutes - START_HOUR * 60) / 60) * HOUR_HEIGHT;
+    ((startMinutes - startHour * 60) / 60) *
+    HOUR_HEIGHT;
 
   if (!event.end) {
     return {
@@ -206,6 +245,14 @@ function getEventPosition(event: PlanningEvent): {
   }
 
   const endMinutes = timeToMinutes(event.end);
+
+  if (endMinutes === null) {
+    return {
+      top,
+      height: 46,
+    };
+  }
+
   const rawHeight =
     ((endMinutes - startMinutes) / 60) * HOUR_HEIGHT;
 
@@ -213,6 +260,48 @@ function getEventPosition(event: PlanningEvent): {
     top,
     height: Math.max(rawHeight, 34),
   };
+}
+
+function isValidDateOnly(value: string): boolean {
+  const match =
+    /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+
+  if (!match) return false;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day) ||
+    month < 1 ||
+    month > 12 ||
+    day < 1
+  ) {
+    return false;
+  }
+
+  const leapYear =
+    year % 4 === 0 &&
+    (year % 100 !== 0 || year % 400 === 0);
+  const daysInMonth = [
+    31,
+    leapYear ? 29 : 28,
+    31,
+    30,
+    31,
+    30,
+    31,
+    31,
+    30,
+    31,
+    30,
+    31,
+  ];
+
+  return day <= daysInMonth[month - 1];
 }
 
 function mapCompressionPlanningEvent(
@@ -228,6 +317,31 @@ function mapCompressionPlanningEvent(
   };
 }
 
+function mapTaskPlanningEvent(
+  task: PlanningTaskDTO,
+): PlanningEvent | null {
+  const date = task.taskDate?.trim() ?? "";
+  const start = task.taskTime?.trim() ?? "";
+
+  if (
+    !date ||
+    !start ||
+    !isValidDateOnly(date) ||
+    !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(start)
+  ) {
+    return null;
+  }
+
+  return {
+    id: `task-${task.id}`,
+    projectId: task.projectId,
+    date,
+    start,
+    title: task.title,
+    category: "TASK",
+  };
+}
+
 export default function ProjectPlanningPage() {
   const { selectedProjectId } = useProjectSelection();
   const [centerDate, setCenterDate] =
@@ -236,7 +350,11 @@ export default function ProjectPlanningPage() {
     );
   const [compressionEvents, setCompressionEvents] =
     useState<PlanningEvent[]>([]);
+  const [taskEvents, setTaskEvents] =
+    useState<PlanningEvent[]>([]);
   const [planningError, setPlanningError] =
+    useState("");
+  const [taskPlanningError, setTaskPlanningError] =
     useState("");
   const today = new Date();
 
@@ -286,14 +404,157 @@ export default function ProjectPlanningPage() {
     };
   }, [visibleDays]);
 
-  const hourLabels = useMemo(
+  useEffect(() => {
+    let active = true;
+
+    setTaskPlanningError("");
+
+    void planningTasksApi
+      .listTasks(selectedProjectId || undefined)
+      .then((response) => {
+        if (!active) return;
+
+        const mappedEvents = response.items
+          .map(mapTaskPlanningEvent)
+          .filter(
+            (
+              event,
+            ): event is PlanningEvent =>
+              event !== null,
+          );
+
+        setTaskEvents(mappedEvents);
+        setTaskPlanningError("");
+      })
+      .catch(() => {
+        if (!active) return;
+
+        setTaskEvents([]);
+        setTaskPlanningError(
+          "Impossible de charger les tâches planifiées.",
+        );
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [selectedProjectId]);
+
+  const planningEvents = useMemo(
+    () => [
+      ...compressionEvents,
+      ...taskEvents,
+    ],
+    [compressionEvents, taskEvents],
+  );
+
+  const visiblePlanningEvents = useMemo(() => {
+    const visibleDateKeys = new Set(
+      visibleDays.map((day) =>
+        formatLocalDateOnly(day),
+      ),
+    );
+
+    return planningEvents.filter(
+      (event) =>
+        Boolean(
+          event.date &&
+            visibleDateKeys.has(event.date),
+        ) &&
+        (
+          !selectedProjectId ||
+          event.projectId === selectedProjectId
+        ),
+    );
+  }, [
+    planningEvents,
+    selectedProjectId,
+    visibleDays,
+  ]);
+
+  const calendarStartHour = useMemo(() => {
+    let startHour = DEFAULT_START_HOUR;
+
+    for (const event of visiblePlanningEvents) {
+      const match =
+        /^(\d{2}):(\d{2})$/.exec(event.start);
+
+      if (!match) continue;
+
+      const hour = Number(match[1]);
+
+      if (
+        Number.isInteger(hour) &&
+        hour >= 0 &&
+        hour <= 23
+      ) {
+        startHour = Math.min(startHour, hour);
+      }
+    }
+
+    return Math.max(0, startHour);
+  }, [visiblePlanningEvents]);
+
+  const calendarEndHour = useMemo(() => {
+    let endHour = DEFAULT_END_HOUR;
+
+    for (const event of visiblePlanningEvents) {
+      const match =
+        /^(\d{2}):(\d{2})$/.exec(event.start);
+
+      if (!match) continue;
+
+      const hour = Number(match[1]);
+      const minute = Number(match[2]);
+
+      if (
+        !Number.isInteger(hour) ||
+        !Number.isInteger(minute) ||
+        hour < 0 ||
+        hour > 23 ||
+        minute < 0 ||
+        minute > 59
+      ) {
+        continue;
+      }
+
+      const requiredEnd =
+        hour + (minute > 0 ? 2 : 1);
+
+      endHour = Math.max(endHour, requiredEnd);
+    }
+
+    const boundedEnd = Math.min(24, endHour);
+
+    return boundedEnd > calendarStartHour
+      ? boundedEnd
+      : Math.min(24, calendarStartHour + 1);
+  }, [
+    calendarStartHour,
+    visiblePlanningEvents,
+  ]);
+
+  const calendarHours = useMemo(
     () =>
       Array.from(
-        { length: END_HOUR - START_HOUR + 1 },
-        (_, index) => START_HOUR + index,
+        {
+          length:
+            calendarEndHour -
+            calendarStartHour +
+            1,
+        },
+        (_, index) => calendarStartHour + index,
       ),
-    [],
+    [
+      calendarEndHour,
+      calendarStartHour,
+    ],
   );
+
+  const totalCalendarHours =
+    calendarEndHour - calendarStartHour;
+  const totalCalendarHeight =
+    totalCalendarHours * HOUR_HEIGHT;
 
   function goToPreviousPeriod() {
     setCenterDate((current) =>
@@ -368,6 +629,15 @@ export default function ProjectPlanningPage() {
         </div>
       ) : null}
 
+      {taskPlanningError ? (
+        <div
+          role="status"
+          className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
+        >
+          {taskPlanningError}
+        </div>
+      ) : null}
+
       <div className="overflow-x-auto rounded-xl">
         <div
           role="region"
@@ -428,20 +698,21 @@ export default function ProjectPlanningPage() {
           >
             <div
               className="relative border-r border-slate-200 bg-white"
-              style={{ height: CALENDAR_HEIGHT }}
+              style={{ height: totalCalendarHeight }}
             >
-              {hourLabels.map((hour) => {
+              {calendarHours.map((hour) => {
                 const top = Math.min(
                   Math.max(
-                    (hour - START_HOUR) * HOUR_HEIGHT,
+                    (hour - calendarStartHour) *
+                      HOUR_HEIGHT,
                     0,
                   ),
-                  CALENDAR_HEIGHT,
+                  totalCalendarHeight,
                 );
                 const alignmentClass =
-                  hour === START_HOUR
+                  hour === calendarStartHour
                     ? "translate-y-1"
-                    : hour === END_HOUR
+                    : hour === calendarEndHour
                       ? "-translate-y-full -mt-1"
                       : "-translate-y-1/2";
 
@@ -463,7 +734,7 @@ export default function ProjectPlanningPage() {
               const localDateKey =
                 formatLocalDateOnly(day);
               const dayEvents =
-                compressionEvents.filter(
+                planningEvents.filter(
                   (event) =>
                     event.date === localDateKey &&
                     (
@@ -486,10 +757,12 @@ export default function ProjectPlanningPage() {
                       ? "border-r border-slate-200"
                       : "",
                   ].join(" ")}
-                  style={{ height: CALENDAR_HEIGHT }}
+                  style={{ height: totalCalendarHeight }}
                 >
                   {Array.from(
-                    { length: TOTAL_HOURS + 1 },
+                    {
+                      length: totalCalendarHours + 1,
+                    },
                     (_, hourIndex) => (
                       <div
                         key={`hour-${hourIndex}`}
@@ -503,7 +776,7 @@ export default function ProjectPlanningPage() {
                   )}
 
                   {Array.from(
-                    { length: TOTAL_HOURS },
+                    { length: totalCalendarHours },
                     (_, hourIndex) => (
                       <div
                         key={`half-hour-${hourIndex}`}
@@ -519,16 +792,24 @@ export default function ProjectPlanningPage() {
                   )}
 
                   {dayEvents.map((event) => {
-                    const position = getEventPosition(event);
+                    const position = getEventPosition(
+                      event,
+                      calendarStartHour,
+                    );
                     const config = CATEGORY_CONFIG[event.category];
+                    const eventTime = event.end
+                      ? `${event.start} – ${event.end}`
+                      : event.start;
 
                     return (
                       <div
                         key={event.id}
                         aria-label={
-                          event.end
-                            ? `${event.title}, ${event.start} à ${event.end}`
-                            : `${event.title}, ${event.start}`
+                          event.category === "TASK"
+                            ? `${config.label}, ${event.title}, ${eventTime}`
+                            : event.end
+                              ? `${event.title}, ${event.start} à ${event.end}`
+                              : `${event.title}, ${event.start}`
                         }
                         className={[
                           "absolute z-10 overflow-hidden rounded-md border border-l-4 px-2.5 py-2 pr-7 text-xs shadow-sm",
@@ -557,9 +838,10 @@ export default function ProjectPlanningPage() {
                           </div>
                         </div>
                         <div className="mt-1 text-[11px] font-medium leading-tight text-slate-600">
-                          {event.end
-                            ? `${event.start} – ${event.end}`
-                            : event.start}
+                          {eventTime}
+                          {event.category === "TASK"
+                            ? ` • ${config.label}`
+                            : ""}
                         </div>
                         <FiMoreHorizontal
                           aria-hidden="true"
