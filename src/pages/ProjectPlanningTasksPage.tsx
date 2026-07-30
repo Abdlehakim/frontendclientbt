@@ -30,6 +30,19 @@ function formatDate(
   return date.toLocaleDateString("fr-FR");
 }
 
+function formatTaskDate(
+  value: string | null | undefined,
+): string {
+  if (!value) return "";
+
+  const match =
+    /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+
+  if (!match) return "";
+
+  return `${match[3]}/${match[2]}/${match[1]}`;
+}
+
 export default function ProjectPlanningTasksPage() {
   const {
     projects,
@@ -252,7 +265,7 @@ export default function ProjectPlanningTasksPage() {
                 Assignée à
               </th>
               <th className="py-2 text-center text-sm font-medium">
-                Créée le / Mise à jour le
+                Créée le / MàJ le
               </th>
               <th className="w-32 border-l-4 border-white py-2 text-center text-sm font-medium">
                 Actions
@@ -278,65 +291,83 @@ export default function ProjectPlanningTasksPage() {
             ) : (
               <tbody className="divide-y divide-gray-200 [&>tr]:h-14">
                 {displayedTasks.map(
-                  (task, index) => (
-                    <tr
-                      key={task.id}
-                      className={
-                        index % 2
-                          ? "bg-gray-100"
-                          : "bg-white"
-                      }
-                    >
-                      <td className="truncate px-2 py-2 text-center font-semibold">
-                        {task.title}
-                      </td>
-                      <td className="truncate px-2 py-2 text-center">
-                        {task.createdByName || "—"}
-                      </td>
-                      <td className="truncate px-2 py-2 text-center">
-                        {task.projectName || "—"}
-                      </td>
-                      <td className="truncate px-2 py-2 text-center">
-                        {task.assignedToName || "—"}
-                      </td>
-                      <td className="px-2 py-2 text-center text-xs">
-                        <div>
-                          Créée :{" "}
-                          {formatDate(task.createdAt)}
-                        </div>
-                        <div>
-                          Mise à jour :{" "}
-                          {formatDate(task.updatedAt)}
-                        </div>
-                      </td>
-                      <td className="w-32 px-2 py-2">
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            type="button"
-                            className="ButtonSquare"
-                            title="Modifier"
-                            aria-label="Modifier"
-                            onClick={() =>
-                              openEditModal(task)
-                            }
-                          >
-                            <FiEdit3 size={14} />
-                          </button>
-                          <button
-                            type="button"
-                            className="ButtonSquareDelete"
-                            title="Supprimer"
-                            aria-label="Supprimer"
-                            onClick={() =>
-                              setDeleteTarget(task)
-                            }
-                          >
-                            <FaTrashAlt size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ),
+                  (task, index) => {
+                    const formattedTaskDate =
+                      formatTaskDate(task.taskDate);
+
+                    return (
+                      <tr
+                        key={task.id}
+                        className={
+                          index % 2
+                            ? "bg-gray-100"
+                            : "bg-white"
+                        }
+                      >
+                        <td className="px-2 py-2 text-center">
+                          <div className="truncate font-semibold">
+                            {task.title}
+                          </div>
+                          {formattedTaskDate ||
+                          task.taskTime ? (
+                            <div className="mt-1 truncate text-xs font-normal text-slate-500">
+                              {formattedTaskDate}
+                              {formattedTaskDate &&
+                              task.taskTime
+                                ? " • "
+                                : ""}
+                              {task.taskTime || ""}
+                            </div>
+                          ) : null}
+                        </td>
+                        <td className="truncate px-2 py-2 text-center">
+                          {task.createdByName || "—"}
+                        </td>
+                        <td className="truncate px-2 py-2 text-center">
+                          {task.projectName || "—"}
+                        </td>
+                        <td className="truncate px-2 py-2 text-center">
+                          {task.assignedToName || "—"}
+                        </td>
+                        <td className="px-2 py-2 text-center text-xs">
+                          <div>
+                            Créée :{" "}
+                            {formatDate(task.createdAt)}
+                          </div>
+                          <div>
+                            MàJ :{" "}
+                            {formatDate(task.updatedAt)}
+                          </div>
+                        </td>
+                        <td className="w-32 px-2 py-2">
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              type="button"
+                              className="ButtonSquare"
+                              title="Modifier"
+                              aria-label="Modifier"
+                              onClick={() =>
+                                openEditModal(task)
+                              }
+                            >
+                              <FiEdit3 size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              className="ButtonSquareDelete"
+                              title="Supprimer"
+                              aria-label="Supprimer"
+                              onClick={() =>
+                                setDeleteTarget(task)
+                              }
+                            >
+                              <FaTrashAlt size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  },
                 )}
               </tbody>
             )}

@@ -1,11 +1,17 @@
 import {
   useEffect,
+  useRef,
   useState,
   type FormEvent,
 } from "react";
 import { createPortal } from "react-dom";
 import { CiCircleRemove } from "react-icons/ci";
 import { FaSpinner } from "react-icons/fa6";
+import {
+  IoIosArrowDropdown,
+  IoIosArrowDropup,
+} from "react-icons/io";
+import { DatePickerInput } from "@/components/DatePickerInput";
 import type { FerRapportDTO } from "@/lib/ferraillageApi";
 import {
   isPlanningTasksApiError,
@@ -25,11 +31,228 @@ type PlanningTaskModalProps = {
   onSaved: (task: PlanningTaskDTO) => void;
 };
 
+type TaskDropdownOption = {
+  id: string;
+  primaryLabel: string;
+  secondaryLabel?: string;
+};
+
+type TaskDropdownProps = {
+  value: string;
+  options: TaskDropdownOption[];
+  placeholder: string;
+  disabled: boolean;
+  onChange: (value: string) => void;
+};
+
 const fieldClass =
   "form-control w-full rounded-md border text-sm font-medium " +
   "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 " +
   "border-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 " +
   "placeholder:text-emerald-800/60";
+
+function todayLocalDateInput(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(
+    now.getMonth() + 1,
+  ).padStart(2, "0");
+  const day = String(
+    now.getDate(),
+  ).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function CheckIcon() {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      aria-hidden="true"
+      className="h-4 w-4"
+      fill="none"
+    >
+      <path
+        d="M4 10.5 8 14l8-8"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function TaskDropdown({
+  value,
+  options,
+  placeholder,
+  disabled,
+  onChange,
+}: TaskDropdownProps) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const selectedOption =
+    options.find((option) => option.id === value) ??
+    null;
+
+  useEffect(() => {
+    function onMouseDown(event: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(
+          event.target as Node,
+        )
+      ) {
+        setOpen(false);
+      }
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", onMouseDown);
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.removeEventListener(
+        "mousedown",
+        onMouseDown,
+      );
+      document.removeEventListener(
+        "keydown",
+        onKeyDown,
+      );
+    };
+  }, []);
+
+  useEffect(() => {
+    if (disabled) {
+      setOpen(false);
+    }
+  }, [disabled]);
+
+  const selectedLabel = selectedOption
+    ? `${selectedOption.primaryLabel}${
+        selectedOption.secondaryLabel
+          ? ` — ${selectedOption.secondaryLabel}`
+          : ""
+      }`
+    : placeholder;
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative flex flex-col"
+    >
+      <button
+        type="button"
+        className={[
+          "form-control form-control--select w-full",
+          "inline-flex items-center justify-between gap-2",
+          "rounded-md border text-left text-sm font-medium",
+          "bg-emerald-50 text-emerald-800",
+          "border-emerald-200",
+          "focus:outline-none focus:ring-2 focus:ring-emerald-400",
+          disabled
+            ? "cursor-not-allowed opacity-50"
+            : "cursor-pointer hover:bg-emerald-100",
+        ].join(" ")}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        disabled={disabled}
+        onClick={() => {
+          if (!disabled) {
+            setOpen((current) => !current);
+          }
+        }}
+      >
+        <span className="truncate">
+          {selectedLabel}
+        </span>
+
+        {open ? (
+          <IoIosArrowDropup
+            className="shrink-0"
+            size={18}
+            aria-hidden="true"
+          />
+        ) : (
+          <IoIosArrowDropdown
+            className="shrink-0"
+            size={18}
+            aria-hidden="true"
+          />
+        )}
+      </button>
+
+      {open && !disabled ? (
+        <div
+          className="
+            absolute left-0 right-0 top-full z-50 mt-2
+            max-h-60 w-full overflow-auto
+            rounded-md border border-emerald-200
+            bg-white shadow-lg
+          "
+          role="listbox"
+        >
+          {options.map((option) => {
+            const selected = option.id === value;
+
+            return (
+              <button
+                key={option.id}
+                type="button"
+                role="option"
+                aria-selected={selected}
+                className={[
+                  "flex w-full items-center gap-2 px-3 py-2",
+                  "text-left text-sm",
+                  selected
+                    ? "bg-emerald-50 text-emerald-700"
+                    : "text-slate-700",
+                  "hover:bg-emerald-100 hover:text-emerald-800",
+                ].join(" ")}
+                onClick={() => {
+                  onChange(option.id);
+                  setOpen(false);
+                }}
+              >
+                <span
+                  className={[
+                    "inline-flex h-4 w-4 shrink-0",
+                    "items-center justify-center",
+                    "rounded-sm border",
+                    selected
+                      ? "border-emerald-500 bg-emerald-500 text-white"
+                      : "border-slate-300 text-transparent",
+                  ].join(" ")}
+                >
+                  <CheckIcon />
+                </span>
+
+                <span className="min-w-0">
+                  <span className="block truncate">
+                    {option.primaryLabel}
+                  </span>
+                  {option.secondaryLabel ? (
+                    <span className="block truncate text-xs text-slate-500">
+                      {option.secondaryLabel}
+                    </span>
+                  ) : null}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 export default function PlanningTaskModal({
   open,
@@ -44,6 +267,8 @@ export default function PlanningTaskModal({
   const [projectId, setProjectId] = useState("");
   const [assignedToId, setAssignedToId] =
     useState("");
+  const [taskDate, setTaskDate] = useState("");
+  const [taskTime, setTaskTime] = useState("");
   const [assignees, setAssignees] = useState<
     PlanningTaskAssigneeDTO[]
   >([]);
@@ -68,6 +293,16 @@ export default function PlanningTaskModal({
     setAssignedToId(
       mode === "edit"
         ? task?.assignedToId ?? ""
+        : "",
+    );
+    setTaskDate(
+      mode === "edit"
+        ? task?.taskDate ?? ""
+        : todayLocalDateInput(),
+    );
+    setTaskTime(
+      mode === "edit"
+        ? task?.taskTime ?? ""
         : "",
     );
     setAssignees([]);
@@ -141,6 +376,8 @@ export default function PlanningTaskModal({
     const normalizedProjectId = projectId.trim();
     const normalizedAssignedToId =
       assignedToId.trim();
+    const normalizedTaskDate = taskDate.trim();
+    const normalizedTaskTime = taskTime.trim();
 
     if (!normalizedTitle) {
       setError(
@@ -161,10 +398,44 @@ export default function PlanningTaskModal({
       return;
     }
 
+    if (!normalizedTaskDate) {
+      setError(
+        "La date de la tâche est obligatoire.",
+      );
+      return;
+    }
+
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(
+        normalizedTaskDate,
+      )
+    ) {
+      setError("La date de la tâche est invalide.");
+      return;
+    }
+
+    if (!normalizedTaskTime) {
+      setError(
+        "L’heure de la tâche est obligatoire.",
+      );
+      return;
+    }
+
+    if (
+      !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(
+        normalizedTaskTime,
+      )
+    ) {
+      setError("L’heure de la tâche est invalide.");
+      return;
+    }
+
     const payload: PlanningTaskMutationPayload = {
       title: normalizedTitle,
       projectId: normalizedProjectId,
       assignedToId: normalizedAssignedToId,
+      taskDate: normalizedTaskDate,
+      taskTime: normalizedTaskTime,
     };
 
     if (mode === "edit" && !task) {
@@ -202,6 +473,28 @@ export default function PlanningTaskModal({
   };
 
   if (!open) return null;
+
+  const projectOptions: TaskDropdownOption[] =
+    projects.map((project) => ({
+      id: project.id,
+      primaryLabel: project.chantierName,
+      secondaryLabel:
+        project.responsable?.trim() || undefined,
+    }));
+
+  const assigneeOptions: TaskDropdownOption[] =
+    assignees.map((assignee) => {
+      const assigneeName = assignee.name?.trim();
+
+      return {
+        id: assignee.id,
+        primaryLabel:
+          assigneeName || assignee.email,
+        secondaryLabel: assigneeName
+          ? assignee.email
+          : undefined,
+      };
+    });
 
   return createPortal(
     <div className="fixed inset-0 z-99">
@@ -248,92 +541,109 @@ export default function PlanningTaskModal({
           ) : null}
 
           <div className="overflow-visible px-5 py-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <div className="flex flex-col">
-                <label
-                  htmlFor="planning-task-title"
-                  className="mb-1 text-xs font-semibold text-gray-700"
-                >
-                  Tâche
-                </label>
-                <input
-                  id="planning-task-title"
-                  className={fieldClass}
-                  value={title}
-                  onChange={(event) => {
-                    setTitle(event.target.value);
-                    if (error) setError("");
-                  }}
-                  placeholder="Ex. : Préparer le rapport de contrôle"
-                  disabled={submitting}
-                />
+            <div className="flex flex-col gap-4">
+              <div className="text-sm font-semibold text-gray-800">
+                Informations de la tâche
               </div>
 
-              <div className="flex flex-col">
-                <label
-                  htmlFor="planning-task-project"
-                  className="mb-1 text-xs font-semibold text-gray-700"
-                >
-                  Chantier
-                </label>
-                <select
-                  id="planning-task-project"
-                  className={`${fieldClass} form-control--select`}
-                  value={projectId}
-                  onChange={(event) => {
-                    setProjectId(event.target.value);
-                    if (error) setError("");
-                  }}
-                  disabled={submitting}
-                >
-                  <option value="">
-                    Sélectionner un chantier
-                  </option>
-                  {projects.map((project) => (
-                    <option
-                      key={project.id}
-                      value={project.id}
-                    >
-                      {project.chantierName}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
+                <div className="flex flex-col md:col-span-2">
+                  <label
+                    htmlFor="planning-task-title"
+                    className="mb-1 text-xs font-semibold text-gray-700"
+                  >
+                    Tâche
+                  </label>
+                  <input
+                    id="planning-task-title"
+                    className={fieldClass}
+                    value={title}
+                    onChange={(event) => {
+                      setTitle(event.target.value);
+                      if (error) setError("");
+                    }}
+                    placeholder="Ex. : Préparer le rapport de contrôle"
+                    disabled={submitting}
+                  />
+                </div>
 
-              <div className="flex flex-col">
-                <label
-                  htmlFor="planning-task-assignee"
-                  className="mb-1 text-xs font-semibold text-gray-700"
-                >
-                  Assignée à
-                </label>
-                <select
-                  id="planning-task-assignee"
-                  className={`${fieldClass} form-control--select`}
-                  value={assignedToId}
-                  onChange={(event) => {
-                    setAssignedToId(
-                      event.target.value,
-                    );
-                    if (error) setError("");
-                  }}
-                  disabled={
-                    submitting || assigneesLoading
-                  }
-                >
-                  <option value="">
-                    Sélectionner une personne
-                  </option>
-                  {assignees.map((assignee) => (
-                    <option
-                      key={assignee.id}
-                      value={assignee.id}
-                    >
-                      {assignee.name?.trim() ||
-                        assignee.email}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex flex-col md:col-span-2">
+                  <label className="mb-1 text-xs font-semibold text-gray-700">
+                    Chantier
+                  </label>
+                  <TaskDropdown
+                    value={projectId}
+                    options={projectOptions}
+                    placeholder="Sélectionner un chantier"
+                    disabled={submitting}
+                    onChange={(nextProjectId) => {
+                      setProjectId(nextProjectId);
+                      if (error) setError("");
+                    }}
+                  />
+                </div>
+
+                <div className="flex flex-col md:col-span-2">
+                  <label className="mb-1 text-xs font-semibold text-gray-700">
+                    Assignée à
+                  </label>
+                  <TaskDropdown
+                    value={assignedToId}
+                    options={assigneeOptions}
+                    placeholder={
+                      assigneesLoading
+                        ? "Chargement..."
+                        : "Sélectionner une personne"
+                    }
+                    disabled={
+                      submitting || assigneesLoading
+                    }
+                    onChange={(nextAssigneeId) => {
+                      setAssignedToId(nextAssigneeId);
+                      if (error) setError("");
+                    }}
+                  />
+                </div>
+
+                <div className="flex flex-col md:col-span-3">
+                  <label
+                    htmlFor="planning-task-date"
+                    className="mb-1 text-xs font-semibold text-gray-700"
+                  >
+                    Date de la tâche
+                  </label>
+                  <DatePickerInput
+                    id="planning-task-date"
+                    value={taskDate}
+                    onChange={(value) => {
+                      setTaskDate(value);
+                      if (error) setError("");
+                    }}
+                    disabled={submitting}
+                    className="w-full"
+                  />
+                </div>
+
+                <div className="flex flex-col md:col-span-3">
+                  <label
+                    htmlFor="planning-task-time"
+                    className="mb-1 text-xs font-semibold text-gray-700"
+                  >
+                    Heure de la tâche
+                  </label>
+                  <input
+                    id="planning-task-time"
+                    type="time"
+                    step={60}
+                    value={taskTime}
+                    onChange={(event) => {
+                      setTaskTime(event.target.value);
+                      if (error) setError("");
+                    }}
+                    disabled={submitting}
+                    className={fieldClass}
+                  />
+                </div>
               </div>
             </div>
           </div>

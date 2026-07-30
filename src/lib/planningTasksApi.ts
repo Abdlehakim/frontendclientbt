@@ -5,6 +5,8 @@ const BASE = "/planning/tasks";
 export type PlanningTaskDTO = {
   id: string;
   title: string;
+  taskDate: string | null;
+  taskTime: string | null;
   projectId: string;
   projectName: string;
   createdById: string | null;
@@ -25,6 +27,8 @@ export type PlanningTaskMutationPayload = {
   title: string;
   projectId: string;
   assignedToId: string;
+  taskDate: string;
+  taskTime: string;
 };
 
 class PlanningTasksApiError extends Error {
