@@ -20,13 +20,13 @@ export type SidebarItem = {
 
 export const sidebarItems: SidebarItem[] = [
   {
-    name: "Dashboard",
+    name: "Tableau de bord",
     to: APP_HREFS.dashboard,
     icon: FiGrid,
   },
 
   {
-    name: "Users",
+    name: "Utilisateurs",
     to: APP_HREFS.users,
     icon: FiUsers,
     permission: "company-owner",

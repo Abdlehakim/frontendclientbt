@@ -412,7 +412,7 @@ export default function Sidebar() {
             <div className="pointer-events-none hidden md:block absolute right-3 top-1">
               <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/15 text-[8px] uppercase tracking-wide">
                 <BiChevronUp size={8} />
-                <span>Top</span>
+                <span>Haut</span>
               </div>
             </div>
           )}
@@ -576,7 +576,7 @@ export default function Sidebar() {
           {!collapsed && atTop && showBottomShadow && (
             <div className="pointer-events-none absolute right-3 bottom-3">
               <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/25 text-[8px] uppercase tracking-wide">
-                <span>Scroll</span>
+                <span>Défiler</span>
                 <BiChevronDown size={8} />
               </div>
             </div>
