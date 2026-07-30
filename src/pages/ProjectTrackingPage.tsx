@@ -213,119 +213,121 @@ export default function ProjectTrackingPage() {
         <div className="text-sm text-red-600">{error}</div>
       ) : null}
 
-      <div className="relative flex-1 overflow-auto">
-        <table className="w-full table-fixed">
-          <thead className="sticky top-0 z-5 bg-(--primary) text-white">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <table className="table-fixed w-full">
+          <thead className="bg-(--primary) text-white">
             <tr>
-              <th className="py-2 text-center text-sm font-medium">
+              <th className="py-2 text-sm font-medium text-center">
                 Titre
               </th>
-              <th className="py-2 text-center text-sm font-medium">
+              <th className="py-2 text-sm font-medium text-center border-x-4 border-white">
                 Chantier
               </th>
-              <th className="py-2 text-center text-sm font-medium">
+              <th className="py-2 text-sm font-medium text-center">
                 Créé par
               </th>
-              <th className="w-28 py-2 text-center text-sm font-medium">
+              <th className="py-2 text-sm font-medium text-center border-x-4 border-white">
                 Créé le
               </th>
-              <th className="w-28 py-2 text-center text-sm font-medium">
+              <th className="py-2 text-sm font-medium text-center">
                 MàJ le
               </th>
-              <th className="w-36 py-2 text-center text-sm font-medium">
+              <th className="w-2/9 py-2 text-sm font-medium text-center border-l-4 border-white">
                 Actions
               </th>
             </tr>
           </thead>
-
-          {displayedReports.length === 0 && !loading ? (
-            <tbody>
-              <tr>
-                <td
-                  colSpan={6}
-                  className="bg-white py-8 text-center text-gray-600"
-                >
-                  Aucun essai à la compression trouvé.
-                </td>
-              </tr>
-            </tbody>
-          ) : (
-            <tbody className="divide-y divide-gray-200 [&>tr]:h-14">
-              {displayedReports.map((report, index) => (
-                <tr
-                  key={report.id}
-                  className={index % 2 ? "bg-gray-100" : "bg-white"}
-                >
-                  <td className="truncate px-2 py-2 text-center">
-                    {report.title ?? "—"}
-                  </td>
-                  <td className="px-2 py-2 text-center">
-                    <div className="truncate font-semibold">
-                      {report.project.chantierName}
-                    </div>
-                  </td>
-                  <td className="truncate px-2 py-2 text-center">
-                    {report.createdByName || "—"}
-                  </td>
-                  <td className="px-2 py-2 text-center">
-                    {formatDate(report.createdAt)}
-                  </td>
-                  <td className="px-2 py-2 text-center">
-                    {formatDate(report.updatedAt)}
-                  </td>
-                  <td className="px-2 py-2">
-                    <div className="flex items-center justify-center gap-2">
-                      <button
-                        type="button"
-                        className="ButtonSquare"
-                        title="Modifier"
-                        onClick={() =>
-                          openEditor("edit", report.id)
-                        }
-                      >
-                        <FiEdit3 size={14} />
-                      </button>
-                      <button
-                        type="button"
-                        className="ButtonSquare"
-                        title="Voir"
-                        onClick={() =>
-                          openEditor("view", report.id)
-                        }
-                      >
-                        <FaRegEye size={14} />
-                      </button>
-                      <button
-                        type="button"
-                        className="ButtonSquareDelete"
-                        title="Supprimer"
-                        onClick={() =>
-                          setDeleteTarget({
-                            id: report.id,
-                            name:
-                              report.title ||
-                              report.project.chantierName,
-                          })
-                        }
-                      >
-                        <FaTrashAlt size={14} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          )}
         </table>
 
-        {loading ? (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/75">
-            <FaSpinner className="animate-spin text-3xl" />
-          </div>
-        ) : null}
+        <div className="relative flex-1 overflow-auto">
+          <table className="table-fixed w-full">
+            {displayedReports.length === 0 && !loading ? (
+              <tbody>
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="py-6 text-center text-gray-600"
+                  >
+                    Aucun essai à la compression trouvé.
+                  </td>
+                </tr>
+              </tbody>
+            ) : (
+              <tbody className="divide-y divide-gray-200 [&>tr]:h-12">
+                {displayedReports.map((report, index) => (
+                  <tr
+                    key={report.id}
+                    className={index % 2 ? "bg-gray-100" : "bg-white"}
+                  >
+                    <td className="py-2 text-center font-semibold truncate">
+                      {report.title?.trim() || "—"}
+                    </td>
+                    <td className="py-2 text-center truncate">
+                      {report.project.chantierName?.trim() || "—"}
+                    </td>
+                    <td className="py-2 text-center truncate">
+                      {report.createdByName?.trim() || "—"}
+                    </td>
+                    <td className="py-2 text-center">
+                      {formatDate(report.createdAt)}
+                    </td>
+                    <td className="py-2 text-center">
+                      {formatDate(report.updatedAt)}
+                    </td>
+                    <td className="py-2 w-2/9">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          className="ButtonSquare"
+                          title="Modifier"
+                          onClick={() =>
+                            openEditor("edit", report.id)
+                          }
+                        >
+                          <FiEdit3 size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          className="ButtonSquare"
+                          title="Voir"
+                          onClick={() =>
+                            openEditor("view", report.id)
+                          }
+                        >
+                          <FaRegEye size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          className="ButtonSquareDelete"
+                          title="Supprimer"
+                          onClick={() =>
+                            setDeleteTarget({
+                              id: report.id,
+                              name:
+                                report.title ||
+                                report.project.chantierName,
+                            })
+                          }
+                        >
+                          <FaTrashAlt size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            )}
+          </table>
+
+          {loading ? (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white bg-opacity-75">
+              <FaSpinner className="animate-spin text-3xl" />
+            </div>
+          ) : null}
+        </div>
       </div>
 
-      <div className="mt-4 flex justify-center">
+      <div className="flex justify-center mt-6">
         <TablePagination
           currentPage={currentPage}
           totalPages={totalPages}
