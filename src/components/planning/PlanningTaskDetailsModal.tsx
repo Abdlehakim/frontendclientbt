@@ -6,11 +6,15 @@ import {
   FiEdit3,
   FiFileText,
   FiMapPin,
+  FiTag,
   FiUser,
   FiUserCheck,
 } from "react-icons/fi";
 import ProjectModalShell from "@/components/ferraillage/ProjectModalShell";
-import type { PlanningTaskDTO } from "@/lib/planningTasksApi";
+import {
+  getPlanningTaskTypeLabel,
+  type PlanningTaskDTO,
+} from "@/lib/planningTasksApi";
 
 type PlanningTaskDetailsModalProps = {
   open: boolean;
@@ -130,6 +134,19 @@ export default function PlanningTaskDetailsModal({
           label="Tâche"
           value={displayText(task.title)}
           className="md:col-span-2"
+        />
+
+        <DetailItem
+          icon={
+            <FiTag
+              aria-hidden="true"
+              size={18}
+            />
+          }
+          label="Type d’activité"
+          value={getPlanningTaskTypeLabel(
+            task.taskType,
+          )}
         />
 
         <DetailItem

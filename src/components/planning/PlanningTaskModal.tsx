@@ -14,11 +14,14 @@ import {
 import { DatePickerInput } from "@/components/DatePickerInput";
 import type { FerRapportDTO } from "@/lib/ferraillageApi";
 import {
+  PLANNING_TASK_TYPE_OPTIONS,
   isPlanningTasksApiError,
+  isPlanningTaskType,
   planningTasksApi,
   type PlanningTaskAssigneeDTO,
   type PlanningTaskDTO,
   type PlanningTaskMutationPayload,
+  type PlanningTaskType,
 } from "@/lib/planningTasksApi";
 
 type PlanningTaskModalProps = {
@@ -264,6 +267,8 @@ export default function PlanningTaskModal({
   onSaved,
 }: PlanningTaskModalProps) {
   const [title, setTitle] = useState("");
+  const [taskType, setTaskType] =
+    useState<PlanningTaskType>("TASK");
   const [projectId, setProjectId] = useState("");
   const [assignedToId, setAssignedToId] =
     useState("");
@@ -284,6 +289,12 @@ export default function PlanningTaskModal({
 
     setTitle(
       mode === "edit" ? task?.title ?? "" : "",
+    );
+    setTaskType(
+      mode === "edit" &&
+        isPlanningTaskType(task?.taskType)
+        ? task.taskType
+        : "TASK",
     );
     setProjectId(
       mode === "edit"
@@ -432,6 +443,7 @@ export default function PlanningTaskModal({
 
     const payload: PlanningTaskMutationPayload = {
       title: normalizedTitle,
+      taskType,
       projectId: normalizedProjectId,
       assignedToId: normalizedAssignedToId,
       taskDate: normalizedTaskDate,
@@ -473,6 +485,12 @@ export default function PlanningTaskModal({
   };
 
   if (!open) return null;
+
+  const taskTypeOptions: TaskDropdownOption[] =
+    PLANNING_TASK_TYPE_OPTIONS.map((option) => ({
+      id: option.id,
+      primaryLabel: option.label,
+    }));
 
   const projectOptions: TaskDropdownOption[] =
     projects.map((project) => ({
@@ -546,7 +564,7 @@ export default function PlanningTaskModal({
                 Informations de la tâche
               </div>
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-8">
                 <div className="flex flex-col md:col-span-2">
                   <label
                     htmlFor="planning-task-title"
@@ -564,6 +582,27 @@ export default function PlanningTaskModal({
                     }}
                     placeholder="Ex. : Préparer le rapport de contrôle"
                     disabled={submitting}
+                  />
+                </div>
+
+                <div className="flex flex-col md:col-span-2">
+                  <label className="mb-1 text-xs font-semibold text-gray-700">
+                    Type d’activité
+                  </label>
+                  <TaskDropdown
+                    value={taskType}
+                    options={taskTypeOptions}
+                    placeholder="Sélectionner un type"
+                    disabled={submitting}
+                    onChange={(nextTaskType) => {
+                      if (
+                        isPlanningTaskType(nextTaskType)
+                      ) {
+                        setTaskType(nextTaskType);
+                      }
+
+                      if (error) setError("");
+                    }}
                   />
                 </div>
 
@@ -605,7 +644,7 @@ export default function PlanningTaskModal({
                   />
                 </div>
 
-                <div className="flex flex-col md:col-span-3">
+                <div className="flex flex-col md:col-span-4">
                   <label
                     htmlFor="planning-task-date"
                     className="mb-1 text-xs font-semibold text-gray-700"
@@ -624,7 +663,7 @@ export default function PlanningTaskModal({
                   />
                 </div>
 
-                <div className="flex flex-col md:col-span-3">
+                <div className="flex flex-col md:col-span-4">
                   <label
                     htmlFor="planning-task-time"
                     className="mb-1 text-xs font-semibold text-gray-700"

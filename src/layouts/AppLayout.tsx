@@ -41,6 +41,7 @@ import {
   type CompressionPlanningEventDTO,
 } from "@/lib/compressionApi";
 import {
+  getPlanningTaskTypeLabel,
   isPlanningTasksApiError,
   planningTasksApi,
   type PlanningTaskDTO,
@@ -195,7 +196,10 @@ function mapTaskNotification(
   const notification: CalendarNotification = {
     kind: "TASK",
     id: task.id,
-    title: `Tâche – ${task.title}`,
+    title:
+      `${getPlanningTaskTypeLabel(
+        task.taskType,
+      )} – ${task.title}`,
     projectId: task.projectId,
     projectName: task.projectName,
     scheduledDate,

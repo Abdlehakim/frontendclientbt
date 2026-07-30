@@ -16,6 +16,7 @@ import PlanningTaskModal from "@/components/planning/PlanningTaskModal";
 import TablePagination from "@/components/tablePagination";
 import { useProjectSelection } from "@/contexts/ProjectSelectionContext";
 import {
+  getPlanningTaskTypeLabel,
   isPlanningTasksApiError,
   planningTasksApi,
   type PlanningTaskDTO,
@@ -308,6 +309,15 @@ export default function ProjectPlanningTasksPage() {
                   (task, index) => {
                     const formattedTaskDate =
                       formatTaskDate(task.taskDate);
+                    const taskTypeLabel =
+                      getPlanningTaskTypeLabel(
+                        task.taskType,
+                      );
+                    const taskMeta = [
+                      taskTypeLabel,
+                      formattedTaskDate,
+                      task.taskTime || "",
+                    ].filter(Boolean);
 
                     return (
                       <tr
@@ -322,15 +332,9 @@ export default function ProjectPlanningTasksPage() {
                           <div className="truncate font-semibold">
                             {task.title}
                           </div>
-                          {formattedTaskDate ||
-                          task.taskTime ? (
+                          {taskMeta.length > 0 ? (
                             <div className="mt-1 truncate text-xs font-normal text-slate-500">
-                              {formattedTaskDate}
-                              {formattedTaskDate &&
-                              task.taskTime
-                                ? " • "
-                                : ""}
-                              {task.taskTime || ""}
+                              {taskMeta.join(" • ")}
                             </div>
                           ) : null}
                         </td>

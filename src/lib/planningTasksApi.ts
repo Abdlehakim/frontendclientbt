@@ -2,9 +2,59 @@ import { API_BASE } from "./apiBase";
 
 const BASE = "/planning/tasks";
 
+export type PlanningTaskType =
+  | "TASK"
+  | "MEETING"
+  | "FOLLOW_UP"
+  | "PURCHASE";
+
+export const PLANNING_TASK_TYPE_OPTIONS: ReadonlyArray<{
+  id: PlanningTaskType;
+  label: string;
+}> = [
+  {
+    id: "TASK",
+    label: "Tâche",
+  },
+  {
+    id: "MEETING",
+    label: "Réunion / Appel",
+  },
+  {
+    id: "FOLLOW_UP",
+    label: "Suivi projet",
+  },
+  {
+    id: "PURCHASE",
+    label: "Achat / Fournisseur",
+  },
+];
+
+export function isPlanningTaskType(
+  value: unknown,
+): value is PlanningTaskType {
+  return (
+    value === "TASK" ||
+    value === "MEETING" ||
+    value === "FOLLOW_UP" ||
+    value === "PURCHASE"
+  );
+}
+
+export function getPlanningTaskTypeLabel(
+  value: unknown,
+): string {
+  return (
+    PLANNING_TASK_TYPE_OPTIONS.find(
+      (option) => option.id === value,
+    )?.label ?? "Tâche"
+  );
+}
+
 export type PlanningTaskDTO = {
   id: string;
   title: string;
+  taskType: PlanningTaskType;
   taskDate: string | null;
   taskTime: string | null;
   projectId: string;
@@ -25,6 +75,7 @@ export type PlanningTaskAssigneeDTO = {
 
 export type PlanningTaskMutationPayload = {
   title: string;
+  taskType: PlanningTaskType;
   projectId: string;
   assignedToId: string;
   taskDate: string;

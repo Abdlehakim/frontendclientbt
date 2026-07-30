@@ -13,8 +13,10 @@ import {
   type CompressionPlanningEventDTO,
 } from "@/lib/compressionApi";
 import {
+  isPlanningTaskType,
   planningTasksApi,
   type PlanningTaskDTO,
+  type PlanningTaskType,
 } from "@/lib/planningTasksApi";
 import { useProjectSelection } from "@/contexts/ProjectSelectionContext";
 
@@ -93,6 +95,16 @@ const CATEGORY_CONFIG: Record<
     accentClass: "border-l-indigo-500",
     dotClass: "bg-indigo-500",
   },
+};
+
+const TASK_TYPE_TO_PLANNING_CATEGORY: Record<
+  PlanningTaskType,
+  PlanningCategory
+> = {
+  TASK: "TASK",
+  MEETING: "CALL",
+  FOLLOW_UP: "SUIVI",
+  PURCHASE: "ACHAT",
 };
 
 function startOfLocalDay(value: Date): Date {
@@ -432,13 +444,20 @@ function mapTaskPlanningEvent(
     return null;
   }
 
+  const category =
+    isPlanningTaskType(task.taskType)
+      ? TASK_TYPE_TO_PLANNING_CATEGORY[
+          task.taskType
+        ]
+      : "TASK";
+
   return {
     id: `task-${task.id}`,
     projectId: task.projectId,
     date,
     start,
     title: task.title,
-    category: "TASK",
+    category,
   };
 }
 
