@@ -36,9 +36,17 @@ type PlanningEvent = {
   category: PlanningCategory;
 };
 
+type PositionedPlanningEvent = {
+  event: PlanningEvent;
+  columnIndex: number;
+  columnCount: number;
+};
+
 const DEFAULT_START_HOUR = 8;
 const DEFAULT_END_HOUR = 18;
 const HOUR_HEIGHT = 58;
+const EVENT_HORIZONTAL_INSET = 10;
+const EVENT_COLUMN_GAP = 6;
 
 const CATEGORY_CONFIG: Record<
   PlanningCategory,
@@ -215,6 +223,98 @@ function timeToMinutes(value: string): number | null {
   }
 
   return hours * 60 + minutes;
+}
+
+function layoutSameTimeEvents(
+  events: PlanningEvent[],
+): PositionedPlanningEvent[] {
+  const groupKeys = events.map((event, index) => {
+    const startMinutes = timeToMinutes(event.start);
+
+    return startMinutes === null
+      ? `invalid:${event.id}:${index}`
+      : `time:${startMinutes}`;
+  });
+  const groups = new Map<string, PlanningEvent[]>();
+
+  events.forEach((event, index) => {
+    const groupKey = groupKeys[index];
+    const group = groups.get(groupKey);
+
+    if (group) {
+      group.push(event);
+    } else {
+      groups.set(groupKey, [event]);
+    }
+  });
+
+  const nextColumnIndex = new Map<string, number>();
+
+  return events.map((event, index) => {
+    const groupKey = groupKeys[index];
+    const group = groups.get(groupKey);
+    const columnIndex =
+      nextColumnIndex.get(groupKey) ?? 0;
+
+    nextColumnIndex.set(groupKey, columnIndex + 1);
+
+    return {
+      event,
+      columnIndex,
+      columnCount: group?.length ?? 1,
+    };
+  });
+}
+
+function getEventHorizontalStyle(
+  columnIndex: number,
+  columnCount: number,
+): {
+  left: number | string;
+  right?: number;
+  width?: string;
+} {
+  if (columnCount <= 1) {
+    return {
+      left: EVENT_HORIZONTAL_INSET,
+      right: EVENT_HORIZONTAL_INSET,
+    };
+  }
+
+  const totalGap =
+    (columnCount - 1) * EVENT_COLUMN_GAP;
+  const totalFixedWidth =
+    EVENT_HORIZONTAL_INSET * 2 + totalGap;
+  const columnWidthPercent = 100 / columnCount;
+  const columnWidthOffset =
+    totalFixedWidth / columnCount;
+  const leftPercent =
+    columnIndex * columnWidthPercent;
+  const leftOffset =
+    EVENT_HORIZONTAL_INSET +
+    columnIndex *
+      (EVENT_COLUMN_GAP - columnWidthOffset);
+  const normalizedLeftPercent = Number(
+    leftPercent.toFixed(6),
+  );
+  const normalizedLeftOffset = Number(
+    Math.abs(leftOffset).toFixed(6),
+  );
+  const normalizedWidthPercent = Number(
+    columnWidthPercent.toFixed(6),
+  );
+  const normalizedWidthOffset = Number(
+    columnWidthOffset.toFixed(6),
+  );
+  const leftOperator =
+    leftOffset < 0 ? "-" : "+";
+
+  return {
+    left:
+      `calc(${normalizedLeftPercent}% ${leftOperator} ${normalizedLeftOffset}px)`,
+    width:
+      `calc(${normalizedWidthPercent}% - ${normalizedWidthOffset}px)`,
+  };
 }
 
 function getEventPosition(
@@ -743,6 +843,8 @@ export default function ProjectPlanningPage() {
                         selectedProjectId
                     ),
                 );
+              const positionedDayEvents =
+                layoutSameTimeEvents(dayEvents);
 
               return (
                 <div
@@ -791,7 +893,11 @@ export default function ProjectPlanningPage() {
                     ),
                   )}
 
-                  {dayEvents.map((event) => {
+                  {positionedDayEvents.map(({
+                    event,
+                    columnIndex,
+                    columnCount,
+                  }) => {
                     const position = getEventPosition(
                       event,
                       calendarStartHour,
@@ -800,6 +906,11 @@ export default function ProjectPlanningPage() {
                     const eventTime = event.end
                       ? `${event.start} – ${event.end}`
                       : event.start;
+                    const horizontalStyle =
+                      getEventHorizontalStyle(
+                        columnIndex,
+                        columnCount,
+                      );
 
                     return (
                       <div
@@ -824,8 +935,7 @@ export default function ProjectPlanningPage() {
                                 34,
                               )
                             : position.height,
-                          left: 10,
-                          right: 10,
+                          ...horizontalStyle,
                         }}
                       >
                         <div className="flex min-w-0 items-start gap-1.5">
