@@ -265,7 +265,7 @@ export default function CreateRapportModal({
         setErr(
           isFerApiError(error)
             ? error.message
-            : "Failed to load projects",
+            : "Impossible de charger les projets.",
         );
       })
       .finally(() => {
@@ -299,7 +299,7 @@ export default function CreateRapportModal({
 
     const normalizedName = name.trim();
     if (!normalizedName) {
-      setErr("Le nom du Ferraillage est obligatoire.");
+      setErr("Le titre du rapport est obligatoire.");
       return;
     }
 
@@ -320,7 +320,7 @@ export default function CreateRapportModal({
       setErr(
         isFerApiError(error)
           ? error.message
-          : "Report creation failed",
+          : "Impossible de créer le rapport.",
       );
     } finally {
       setSubmitting(false);
@@ -350,7 +350,7 @@ export default function CreateRapportModal({
         >
           <div className="px-5 py-2 bg-gray-50 rounded-t-xl border-b border-gray-200 flex items-center justify-between">
             <div className="text-sm font-semibold text-gray-900">
-              Créer Rapport
+              Créer un rapport
             </div>
 
             <button
@@ -405,7 +405,7 @@ export default function CreateRapportModal({
                     htmlFor="ferraillage-report-name"
                     className="text-xs font-semibold text-gray-700 mb-1"
                   >
-                    Nom du Ferraillage
+                    Titre du rapport
                   </label>
                   <input
                     id="ferraillage-report-name"
@@ -415,7 +415,7 @@ export default function CreateRapportModal({
                       setName(event.target.value);
                       if (err) setErr("");
                     }}
-                    placeholder="Ex: Ferraillage Bloc A"
+                    placeholder="Ex. : Ferraillage – Bloc A"
                     disabled={submitting}
                   />
                 </div>

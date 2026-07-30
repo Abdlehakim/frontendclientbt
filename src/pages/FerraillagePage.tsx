@@ -63,7 +63,7 @@ export default function FerraillagePage() {
       setErr(
         isFerApiError(error)
           ? error.message
-          : "Impossible de charger les données de Ferraillage.",
+          : "Impossible de charger les rapports de ferraillage.",
       );
     } finally {
       setLoading(false);
@@ -182,13 +182,15 @@ export default function FerraillagePage() {
 
     if (!projectId) {
       setErr(
-        "Le projet lié à ce Ferraillage est introuvable.",
+        "Le projet lié à ce rapport de ferraillage est introuvable.",
       );
       return;
     }
 
     setViewProjectId(projectId);
-    setViewName(report.name?.trim() || "Ferraillage");
+    setViewName(
+      report.name?.trim() || "Rapport de ferraillage",
+    );
     setViewOpen(true);
   }
 
@@ -293,18 +295,18 @@ export default function FerraillagePage() {
             type="button"
             onClick={() => setCreateOpen(true)}
           >
-            Créer Rapport
+            Créer un rapport
           </button>
         </div>
       </div>
 
       <div className="flex justify-between items-center gap-6 h-12">
         <div className="flex items-center gap-2">
-          <label className="font-medium">Recherche:</label>
+          <label className="font-medium">Recherche :</label>
           <input
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder="Ferraillage / chantier / créateur"
+            placeholder="Titre du rapport / chantier / créateur"
             className="border border-gray-300 rounded px-2 py-1 bg-white"
           />
         </div>
@@ -317,7 +319,7 @@ export default function FerraillagePage() {
           <thead className="bg-(--primary) text-white">
             <tr>
               <th className="py-2 text-sm font-medium text-center">
-                Ferraillage
+                Titre du rapport
               </th>
               <th className="py-2 text-sm font-medium text-center border-x-4 border-white">
                 Chantier
@@ -329,7 +331,7 @@ export default function FerraillagePage() {
                 Créé le
               </th>
               <th className="py-2 text-sm font-medium text-center">
-                MàJ le
+                Mis à jour le
               </th>
               <th className="w-2/9 py-2 text-sm font-medium text-center border-l-4 border-white">
                 Actions
@@ -347,7 +349,7 @@ export default function FerraillagePage() {
                     colSpan={6}
                     className="py-6 text-center text-gray-600"
                   >
-                    Aucune donnée de ferraillage trouvée.
+                    Aucun rapport de ferraillage trouvé.
                   </td>
                 </tr>
               </tbody>
