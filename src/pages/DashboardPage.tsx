@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/auth/useAuth";
 import { api, type ModuleDTO, type ModuleKey } from "@/lib/api";
-import { useNavigate, useLocation } from "react-router-dom";
 
 function moduleLabelFromKey(m: ModuleKey) {
   if (m === "MODULE_1") return "Calculateur";
@@ -10,8 +9,6 @@ function moduleLabelFromKey(m: ModuleKey) {
 }
 
 export default function DashboardPage() {
-  const nav = useNavigate();
-  const loc = useLocation();
   const { user, subscription, plan } = useAuth();
 
   const [enabledTree, setEnabledTree] = useState<ModuleDTO[]>([]);
@@ -41,8 +38,6 @@ export default function DashboardPage() {
 
   const hasEnabledSomething = useMemo(() => enabledTree.length > 0, [enabledTree]);
 
-  const current = loc.pathname + loc.search;
-
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between gap-4">
@@ -50,14 +45,6 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-extrabold text-slate-900">Dashboard</h1>
           <div className="text-sm text-neutral-600">{user?.email ?? "—"}</div>
         </div>
-
-        <button
-          type="button"
-          onClick={() => nav(`/onboarding/modules?redirectTo=${encodeURIComponent(current)}`)}
-          className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700"
-        >
-          Update modules
-        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -84,7 +71,7 @@ export default function DashboardPage() {
           {loadingTree ? (
             <div className="text-sm text-neutral-600">Loading modules…</div>
           ) : !hasEnabledSomething ? (
-            <div className="text-sm text-neutral-600">No module enabled</div>
+            <div className="text-sm text-neutral-600">No active module available</div>
           ) : (
             <div className="space-y-3">
               {enabledTree.map((m) => (

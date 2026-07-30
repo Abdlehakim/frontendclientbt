@@ -90,11 +90,6 @@ export type MeResponse = {
   } | null;
 };
 
-export type SelectModulesPayload = {
-  moduleKeys: ModuleKey[];
-  subModuleKeys: SubModuleKey[];
-};
-
 class ApiError extends Error {
   status: number;
 
@@ -157,15 +152,7 @@ export const api = {
       method: "POST",
     }),
 
-  listModules: () => request<{ modules: ModuleDTO[] }>("/modules"),
-
   listEnabledModules: () => request<{ modules: ModuleDTO[] }>("/modules/enabled"),
-
-  selectModules: (payload: SelectModulesPayload) =>
-    request<{ ok: true }>("/modules/select", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    }),
 
   listUsers: () => request<{ users: CompanyUserDTO[] }>("/users"),
 
