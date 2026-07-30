@@ -84,13 +84,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setModules(effectiveModules);
       setSubModules(effectiveSubModules);
 
-      const planSelected = Boolean(sub?.plan) && Boolean(sub?.billingCycle);
-      const modulesSelected = effectiveModules.length > 0 && effectiveSubModules.length > 0;
+      const modulesSelected = effectiveModules.length > 0;
 
       const complete =
         data.onboarding?.complete ??
         data.onboardingComplete ??
-        (planSelected && modulesSelected);
+        modulesSelected;
 
       setOnboardingComplete(Boolean(complete));
       setSessionExpiresAt(

@@ -157,12 +157,6 @@ export const api = {
       method: "POST",
     }),
 
-  selectPlan: (plan: Plan, billingCycle: BillingCycle) =>
-    request<{ ok: true }>("/onboarding/plan", {
-      method: "POST",
-      body: JSON.stringify({ plan, billingCycle }),
-    }),
-
   listModules: () => request<{ modules: ModuleDTO[] }>("/modules"),
 
   listEnabledModules: () => request<{ modules: ModuleDTO[] }>("/modules/enabled"),

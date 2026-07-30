@@ -1,6 +1,5 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
-import type { ModuleKey } from "@/lib/api";
 
 function cleanRedirectTo(pathname: string, search: string) {
   const u = new URL(pathname + search, "http://local");
@@ -11,32 +10,17 @@ function cleanRedirectTo(pathname: string, search: string) {
 
 export default function AppGuard() {
   const loc = useLocation();
-  const { user, loading, subscriptionActive, subscription, plan, modules } = useAuth();
+  const { user, loading, modules } = useAuth();
 
   if (loading) return <div className="p-6">Loading...</div>;
   if (!user) return <Navigate to="/login" replace />;
 
   const current = cleanRedirectTo(loc.pathname, loc.search);
 
-  const effectivePlan = subscription?.plan ?? plan ?? null;
-  const effectiveCycle = subscription?.billingCycle ?? null;
-  const planSelected = Boolean(effectivePlan) && Boolean(effectiveCycle);
+  const modulesSelected =
+    Array.isArray(modules) && modules.length > 0;
 
-  const selectedModules: ModuleKey[] = Array.isArray(modules) ? modules : [];
-
-  const isExpired = Boolean(subscription?.expired);
-  const isValid = Boolean(subscription?.valid ?? subscriptionActive);
-
-  const onPlan = loc.pathname.startsWith("/onboarding/plan");
-  const onModules = loc.pathname.startsWith("/onboarding/modules");
-
-  if (!planSelected || isExpired || !isValid) {
-    if (onPlan) return <Outlet />;
-    return <Navigate to={`/onboarding/plan?redirectTo=${encodeURIComponent(current)}`} replace />;
-  }
-
-  if (selectedModules.length === 0) {
-    if (onModules) return <Outlet />;
+  if (!modulesSelected) {
     return <Navigate to={`/onboarding/modules?redirectTo=${encodeURIComponent(current)}`} replace />;
   }
 

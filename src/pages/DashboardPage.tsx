@@ -12,7 +12,7 @@ function moduleLabelFromKey(m: ModuleKey) {
 export default function DashboardPage() {
   const nav = useNavigate();
   const loc = useLocation();
-  const { user, subscriptionActive, subscription, plan } = useAuth();
+  const { user, subscription, plan } = useAuth();
 
   const [enabledTree, setEnabledTree] = useState<ModuleDTO[]>([]);
   const [loadingTree, setLoadingTree] = useState(true);
@@ -35,21 +35,9 @@ export default function DashboardPage() {
   }, []);
 
   const effectivePlan = subscription?.plan ?? plan ?? null;
-  const isValid = Boolean(subscription?.valid ?? subscriptionActive);
-
-  const endLabel = subscription?.currentPeriodEnd
-    ? new Date(subscription.currentPeriodEnd).toLocaleString()
-    : "—";
 
   const planLabel =
     effectivePlan === "INDIVIDUAL" ? "Individual" : effectivePlan === "ENTERPRISE" ? "Enterprise" : "—";
-
-  const billingLabel =
-    subscription?.billingCycle === "MONTHLY"
-      ? "Monthly"
-      : subscription?.billingCycle === "YEARLY"
-      ? "Yearly"
-      : "—";
 
   const hasEnabledSomething = useMemo(() => enabledTree.length > 0, [enabledTree]);
 
@@ -65,10 +53,10 @@ export default function DashboardPage() {
 
         <button
           type="button"
-          onClick={() => nav(`/onboarding/plan?redirectTo=${encodeURIComponent(current)}`)}
+          onClick={() => nav(`/onboarding/modules?redirectTo=${encodeURIComponent(current)}`)}
           className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700"
         >
-          Update subscription & modules
+          Update modules
         </button>
       </div>
 
@@ -81,27 +69,13 @@ export default function DashboardPage() {
           </div>
 
           <div className="text-sm">
-            Subscription:{" "}
-            <span className={`font-semibold ${isValid ? "text-green-600" : "text-red-600"}`}>
-              {isValid ? "ACTIVE" : "INACTIVE"}
-            </span>
-          </div>
-
-          <div className="text-sm">
-            Plan: <span className="font-medium">{planLabel}</span>
-          </div>
-
-          <div className="text-sm">
-            Billing: <span className="font-medium">{billingLabel}</span>
+            Account type: <span className="font-medium">{planLabel}</span>
           </div>
 
           <div className="text-sm">
             Seats: <span className="font-medium">{subscription?.seats ?? "—"}</span>
           </div>
 
-          <div className="text-sm">
-            Current period end: <span className="font-medium">{endLabel}</span>
-          </div>
         </div>
 
         <div className="bg-white rounded-2xl shadow p-5 space-y-3">
