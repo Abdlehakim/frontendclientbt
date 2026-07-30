@@ -328,12 +328,9 @@ export default function FerraillagePage() {
                 Créé par
               </th>
               <th className="py-2 text-sm font-medium text-center border-x-4 border-white">
-                Créé le
+                Créé le / MàJ le
               </th>
-              <th className="py-2 text-sm font-medium text-center">
-                Mis à jour le
-              </th>
-              <th className="w-2/9 py-2 text-sm font-medium text-center border-l-4 border-white">
+              <th className="w-2/9 py-2 text-sm font-medium text-center">
                 Actions
               </th>
             </tr>
@@ -346,7 +343,7 @@ export default function FerraillagePage() {
               <tbody>
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={5}
                     className="py-6 text-center text-gray-600"
                   >
                     Aucun rapport de ferraillage trouvé.
@@ -369,11 +366,15 @@ export default function FerraillagePage() {
                     <td className="py-2 text-center truncate">
                       {report.createdByName?.trim() || "—"}
                     </td>
-                    <td className="py-2 text-center">
-                      {fmtDate(report.createdAt)}
-                    </td>
-                    <td className="py-2 text-center">
-                      {fmtDate(report.updatedAt)}
+                    <td className="py-2 text-center text-xs">
+                      <div>
+                        Créé :{" "}
+                        {fmtDate(report.createdAt)}
+                      </div>
+                      <div>
+                        MàJ :{" "}
+                        {fmtDate(report.updatedAt)}
+                      </div>
                     </td>
                     <td className="py-2 w-2/9">
                       <div className="flex justify-center items-center gap-2">

@@ -287,11 +287,8 @@ export default function ProjectsPage() {
               <th className="py-2 text-sm font-medium text-center border-x-4 border-white">
                 Responsable
               </th>
-              <th className="py-2 text-sm font-medium text-center">
-                Créé le
-              </th>
               <th className="py-2 text-sm font-medium text-center border-x-4 border-white">
-                MàJ le
+                Créé le / MàJ le
               </th>
               <th className="w-2/9 py-2 text-sm font-medium text-center">
                 Actions
@@ -306,7 +303,7 @@ export default function ProjectsPage() {
               <tbody>
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={4}
                     className="py-6 text-center text-gray-600"
                   >
                     Aucun projet trouvé.
@@ -326,11 +323,15 @@ export default function ProjectsPage() {
                     <td className="py-2 text-center truncate">
                       {project.responsable ?? "—"}
                     </td>
-                    <td className="py-2 text-center">
-                      {fmtDate(project.createdAt)}
-                    </td>
-                    <td className="py-2 text-center">
-                      {fmtDate(project.updatedAt)}
+                    <td className="py-2 text-center text-xs">
+                      <div>
+                        Créé :{" "}
+                        {fmtDate(project.createdAt)}
+                      </div>
+                      <div>
+                        MàJ :{" "}
+                        {fmtDate(project.updatedAt)}
+                      </div>
                     </td>
                     <td className="py-2 w-2/9">
                       <div className="flex justify-center items-center gap-2">

@@ -227,12 +227,9 @@ export default function ProjectTrackingPage() {
                 Créé par
               </th>
               <th className="py-2 text-sm font-medium text-center border-x-4 border-white">
-                Créé le
+                Créé le / MàJ le
               </th>
-              <th className="py-2 text-sm font-medium text-center">
-                MàJ le
-              </th>
-              <th className="w-2/9 py-2 text-sm font-medium text-center border-l-4 border-white">
+              <th className="w-2/9 py-2 text-sm font-medium text-center">
                 Actions
               </th>
             </tr>
@@ -245,7 +242,7 @@ export default function ProjectTrackingPage() {
               <tbody>
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={5}
                     className="py-6 text-center text-gray-600"
                   >
                     Aucun essai à la compression trouvé.
@@ -268,11 +265,15 @@ export default function ProjectTrackingPage() {
                     <td className="py-2 text-center truncate">
                       {report.createdByName?.trim() || "—"}
                     </td>
-                    <td className="py-2 text-center">
-                      {formatDate(report.createdAt)}
-                    </td>
-                    <td className="py-2 text-center">
-                      {formatDate(report.updatedAt)}
+                    <td className="py-2 text-center text-xs">
+                      <div>
+                        Créé :{" "}
+                        {formatDate(report.createdAt)}
+                      </div>
+                      <div>
+                        MàJ :{" "}
+                        {formatDate(report.updatedAt)}
+                      </div>
                     </td>
                     <td className="py-2 w-2/9">
                       <div className="flex items-center justify-center gap-2">
