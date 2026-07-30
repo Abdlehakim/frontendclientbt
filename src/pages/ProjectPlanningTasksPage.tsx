@@ -4,10 +4,14 @@ import {
   useMemo,
   useState,
 } from "react";
-import { FaTrashAlt } from "react-icons/fa";
+import {
+  FaRegEye,
+  FaTrashAlt,
+} from "react-icons/fa";
 import { FaSpinner } from "react-icons/fa6";
 import { FiEdit3 } from "react-icons/fi";
 import DeleteConfirmModal from "@/components/common/DeleteConfirmModal";
+import PlanningTaskDetailsModal from "@/components/planning/PlanningTaskDetailsModal";
 import PlanningTaskModal from "@/components/planning/PlanningTaskModal";
 import TablePagination from "@/components/tablePagination";
 import { useProjectSelection } from "@/contexts/ProjectSelectionContext";
@@ -60,6 +64,8 @@ export default function ProjectPlanningTasksPage() {
     "create" | "edit"
   >("create");
   const [editingTask, setEditingTask] =
+    useState<PlanningTaskDTO | null>(null);
+  const [viewTarget, setViewTarget] =
     useState<PlanningTaskDTO | null>(null);
 
   const [deleteTarget, setDeleteTarget] =
@@ -146,6 +152,14 @@ export default function ProjectPlanningTasksPage() {
     setModalMode("edit");
     setEditingTask(task);
     setModalOpen(true);
+  }
+
+  function openTaskDetails(task: PlanningTaskDTO) {
+    setViewTarget(task);
+  }
+
+  function closeTaskDetails() {
+    setViewTarget(null);
   }
 
   function closeTaskModal() {
@@ -267,7 +281,7 @@ export default function ProjectPlanningTasksPage() {
               <th className="py-2 text-center text-sm font-medium">
                 Créée le / MàJ le
               </th>
-              <th className="w-32 border-l-4 border-white py-2 text-center text-sm font-medium">
+              <th className="w-40 border-l-4 border-white py-2 text-center text-sm font-medium">
                 Actions
               </th>
             </tr>
@@ -339,8 +353,22 @@ export default function ProjectPlanningTasksPage() {
                             {formatDate(task.updatedAt)}
                           </div>
                         </td>
-                        <td className="w-32 px-2 py-2">
+                        <td className="w-40 px-2 py-2">
                           <div className="flex items-center justify-center gap-2">
+                            <button
+                              type="button"
+                              className="ButtonSquare"
+                              title="Voir les détails"
+                              aria-label={`Voir les détails de la tâche ${task.title}`}
+                              onClick={() =>
+                                openTaskDetails(task)
+                              }
+                            >
+                              <FaRegEye
+                                aria-hidden="true"
+                                size={14}
+                              />
+                            </button>
                             <button
                               type="button"
                               className="ButtonSquare"
@@ -388,6 +416,12 @@ export default function ProjectPlanningTasksPage() {
           onPageChange={setCurrentPage}
         />
       </div>
+
+      <PlanningTaskDetailsModal
+        open={Boolean(viewTarget)}
+        task={viewTarget}
+        onClose={closeTaskDetails}
+      />
 
       <PlanningTaskModal
         open={modalOpen}
