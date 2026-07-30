@@ -15,6 +15,7 @@ import {
   FiMapPin,
   FiUser,
 } from "react-icons/fi";
+import CompressionSamplesTable from "@/components/compression/CompressionSamplesTable";
 import ProjectModalShell from "@/components/ferraillage/ProjectModalShell";
 import {
   buildTotalFerraillageData,
@@ -22,7 +23,9 @@ import {
 import {
   compressionApi,
   isCompressionApiError,
+  type CompressionReportDetailDTO,
   type CompressionReportSummaryDTO,
+  type CompressionSampleInput,
 } from "@/lib/compressionApi";
 import {
   ferraillageApi,
@@ -150,6 +153,58 @@ function formatDate(
   return date.toLocaleDateString("fr-FR");
 }
 
+function toCompressionDateInput(
+  value: string | null | undefined,
+): string {
+  return value?.slice(0, 10) ?? "";
+}
+
+function mapCompressionReportSamples(
+  report: CompressionReportDetailDTO,
+): CompressionSampleInput[] {
+  return report.samples.map((sample) => ({
+    id: sample.id,
+    sequenceNumber: sample.sequenceNumber,
+    dosage: sample.dosage,
+    cement: sample.cement,
+    admixture: sample.admixture ?? "",
+    designation: sample.designation,
+    pourDate: toCompressionDateInput(
+      sample.pourDate,
+    ),
+    specimenSendDate: toCompressionDateInput(
+      sample.specimenSendDate,
+    ),
+    specimenCount: sample.specimenCount,
+    sortOrder: sample.sortOrder,
+    series: sample.series.map((series) => ({
+      id: series.id,
+      crushingDate: toCompressionDateInput(
+        series.crushingDate,
+      ),
+      reference: series.reference ?? "",
+      sortOrder: series.sortOrder,
+      showInPlanning: series.showInPlanning,
+      planningTime: series.planningTime,
+      results: series.results.map((result) => ({
+        id: result.id,
+        specimenNumber: result.specimenNumber,
+        value:
+          typeof result.value === "number" &&
+          Number.isFinite(result.value)
+            ? result.value
+            : null,
+        status: result.status,
+        note: result.note,
+      })),
+    })),
+  }));
+}
+
+async function ignoreReadOnlyCompressionMutation(): Promise<void> {
+  return;
+}
+
 function readableError(error: unknown): string {
   if (
     isFerApiError(error) ||
@@ -174,6 +229,18 @@ export default function ProjectOverviewModal({
     useState<FerraillageReportDTO[]>([]);
   const [compressionReports, setCompressionReports] =
     useState<CompressionReportSummaryDTO[]>([]);
+  const [
+    compressionReportDetails,
+    setCompressionReportDetails,
+  ] = useState<CompressionReportDetailDTO[]>([]);
+  const [
+    compressionDetailsLoading,
+    setCompressionDetailsLoading,
+  ] = useState(false);
+  const [
+    compressionDetailsError,
+    setCompressionDetailsError,
+  ] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] =
@@ -243,6 +310,9 @@ export default function ProjectOverviewModal({
       setProject(null);
       setFerraillageReports([]);
       setCompressionReports([]);
+      setCompressionReportDetails([]);
+      setCompressionDetailsLoading(false);
+      setCompressionDetailsError("");
       setLoading(false);
       setError("");
       setActiveTab("PROJECT_INFO");
@@ -254,6 +324,9 @@ export default function ProjectOverviewModal({
     setProject(null);
     setFerraillageReports([]);
     setCompressionReports([]);
+    setCompressionReportDetails([]);
+    setCompressionDetailsLoading(false);
+    setCompressionDetailsError("");
     setLoading(true);
     setError("");
     setActiveTab("PROJECT_INFO");
@@ -303,6 +376,66 @@ export default function ProjectOverviewModal({
       active = false;
     };
   }, [open, projectId]);
+
+  useEffect(() => {
+    if (
+      !open ||
+      !projectId ||
+      activeTab !== "COMPRESSION"
+    ) {
+      return;
+    }
+
+    if (compressionReports.length === 0) {
+      setCompressionReportDetails([]);
+      setCompressionDetailsLoading(false);
+      setCompressionDetailsError("");
+      return;
+    }
+
+    let active = true;
+
+    setCompressionDetailsLoading(true);
+    setCompressionDetailsError("");
+
+    void Promise.all(
+      compressionReports.map((report) =>
+        compressionApi.getReport(report.id),
+      ),
+    )
+      .then((responses) => {
+        if (!active) return;
+
+        setCompressionReportDetails(
+          responses.map((response) => response.item),
+        );
+        setCompressionDetailsError("");
+      })
+      .catch((loadError: unknown) => {
+        if (!active) return;
+
+        setCompressionReportDetails([]);
+        setCompressionDetailsError(
+          isCompressionApiError(loadError)
+            ? loadError.message
+            : "Impossible de charger les essais à la compression.",
+        );
+      })
+      .finally(() => {
+        if (active) {
+          setCompressionDetailsLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [
+    activeTab,
+    compressionReports,
+    open,
+    projectId,
+  ]);
 
   if (!open) return null;
 
@@ -543,80 +676,101 @@ export default function ProjectOverviewModal({
             ) : null}
 
             {activeTab === "COMPRESSION" ? (
-              <div className="overflow-hidden rounded-lg bg-white shadow-sm">
-                <table className="w-full table-fixed">
-                  <thead className="bg-(--primary) text-white">
-                    <tr>
-                      <th className="py-2 text-center text-sm font-medium">
-                        Titre
-                      </th>
-                      <th className="py-2 text-center text-sm font-medium">
-                        Créé par
-                      </th>
-                      <th className="w-32 py-2 text-center text-sm font-medium">
-                        Prélèvements
-                      </th>
-                      <th className="w-32 py-2 text-center text-sm font-medium">
-                        Créé le
-                      </th>
-                      <th className="w-32 py-2 text-center text-sm font-medium">
-                        MàJ le
-                      </th>
-                      <th className="w-24 py-2 text-center text-sm font-medium">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {compressionReports.map(
-                      (report) => (
-                        <tr key={report.id}>
-                          <td className="truncate px-2 py-2 text-center">
-                            {report.title ?? "—"}
-                          </td>
-                          <td className="truncate px-2 py-2 text-center">
-                            {report.createdByName ||
-                              "—"}
-                          </td>
-                          <td className="px-2 py-2 text-center">
-                            {report.sampleCount}
-                          </td>
-                          <td className="px-2 py-2 text-center">
-                            {formatDate(
-                              report.createdAt,
-                            )}
-                          </td>
-                          <td className="px-2 py-2 text-center">
-                            {formatDate(
-                              report.updatedAt,
-                            )}
-                          </td>
-                          <td className="px-2 py-2">
-                            <div className="flex items-center justify-center">
-                              <button
-                                type="button"
-                                className="ButtonSquare"
-                                title="Voir"
-                                aria-label="Voir"
-                                onClick={() =>
-                                  onViewCompressionReport(
-                                    report.id,
-                                  )
-                                }
-                              >
-                                <FaRegEye
-                                  aria-hidden="true"
-                                  size={14}
-                                />
-                              </button>
+              compressionDetailsLoading ? (
+                <div className="flex min-h-64 items-center justify-center">
+                  <FaSpinner className="animate-spin text-4xl text-(--primary)" />
+                </div>
+              ) : compressionDetailsError ? (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {compressionDetailsError}
+                </div>
+              ) : compressionReportDetails.length ===
+                0 ? (
+                <div className="rounded-lg bg-white px-4 py-8 text-center text-sm text-slate-500">
+                  Aucun essai à la compression trouvé.
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  {compressionReportDetails.map(
+                    (report) => (
+                      <section
+                        key={report.id}
+                        className="space-y-4"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
+                          <div className="min-w-0">
+                            <h3 className="truncate text-base font-semibold text-[#0d2d5f]">
+                              {report.title?.trim() ||
+                                "Essai à la compression"}
+                            </h3>
+
+                            <div className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-slate-500">
+                              <span>
+                                {report.createdByName ||
+                                  "—"}
+                              </span>
+                              <span aria-hidden="true">
+                                •
+                              </span>
+                              <span>
+                                {formatDate(
+                                  report.reportDate,
+                                )}
+                              </span>
                             </div>
-                          </td>
-                        </tr>
-                      ),
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            className="ButtonSquare"
+                            title="Voir"
+                            aria-label={`Voir ${
+                              report.title ??
+                              "l’essai à la compression"
+                            }`}
+                            onClick={() =>
+                              onViewCompressionReport(
+                                report.id,
+                              )
+                            }
+                          >
+                            <FaRegEye
+                              aria-hidden="true"
+                              size={14}
+                            />
+                          </button>
+                        </div>
+
+                        <CompressionSamplesTable
+                          readOnly
+                          busy={false}
+                          samples={mapCompressionReportSamples(
+                            report,
+                          )}
+                          onCreateSample={
+                            ignoreReadOnlyCompressionMutation
+                          }
+                          onUpdateSample={
+                            ignoreReadOnlyCompressionMutation
+                          }
+                          onDeleteSample={
+                            ignoreReadOnlyCompressionMutation
+                          }
+                          onCreateSeries={
+                            ignoreReadOnlyCompressionMutation
+                          }
+                          onUpdateSeries={
+                            ignoreReadOnlyCompressionMutation
+                          }
+                          onDeleteSeries={
+                            ignoreReadOnlyCompressionMutation
+                          }
+                        />
+                      </section>
+                    ),
+                  )}
+                </div>
+              )
             ) : null}
           </div>
         </div>
